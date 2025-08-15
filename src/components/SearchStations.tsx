@@ -33,15 +33,11 @@ export const SearchStations: React.FC<SearchStationsProps> = ({ onLocationUpdate
     setHasSearched(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock search results
+      // Search for stations based on query
       const results = await searchStationsByLocation(searchQuery);
       setStations(results);
       
-      // Mock updating user location based on search
-      // In real app, this would use geocoding API
+      // Update location based on search results
       if (results.length > 0) {
         const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
         const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;

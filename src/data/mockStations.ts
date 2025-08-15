@@ -1,5 +1,6 @@
 import { ChargingStation } from '@/types/station';
 import { LocationService } from '@/services/locationService';
+import { EVStationService } from '@/services/evStationService';
 
 // Mock charging stations data - in real app, this would come from APIs
 const mockStations: Omit<ChargingStation, 'distance'>[] = [
@@ -101,24 +102,41 @@ const mockStations: Omit<ChargingStation, 'distance'>[] = [
   }
 ];
 
-export const getStationsWithDistance = (userLocation: { lat: number; lng: number } | null, radius: number = 50): ChargingStation[] => {
+export const getStationsWithDistance = async (userLocation: { lat: number; lng: number } | null, radius: number = 50): Promise<ChargingStation[]> => {
   if (!userLocation) return [];
 
-  return mockStations
-    .map(station => ({
-      ...station,
-      distance: LocationService.calculateDistance(userLocation, { lat: station.lat, lng: station.lng })
-    }))
-    .filter(station => station.distance <= radius)
-    .sort((a, b) => a.distance - b.distance);
+  // Use real EV station service instead of mock data
+  try {
+    const stations = await EVStationService.getStationsWithDistance(userLocation, radius);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching real station data, falling back to mock:', error);
+    
+    // Fallback to mock data if real service fails
+    return mockStations
+      .map(station => ({
+        ...station,
+        distance: LocationService.calculateDistance(userLocation, { lat: station.lat, lng: station.lng })
+      }))
+      .filter(station => station.distance <= radius)
+      .sort((a, b) => a.distance - b.distance);
+  }
 };
 
 export const searchStationsByLocation = async (query: string): Promise<ChargingStation[]> => {
-  // Mock search implementation - in real app, this would use geocoding API
-  const mockSearchResults = mockStations.map(station => ({
-    ...station,
-    distance: Math.random() * 20 + 1 // Random distance for demo
-  }));
+  // Use real EV station service for search
+  try {
+    const stations = await EVStationService.searchStationsByLocation(query);
+    return stations;
+  } catch (error) {
+    console.error('Error searching real station data, falling back to mock:', error);
+    
+    // Fallback to mock data if real service fails
+    const mockSearchResults = mockStations.map(station => ({
+      ...station,
+      distance: Math.random() * 20 + 1 // Random distance for demo
+    }));
 
-  return mockSearchResults.sort((a, b) => a.distance - b.distance);
+    return mockSearchResults.sort((a, b) => a.distance - b.distance);
+  }
 };

@@ -30,12 +30,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     
     setIsLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const nearbyStations = getStationsWithDistance(location, radius);
+      const nearbyStations = await getStationsWithDistance(location, radius);
       setStations(nearbyStations);
     } catch (error) {
       console.error('Error loading stations:', error);
+      setStations([]);
     } finally {
       setIsLoading(false);
     }

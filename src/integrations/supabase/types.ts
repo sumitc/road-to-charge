@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      ev_charging_stations: {
+        Row: {
+          address: string
+          availability_status: string | null
+          charger_type: string | null
+          connector_types: string[] | null
+          created_at: string
+          external_id: string | null
+          id: string
+          last_updated: string
+          latitude: number
+          longitude: number
+          maps_link: string | null
+          power_output: string | null
+          pricing: string | null
+          provider: string
+          station_name: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          availability_status?: string | null
+          charger_type?: string | null
+          connector_types?: string[] | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_updated?: string
+          latitude: number
+          longitude: number
+          maps_link?: string | null
+          power_output?: string | null
+          pricing?: string | null
+          provider: string
+          station_name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          availability_status?: string | null
+          charger_type?: string | null
+          connector_types?: string[] | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_updated?: string
+          latitude?: number
+          longitude?: number
+          maps_link?: string | null
+          power_output?: string | null
+          pricing?: string | null
+          provider?: string
+          station_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       image_embeddings: {
         Row: {
           created_at: string
