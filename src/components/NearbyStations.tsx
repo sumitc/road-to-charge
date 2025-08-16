@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StationCard } from './StationCard';
 import { ChargingStation } from '@/types/station';
-import { getStationsWithDistance } from '@/data/mockStations';
+import { EVStationService } from '@/services/evStationService';
 
 interface NearbyStationsProps {
   location: { lat: number; lng: number } | null;
@@ -30,8 +30,17 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     
     setIsLoading(true);
     try {
-      const nearbyStations = await getStationsWithDistance(location, radius);
-      setStations(nearbyStations);
+      // Try to sync stations first if database is empty
+      const stations = await EVStationService.getStationsWithDistance(location, radius);
+      if (stations.length === 0) {
+        console.log('No stations found, triggering sync...');
+        await EVStationService.syncStationsFromSources();
+        // Try again after sync
+        const syncedStations = await EVStationService.getStationsWithDistance(location, radius);
+        setStations(syncedStations);
+      } else {
+        setStations(stations);
+      }
     } catch (error) {
       console.error('Error loading stations:', error);
       setStations([]);

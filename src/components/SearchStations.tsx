@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { StationCard } from './StationCard';
 import { ChargingStation } from '@/types/station';
-import { searchStationsByLocation } from '@/data/mockStations';
+import { EVStationService } from '@/services/evStationService';
 import { useToast } from '@/hooks/use-toast';
 
 interface SearchStationsProps {
@@ -34,7 +34,7 @@ export const SearchStations: React.FC<SearchStationsProps> = ({ onLocationUpdate
 
     try {
       // Search for stations based on query
-      const results = await searchStationsByLocation(searchQuery);
+      const results = await EVStationService.searchStationsByLocation(searchQuery);
       setStations(results);
       
       // Update location based on search results
