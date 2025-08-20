@@ -102,6 +102,90 @@ async function fetchNITIAayogData(): Promise<EVStationData[]> {
   }
 }
 
+async function fetchBEEIndiaStations(): Promise<EVStationData[]> {
+  try {
+    console.log('Fetching BEE India EV stations from evyatra.beeindia.gov.in...');
+    
+    const response = await fetch('https://evyatra.beeindia.gov.in/public-charging-stations/');
+    if (!response.ok) {
+      throw new Error(`BEE India website error: ${response.status}`);
+    }
+    
+    const html = await response.text();
+    
+    // Parse HTML to extract table data
+    // Using basic string parsing since we don't have BeautifulSoup in Deno
+    const stations: EVStationData[] = [];
+    
+    // Look for table structure in the HTML
+    const tableMatch = html.match(/<table[\s\S]*?<\/table>/i);
+    if (!tableMatch) {
+      console.log('No table found in BEE India page');
+      return [];
+    }
+    
+    const tableHtml = tableMatch[0];
+    
+    // Extract headers
+    const headerMatch = tableHtml.match(/<thead[\s\S]*?<\/thead>/i);
+    let headers: string[] = [];
+    if (headerMatch) {
+      const headerCells = headerMatch[0].match(/<th[^>]*>([\s\S]*?)<\/th>/gi);
+      if (headerCells) {
+        headers = headerCells.map(cell => 
+          cell.replace(/<[^>]*>/g, '').trim().toLowerCase()
+        );
+      }
+    }
+    
+    // Extract rows
+    const tbodyMatch = tableHtml.match(/<tbody[\s\S]*?<\/tbody>/i);
+    if (tbodyMatch) {
+      const rows = tbodyMatch[0].match(/<tr[\s\S]*?<\/tr>/gi);
+      if (rows) {
+        for (const row of rows) {
+          const cells = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+          if (cells && cells.length >= 4) {
+            const rowData: {[key: string]: string} = {};
+            cells.forEach((cell, index) => {
+              if (headers[index]) {
+                rowData[headers[index]] = cell.replace(/<[^>]*>/g, '').trim();
+              }
+            });
+            
+            // Map common field names to our schema
+            const lat = parseFloat(rowData.latitude || rowData.lat || '0');
+            const lng = parseFloat(rowData.longitude || rowData.lng || rowData.long || '0');
+            
+            if (lat && lng) {
+              stations.push({
+                station_name: rowData.name || rowData.station_name || rowData['station name'] || 'Unknown Station',
+                provider: rowData.operator || rowData.provider || 'BEE India',
+                latitude: lat,
+                longitude: lng,
+                address: rowData.address || rowData.location || 'Address not available',
+                charger_type: rowData.charger_type || rowData['charger type'],
+                connector_types: rowData.connector_types ? rowData.connector_types.split(',').map(c => c.trim()) : [],
+                availability_status: rowData.status || 'unknown',
+                external_id: rowData.id || rowData['station id'],
+                power_output: rowData.power || rowData.power_output,
+                pricing: rowData.pricing || rowData.tariff
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`Found ${stations.length} stations from BEE India`);
+    return stations;
+    
+  } catch (error) {
+    console.error('Error fetching BEE India stations:', error);
+    return [];
+  }
+}
+
 async function fetchStatiqStations(): Promise<EVStationData[]> {
   try {
     console.log('Fetching Statiq stations...');
@@ -142,10 +226,11 @@ Deno.serve(async (req) => {
     console.log('Starting EV stations sync...');
     
     // Fetch data from all sources
-    const [tataPowerStations, atherStations, nitiStations, statiqStations] = await Promise.all([
+    const [tataPowerStations, atherStations, nitiStations, beeIndiaStations, statiqStations] = await Promise.all([
       fetchTataPowerStations(),
       fetchAtherGridStations(),
       fetchNITIAayogData(),
+      fetchBEEIndiaStations(),
       fetchStatiqStations()
     ]);
     
@@ -153,6 +238,7 @@ Deno.serve(async (req) => {
       ...tataPowerStations,
       ...atherStations,
       ...nitiStations,
+      ...beeIndiaStations,
       ...statiqStations
     ];
     
@@ -200,6 +286,7 @@ Deno.serve(async (req) => {
           'Tata Power': tataPowerStations.length,
           'Ather Grid': atherStations.length,
           'NITI Aayog': nitiStations.length,
+          'BEE India': beeIndiaStations.length,
           'Statiq': statiqStations.length
         }
       }),
