@@ -102,6 +102,56 @@ async function fetchNITIAayogData(): Promise<EVStationData[]> {
   }
 }
 
+async function fetchOpenChargeMapStations(): Promise<EVStationData[]> {
+  try {
+    console.log('Fetching OpenChargeMap stations for India...');
+    
+    // Fetch stations from India (country code 100) with a reasonable limit
+    const response = await fetch('https://api.openchargemap.io/v3/poi/?output=json&countrycode=IN&maxresults=500&compact=true&verbose=false');
+    
+    if (!response.ok) {
+      throw new Error(`OpenChargeMap API error: ${response.status}`);
+    }
+    
+    const stations = await response.json();
+    console.log(`Fetched ${stations.length} stations from OpenChargeMap`);
+    
+    // Transform OpenChargeMap data to our schema
+    return stations.map((station: any) => {
+      const connections = station.Connections || [];
+      const connectorTypes = connections.map((conn: any) => 
+        conn.ConnectionType?.Title || 'Unknown'
+      ).filter((type: string) => type !== 'Unknown');
+      
+      return {
+        station_name: station.AddressInfo?.Title || 'Unknown Station',
+        provider: station.OperatorInfo?.Title || 'OpenChargeMap',
+        latitude: parseFloat(station.AddressInfo?.Latitude || '0'),
+        longitude: parseFloat(station.AddressInfo?.Longitude || '0'),
+        address: [
+          station.AddressInfo?.AddressLine1,
+          station.AddressInfo?.Town,
+          station.AddressInfo?.StateOrProvince,
+          station.AddressInfo?.Postcode
+        ].filter(Boolean).join(', '),
+        charger_type: connections[0]?.Level?.Title || 'Unknown',
+        connector_types: connectorTypes.length > 0 ? connectorTypes : ['Unknown'],
+        availability_status: station.StatusType?.IsOperational ? 'operational' : 'unknown',
+        external_id: station.ID?.toString(),
+        power_output: connections[0]?.PowerKW ? `${connections[0].PowerKW}kW` : undefined,
+        maps_link: `https://www.google.com/maps?q=${station.AddressInfo?.Latitude},${station.AddressInfo?.Longitude}`
+      };
+    }).filter((station: EVStationData) => 
+      station.latitude && station.longitude && 
+      station.latitude !== 0 && station.longitude !== 0
+    );
+    
+  } catch (error) {
+    console.error('Error fetching OpenChargeMap stations:', error);
+    return [];
+  }
+}
+
 async function fetchBEEIndiaStations(): Promise<EVStationData[]> {
   try {
     console.log('Fetching BEE India EV stations from evyatra.beeindia.gov.in...');
@@ -226,10 +276,11 @@ Deno.serve(async (req) => {
     console.log('Starting EV stations sync...');
     
     // Fetch data from all sources
-    const [tataPowerStations, atherStations, nitiStations, beeIndiaStations, statiqStations] = await Promise.all([
+    const [tataPowerStations, atherStations, nitiStations, openChargeMapStations, beeIndiaStations, statiqStations] = await Promise.all([
       fetchTataPowerStations(),
       fetchAtherGridStations(),
       fetchNITIAayogData(),
+      fetchOpenChargeMapStations(),
       fetchBEEIndiaStations(),
       fetchStatiqStations()
     ]);
@@ -238,6 +289,7 @@ Deno.serve(async (req) => {
       ...tataPowerStations,
       ...atherStations,
       ...nitiStations,
+      ...openChargeMapStations,
       ...beeIndiaStations,
       ...statiqStations
     ];
@@ -286,6 +338,7 @@ Deno.serve(async (req) => {
           'Tata Power': tataPowerStations.length,
           'Ather Grid': atherStations.length,
           'NITI Aayog': nitiStations.length,
+          'OpenChargeMap': openChargeMapStations.length,
           'BEE India': beeIndiaStations.length,
           'Statiq': statiqStations.length
         }
