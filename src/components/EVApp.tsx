@@ -1,16 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Search, Star, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Search, Star, Zap, RefreshCw } from 'lucide-react';
 import { NearbyStations } from './NearbyStations';
 import { SearchStations } from './SearchStations';
 import { FavouriteStations } from './FavouriteStations';
 import { LocationService } from '@/services/locationService';
+import { EVStationService } from '@/services/evStationService';
 import { useToast } from '@/hooks/use-toast';
 
 export const EVApp = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await EVStationService.syncStationsFromSources();
+      if (result.success) {
+        toast({
+          title: "Sync successful",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Sync failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Sync error",
+        description: "Failed to sync station data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const getLocation = async () => {
@@ -43,14 +73,26 @@ export const EVApp = () => {
       {/* Header */}
       <header className="bg-gradient-hero text-primary-foreground p-4 shadow-electric">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary-foreground/20 rounded-lg">
-              <Zap className="w-6 h-6" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary-foreground/20 rounded-lg">
+                <Zap className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">EV Station Finder</h1>
+                <p className="text-sm opacity-90">Find charging stations near you</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold">EV Station Finder</h1>
-              <p className="text-sm opacity-90">Find charging stations near you</p>
-            </div>
+            <Button 
+              onClick={handleSync} 
+              disabled={isSyncing}
+              variant="outline" 
+              size="sm"
+              className="bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync Data'}
+            </Button>
           </div>
         </div>
       </header>
