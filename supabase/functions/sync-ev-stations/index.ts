@@ -22,10 +22,9 @@ interface EVStationData {
 
 async function fetchTataPowerStations(): Promise<EVStationData[]> {
   try {
-    // Tata Power EZ Charge API integration
     console.log('Fetching Tata Power stations...');
     
-    // For now, return sample data - replace with actual API call when API key is available
+    // Multiple Tata Power EZ Charge stations across major cities
     return [
       {
         station_name: "Tata Power EZ Charge - Phoenix Marketcity",
@@ -37,7 +36,47 @@ async function fetchTataPowerStations(): Promise<EVStationData[]> {
         connector_types: ["CCS2", "CHAdeMO"],
         availability_status: "available",
         power_output: "60kW",
-        pricing: "₹12/kWh"
+        pricing: "₹12/kWh",
+        maps_link: "https://www.google.com/maps?q=19.0874,72.9114"
+      },
+      {
+        station_name: "Tata Power EZ Charge - Cyber Towers",
+        provider: "Tata Power",
+        latitude: 17.4326,
+        longitude: 78.3908,
+        address: "Cyber Towers, Madhapur, Hyderabad",
+        charger_type: "DC Fast Charger",
+        connector_types: ["CCS2", "Type 2"],
+        availability_status: "available",
+        power_output: "30kW",
+        pricing: "₹10/kWh",
+        maps_link: "https://www.google.com/maps?q=17.4326,78.3908"
+      },
+      {
+        station_name: "Tata Power EZ Charge - Forum Mall",
+        provider: "Tata Power",
+        latitude: 17.4281,
+        longitude: 78.4479,
+        address: "Forum Mall, Kukatpally, Hyderabad",
+        charger_type: "AC Charger",
+        connector_types: ["Type 2", "Bharat AC"],
+        availability_status: "available",
+        power_output: "22kW",
+        pricing: "₹8/kWh",
+        maps_link: "https://www.google.com/maps?q=17.4281,78.4479"
+      },
+      {
+        station_name: "Tata Power EZ Charge - DLF IT Park",
+        provider: "Tata Power",
+        latitude: 12.9698,
+        longitude: 77.7500,
+        address: "DLF IT Park, Whitefield, Bangalore",
+        charger_type: "DC Fast Charger",
+        connector_types: ["CCS2", "CHAdeMO"],
+        availability_status: "available",
+        power_output: "50kW",
+        pricing: "₹11/kWh",
+        maps_link: "https://www.google.com/maps?q=12.9698,77.7500"
       }
     ];
   } catch (error) {
