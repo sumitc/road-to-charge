@@ -22,67 +22,128 @@ interface EVStationData {
 
 async function fetchTataPowerStations(): Promise<EVStationData[]> {
   try {
-    console.log('Fetching Tata Power stations...');
+    console.log('Fetching Tata Power stations from website...');
     
-    // Multiple Tata Power EZ Charge stations across major cities
-    return [
-      {
-        station_name: "Tata Power EZ Charge - Phoenix Marketcity",
-        provider: "Tata Power",
-        latitude: 19.0874,
-        longitude: 72.9114,
-        address: "Phoenix Marketcity, Kurla West, Mumbai",
-        charger_type: "DC Fast Charger",
-        connector_types: ["CCS2", "CHAdeMO"],
-        availability_status: "available",
-        power_output: "60kW",
-        pricing: "₹12/kWh",
-        maps_link: "https://www.google.com/maps?q=19.0874,72.9114"
-      },
-      {
-        station_name: "Tata Power EZ Charge - Cyber Towers",
-        provider: "Tata Power",
-        latitude: 17.4326,
-        longitude: 78.3908,
-        address: "Cyber Towers, Madhapur, Hyderabad",
-        charger_type: "DC Fast Charger",
-        connector_types: ["CCS2", "Type 2"],
-        availability_status: "available",
-        power_output: "30kW",
-        pricing: "₹10/kWh",
-        maps_link: "https://www.google.com/maps?q=17.4326,78.3908"
-      },
-      {
-        station_name: "Tata Power EZ Charge - Forum Mall",
-        provider: "Tata Power",
-        latitude: 17.4281,
-        longitude: 78.4479,
-        address: "Forum Mall, Kukatpally, Hyderabad",
-        charger_type: "AC Charger",
-        connector_types: ["Type 2", "Bharat AC"],
-        availability_status: "available",
-        power_output: "22kW",
-        pricing: "₹8/kWh",
-        maps_link: "https://www.google.com/maps?q=17.4281,78.4479"
-      },
-      {
-        station_name: "Tata Power EZ Charge - DLF IT Park",
-        provider: "Tata Power",
-        latitude: 12.9698,
-        longitude: 77.7500,
-        address: "DLF IT Park, Whitefield, Bangalore",
-        charger_type: "DC Fast Charger",
-        connector_types: ["CCS2", "CHAdeMO"],
-        availability_status: "available",
-        power_output: "50kW",
-        pricing: "₹11/kWh",
-        maps_link: "https://www.google.com/maps?q=12.9698,77.7500"
+    // Scrape Tata Power EZ Charge station locator
+    const response = await fetch('https://ezcharge.tatapowerddl.com/webportal/stationlocator', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
-    ];
+    });
+    
+    if (!response.ok) {
+      console.log('Tata Power website not accessible, using fallback data');
+      return getTataPowerFallbackData();
+    }
+    
+    const html = await response.text();
+    const stations: EVStationData[] = [];
+    
+    // Try to extract station data from the HTML
+    // Look for JSON data or station listings
+    const jsonMatch = html.match(/var\s+stations\s*=\s*(\[.*?\]);/s) || 
+                     html.match(/stations["\']?\s*:\s*(\[.*?\])/s) ||
+                     html.match(/"stations":\s*(\[.*?\])/s);
+    
+    if (jsonMatch) {
+      try {
+        const stationData = JSON.parse(jsonMatch[1]);
+        for (const station of stationData) {
+          const lat = parseFloat(station.latitude || station.lat || station.Latitude || '0');
+          const lng = parseFloat(station.longitude || station.lng || station.Longitude || '0');
+          
+          if (lat && lng) {
+            stations.push({
+              station_name: station.name || station.stationName || station.title || 'Tata Power Station',
+              provider: 'Tata Power',
+              latitude: lat,
+              longitude: lng,
+              address: station.address || station.location || 'Address not available',
+              charger_type: station.chargerType || station.type || 'DC Fast Charger',
+              connector_types: station.connectors ? station.connectors.split(',') : ['CCS2', 'Type 2'],
+              availability_status: station.status || 'operational',
+              external_id: station.id || station.stationId,
+              power_output: station.power || station.powerOutput || '30kW',
+              pricing: station.pricing || station.tariff || '₹10/kWh',
+              maps_link: `https://www.google.com/maps?q=${lat},${lng}`
+            });
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing Tata Power JSON data:', parseError);
+      }
+    }
+    
+    // If no stations found from scraping, use fallback data
+    if (stations.length === 0) {
+      console.log('No stations extracted from Tata Power website, using fallback data');
+      return getTataPowerFallbackData();
+    }
+    
+    console.log(`Found ${stations.length} Tata Power stations from website`);
+    return stations;
+    
   } catch (error) {
     console.error('Error fetching Tata Power stations:', error);
-    return [];
+    return getTataPowerFallbackData();
   }
+}
+
+function getTataPowerFallbackData(): EVStationData[] {
+  return [
+    {
+      station_name: "Tata Power EZ Charge - Phoenix Marketcity",
+      provider: "Tata Power",
+      latitude: 19.0874,
+      longitude: 72.9114,
+      address: "Phoenix Marketcity, Kurla West, Mumbai",
+      charger_type: "DC Fast Charger",
+      connector_types: ["CCS2", "CHAdeMO"],
+      availability_status: "available",
+      power_output: "60kW",
+      pricing: "₹12/kWh",
+      maps_link: "https://www.google.com/maps?q=19.0874,72.9114"
+    },
+    {
+      station_name: "Tata Power EZ Charge - Cyber Towers",
+      provider: "Tata Power",
+      latitude: 17.4326,
+      longitude: 78.3908,
+      address: "Cyber Towers, Madhapur, Hyderabad",
+      charger_type: "DC Fast Charger",
+      connector_types: ["CCS2", "Type 2"],
+      availability_status: "available",
+      power_output: "30kW",
+      pricing: "₹10/kWh",
+      maps_link: "https://www.google.com/maps?q=17.4326,78.3908"
+    },
+    {
+      station_name: "Tata Power EZ Charge - Forum Mall",
+      provider: "Tata Power",
+      latitude: 17.4281,
+      longitude: 78.4479,
+      address: "Forum Mall, Kukatpally, Hyderabad",
+      charger_type: "AC Charger",
+      connector_types: ["Type 2", "Bharat AC"],
+      availability_status: "available",
+      power_output: "22kW",
+      pricing: "₹8/kWh",
+      maps_link: "https://www.google.com/maps?q=17.4281,78.4479"
+    },
+    {
+      station_name: "Tata Power EZ Charge - DLF IT Park",
+      provider: "Tata Power",
+      latitude: 12.9698,
+      longitude: 77.7500,
+      address: "DLF IT Park, Whitefield, Bangalore",
+      charger_type: "DC Fast Charger",
+      connector_types: ["CCS2", "CHAdeMO"],
+      availability_status: "available",
+      power_output: "50kW",
+      pricing: "₹11/kWh",
+      maps_link: "https://www.google.com/maps?q=12.9698,77.7500"
+    }
+  ];
 }
 
 async function fetchAtherGridStations(): Promise<EVStationData[]> {
