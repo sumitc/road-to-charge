@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, ExternalLink, Zap } from 'lucide-react';
+import { MapPin, Star, Map, Circle, Building2 } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -50,16 +50,16 @@ export const StationCard: React.FC<StationCardProps> = ({
     window.open(googleMapsUrl, '_blank');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'operational':
-        return 'text-secondary';
+        return <Circle className="w-3 h-3 text-green-500 fill-green-500" />;
       case 'maintenance':
-        return 'text-yellow-600';
+        return <Circle className="w-3 h-3 text-yellow-500 fill-yellow-500" />;
       case 'out-of-service':
-        return 'text-destructive';
+        return <Circle className="w-3 h-3 text-red-500 fill-red-500" />;
       default:
-        return 'text-muted-foreground';
+        return <Circle className="w-3 h-3 text-gray-400 fill-gray-400" />;
     }
   };
 
@@ -70,12 +70,25 @@ export const StationCard: React.FC<StationCardProps> = ({
           <div className="flex-1 space-y-3">
             <div className="flex items-start space-x-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <Zap className="w-5 h-5 text-primary" />
+                <Building2 className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-card-foreground">{station.name}</h3>
-                <p className="text-sm text-muted-foreground">{station.provider}</p>
-                <p className="text-xs text-muted-foreground mt-1">{station.address}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-card-foreground">{station.name}</h3>
+                    <p className="text-sm text-muted-foreground">{station.provider}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{station.address}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNavigate}
+                    className="flex items-center space-x-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+                  >
+                    <Map className="w-4 h-4" />
+                    <span>Directions</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -87,31 +100,22 @@ export const StationCard: React.FC<StationCardProps> = ({
                     {station.distance} km
                   </span>
                 </div>
-                <div className={`text-sm font-medium ${getStatusColor(station.status)}`}>
-                  {station.status}
+                <div className="flex items-center space-x-1">
+                  {getStatusIcon(station.status)}
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {station.status.replace('-', ' ')}
+                  </span>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleFavouriteToggle}
-                  className={isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}
-                >
-                  <Star className={`w-4 h-4 ${isFavourite ? 'fill-current' : ''}`} />
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleNavigate}
-                  className="flex items-center space-x-1"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Navigate</span>
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleFavouriteToggle}
+                className={isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}
+              >
+                <Star className={`w-4 h-4 ${isFavourite ? 'fill-current' : ''}`} />
+              </Button>
             </div>
 
             {station.connectorTypes && station.connectorTypes.length > 0 && (
