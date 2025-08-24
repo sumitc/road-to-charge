@@ -50,16 +50,16 @@ export const StationCard: React.FC<StationCardProps> = ({
     window.open(googleMapsUrl, '_blank');
   };
 
-  const getStatusIcon = (status: string) => {
+  const getIconColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'operational':
-        return <Circle className="w-3 h-3 text-green-500 fill-green-500" />;
+        return 'text-green-500';
       case 'maintenance':
-        return <Circle className="w-3 h-3 text-yellow-500 fill-yellow-500" />;
+        return 'text-yellow-500';
       case 'out-of-service':
-        return <Circle className="w-3 h-3 text-red-500 fill-red-500" />;
+        return 'text-red-500';
       default:
-        return <Circle className="w-3 h-3 text-gray-400 fill-gray-400" />;
+        return 'text-gray-400';
     }
   };
 
@@ -70,7 +70,7 @@ export const StationCard: React.FC<StationCardProps> = ({
           <div className="flex-1 space-y-3">
             <div className="flex items-start space-x-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <Building2 className="w-5 h-5 text-primary" />
+                <Building2 className={`w-5 h-5 ${getIconColor(station.status)}`} />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
@@ -83,7 +83,7 @@ export const StationCard: React.FC<StationCardProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={handleNavigate}
-                    className="flex items-center space-x-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+                    className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 border-red-200 text-red-600 hover:text-red-700"
                   >
                     <Map className="w-4 h-4" />
                     <span>Directions</span>
@@ -98,12 +98,6 @@ export const StationCard: React.FC<StationCardProps> = ({
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
                     {station.distance} km
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  {getStatusIcon(station.status)}
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {station.status.replace('-', ' ')}
                   </span>
                 </div>
               </div>
@@ -123,7 +117,7 @@ export const StationCard: React.FC<StationCardProps> = ({
                 {station.connectorTypes.map((type, index) => (
                   <span
                     key={index}
-                    className="px-2 py-1 bg-secondary/20 text-secondary text-xs rounded-full"
+                    className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
                   >
                     {type}
                   </span>
