@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, Map, Circle, Building2 } from 'lucide-react';
+import { MapPin, Star, Map, Circle, Building2, ExternalLink } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,24 @@ export const StationCard: React.FC<StationCardProps> = ({
     window.open(googleMapsUrl, '_blank');
   };
 
+  const handleServiceApp = () => {
+    const provider = station.provider.toLowerCase();
+    let appUrl = '';
+    
+    if (provider.includes('tata')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=com.tatapower.ezcharge';
+    } else if (provider.includes('jio')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=com.jio.jioelectricity';
+    } else if (provider.includes('bolt')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=ee.mtakso.client';
+    } else {
+      // Generic search for the provider app
+      appUrl = `https://play.google.com/store/search?q=${encodeURIComponent(provider + ' charging app')}`;
+    }
+    
+    window.open(appUrl, '_blank');
+  };
+
   const getStatusIconColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'operational':
@@ -65,18 +83,18 @@ export const StationCard: React.FC<StationCardProps> = ({
 
   return (
     <Card className="animate-fade-in hover:shadow-electric transition-all duration-300">
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-3 flex-1">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Circle className={`w-5 h-5 ${getStatusIconColor(station.status)}`} />
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Circle className={`w-4 h-4 ${getStatusIconColor(station.status)}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-card-foreground">{station.name}</h3>
-                  <p className="text-sm text-muted-foreground">{station.provider}</p>
-                  <p className="text-xs text-muted-foreground mt-1 break-words">{station.address}</p>
+                  <h3 className="font-semibold text-card-foreground text-sm">{station.name}</h3>
+                  <p className="text-xs text-muted-foreground">{station.provider}</p>
+                  <p className="text-xs text-muted-foreground break-words">{station.address}</p>
                 </div>
               </div>
               <div className="flex flex-col items-end space-y-1 ml-3">
@@ -84,10 +102,19 @@ export const StationCard: React.FC<StationCardProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleNavigate}
-                  className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 border-red-200 text-red-600 hover:text-red-700"
+                  className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 border-red-200 text-red-600 hover:text-red-700 h-7 text-xs px-2"
                 >
-                  <Map className="w-4 h-4" />
+                  <Map className="w-3 h-3" />
                   <span>Directions</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleServiceApp}
+                  className="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-700 h-7 text-xs px-2"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>App</span>
                 </Button>
                 <span className="text-xs text-muted-foreground">
                   {station.distance.toFixed(2)} km
@@ -95,29 +122,28 @@ export const StationCard: React.FC<StationCardProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-between">
+              {station.connectorTypes && station.connectorTypes.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {station.connectorTypes.map((type, index) => (
+                    <span
+                      key={index}
+                      className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
+                    >
+                      {type}
+                    </span>
+                  ))}
+                </div>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFavouriteToggle}
-                className={isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}
+                className={`h-6 w-6 p-0 ${isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}`}
               >
-                <Star className={`w-4 h-4 ${isFavourite ? 'fill-current' : ''}`} />
+                <Star className={`w-3 h-3 ${isFavourite ? 'fill-current' : ''}`} />
               </Button>
             </div>
-
-            {station.connectorTypes && station.connectorTypes.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {station.connectorTypes.map((type, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
-                  >
-                    {type}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
