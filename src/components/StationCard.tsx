@@ -57,12 +57,16 @@ export const StationCard: React.FC<StationCardProps> = ({
     if (provider.includes('tata')) {
       appUrl = 'https://play.google.com/store/apps/details?id=com.tatapower.evapp';
     } else if (provider.includes('jio') || provider.includes('bp')) {
-      appUrl = 'https://play.google.com/store/apps/details?id=com.aml.evapp';
+      appUrl = 'https://play.google.com/store/apps/details?id=com.jiobp.pulse_charge';
     } else if (provider.includes('bolt')) {
       appUrl = 'https://play.google.com/store/apps/details?id=com.revos.bolt.android';
+    } else if (provider.includes('ather')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=com.atherenergy.aegridapp';
+    } else if (provider.includes('charge') && provider.includes('zone')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=com.chargezone';
     } else {
       // Generic search for the provider app
-      appUrl = `https://play.google.com/store/search?q=${encodeURIComponent(provider + ' EV charging app')}`;
+      appUrl = `https://play.google.com/store/search?q=${encodeURIComponent(provider + ' EV charging app India')}`;
     }
     
     window.open(appUrl, '_blank');
