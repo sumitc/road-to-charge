@@ -55,14 +55,14 @@ export const StationCard: React.FC<StationCardProps> = ({
     let appUrl = '';
     
     if (provider.includes('tata')) {
-      appUrl = 'https://play.google.com/store/apps/details?id=com.tatapower.ezcharge';
-    } else if (provider.includes('jio')) {
-      appUrl = 'https://play.google.com/store/apps/details?id=com.jio.jioelectricity';
+      appUrl = 'https://play.google.com/store/apps/details?id=com.tatapower.evapp';
+    } else if (provider.includes('jio') || provider.includes('bp')) {
+      appUrl = 'https://play.google.com/store/apps/details?id=com.aml.evapp';
     } else if (provider.includes('bolt')) {
-      appUrl = 'https://play.google.com/store/apps/details?id=ee.mtakso.client';
+      appUrl = 'https://play.google.com/store/apps/details?id=com.revos.bolt.android';
     } else {
       // Generic search for the provider app
-      appUrl = `https://play.google.com/store/search?q=${encodeURIComponent(provider + ' charging app')}`;
+      appUrl = `https://play.google.com/store/search?q=${encodeURIComponent(provider + ' EV charging app')}`;
     }
     
     window.open(appUrl, '_blank');
