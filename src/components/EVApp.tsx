@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, Search, Star, Zap, RefreshCw } from 'lucide-react';
+import { MapPin, Search, Star, Zap, RefreshCw, Database } from 'lucide-react';
 import { NearbyStations } from './NearbyStations';
 import { SearchStations } from './SearchStations';
 import { FavouriteStations } from './FavouriteStations';
+import { ChargingStationsSync } from './ChargingStationsSync';
 import { LocationService } from '@/services/locationService';
 import { EVStationService } from '@/services/evStationService';
 import { useToast } from '@/hooks/use-toast';
@@ -100,7 +101,7 @@ export const EVApp = () => {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="nearby" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-card shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-card shadow-sm">
             <TabsTrigger value="nearby" className="flex items-center space-x-2">
               <MapPin className="w-4 h-4" />
               <span>Nearby</span>
@@ -112,6 +113,10 @@ export const EVApp = () => {
             <TabsTrigger value="favourites" className="flex items-center space-x-2">
               <Star className="w-4 h-4" />
               <span>Favourites</span>
+            </TabsTrigger>
+            <TabsTrigger value="sync" className="flex items-center space-x-2">
+              <Database className="w-4 h-4" />
+              <span>Sync</span>
             </TabsTrigger>
           </TabsList>
 
@@ -125,6 +130,16 @@ export const EVApp = () => {
 
           <TabsContent value="favourites" className="space-y-4">
             <FavouriteStations />
+          </TabsContent>
+
+          <TabsContent value="sync" className="space-y-4">
+            <ChargingStationsSync 
+              userLocation={location} 
+              onSyncComplete={() => {
+                // Trigger a refresh of nearby stations if on that tab
+                window.location.reload();
+              }}
+            />
           </TabsContent>
         </Tabs>
       </main>

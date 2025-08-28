@@ -12,3 +12,6 @@ port = 54322
 
 [functions.sync-ev-stations]
 verify_jwt = false
+
+[functions.fetch-charging-stations]
+verify_jwt = false
