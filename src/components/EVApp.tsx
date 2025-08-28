@@ -7,7 +7,7 @@ import { SearchStations } from './SearchStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ChargingStationsSync } from './ChargingStationsSync';
 import { LocationService } from '@/services/locationService';
-import { EVStationService } from '@/services/evStationService';
+import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useToast } from '@/hooks/use-toast';
 
 export const EVApp = () => {
@@ -17,18 +17,33 @@ export const EVApp = () => {
   const { toast } = useToast();
 
   const handleSync = async () => {
+    if (!location) {
+      toast({
+        title: "Location required",
+        description: "Enable location to sync nearby stations",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSyncing(true);
     try {
-      const result = await EVStationService.syncStationsFromSources();
+      const result = await ChargingStationsSyncService.fetchAndSyncStations(
+        location.lat,
+        location.lng,
+        100
+      );
+
       if (result.success) {
         toast({
           title: "Sync successful",
-          description: result.message,
+          description: `Added ${result.stats?.new || 0} new stations`,
         });
+        window.location.reload();
       } else {
         toast({
           title: "Sync failed",
-          description: result.message,
+          description: result.error || "Unknown error",
           variant: "destructive",
         });
       }
