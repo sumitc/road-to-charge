@@ -40,21 +40,15 @@ export class AppIconService {
   
   private static async fetchAppIcon(packageId: string): Promise<string | null> {
     try {
-      // Use Google Play Store's icon API
-      const iconUrl = `https://play-lh.googleusercontent.com/PCpXdqvUWfCW1mXhH1Y_98yBpgsWxuTSTofy3NGMo9yBTATDyzVkqU580bfSln50bFU=w240-h480-rw`;
-      
-      // For specific apps, we know their package IDs and can construct the icon URLs
+      // Known direct icon URLs from Google Play CDN (stable hashes can change over time)
       const appIconUrls: { [key: string]: string } = {
-        'com.tatapower.evapp': 'https://play-lh.googleusercontent.com/Q8hF7sAVJFgdGlj_1AyqJ0n6SzK_6Qy_NJK0Pq4uZlVtR8fKGwE9J5uB2vL6E5Zr4Q=w240-h480-rw',
-        'com.jiobp.pulse_charge': 'https://play-lh.googleusercontent.com/mGRmmNBUCVXxK7aXaQcQrYQCM6J7B5N4pFY_x1jU7M6qHkG2rE5vP8TwL9SxC4aR6N=w240-h480-rw',
-        'com.revos.bolt.android': 'https://play-lh.googleusercontent.com/Jx5E8FqhbN2cZ1_Y6MvT3pQ7K9fR5gL2sH8jU4nP6mB9kC7wX0vA1tI5eQ3rT8yN2=w240-h480-rw',
-        'com.atherenergy.aegridapp': 'https://play-lh.googleusercontent.com/H9qF2tYE5nR6kL1cZ8vM3pX7jS4wB9gT0fK5aQ2uN6mH8dJ3rP0yE7tC1bV5sI9x=w240-h480-rw',
-        'com.chargezone': 'https://play-lh.googleusercontent.com/K3mN8pT1qF5eR7yB9vC6xL2jS4hW0gZ8aQ5uP3rM7nH1kD9fT0bE6cX2yI4sV8jL=w240-h480-rw'
+        'com.tatapower.evapp': 'https://play-lh.googleusercontent.com/5CmGGbaK5RCxImpt3UI4VMT-adFmrRQcI57GqV5MsDQZuVoZyfV0hVSQP8xfKofJLJ4J=w96-h96-rw',
+        // Using Ather main app icon as brand indicator when Grid icon is unavailable via search result
+        'com.atherenergy.aegridapp': 'https://play-lh.googleusercontent.com/3NtK-fnPGartV7EIr-5uLE6gsa-WEEPY10yFwZaUzxS9zVs81CLk31AJTGM7-_sP-Hbe=w96-h96-rw',
       };
-      
+
       const specificUrl = appIconUrls[packageId];
       if (specificUrl) {
-        // Test if the image loads
         return new Promise((resolve) => {
           const img = new Image();
           img.onload = () => resolve(specificUrl);
@@ -62,7 +56,6 @@ export class AppIconService {
           img.src = specificUrl;
         });
       }
-      
       return null;
     } catch {
       return null;

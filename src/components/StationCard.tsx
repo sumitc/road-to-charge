@@ -125,11 +125,12 @@ export const StationCard: React.FC<StationCardProps> = ({
                   className="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-700 h-7 text-xs px-2"
                 >
                   {appIconUrl ? (
-                    <img src={appIconUrl} alt={`${station.provider} app`} className="w-3 h-3 rounded-sm" />
+                    <img src={appIconUrl} alt={`${station.provider} app`} className="w-4 h-4 rounded-sm" />
                   ) : (
                     <Smartphone className="w-3 h-3" />
                   )}
                   <span>App</span>
+                  <ExternalLink className="w-3 h-3 opacity-80" />
                 </Button>
                 <span className="text-xs text-muted-foreground">
                   {station.distance.toFixed(2)} km
