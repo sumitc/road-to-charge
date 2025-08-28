@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Map, Circle, Building2, ExternalLink, Smartphone } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
+import { AppIconService } from '@/services/appIconService';
 
 interface StationCardProps {
   station: ChargingStation;
@@ -20,6 +21,11 @@ export const StationCard: React.FC<StationCardProps> = ({
 }) => {
   const { toast } = useToast();
   const isFavourite = FavouritesService.isFavourite(station.id);
+  const [appIconUrl, setAppIconUrl] = useState<string | null>(null);
+  
+  useEffect(() => {
+    AppIconService.getAppIcon(station.provider).then(setAppIconUrl);
+  }, [station.provider]);
 
   const handleFavouriteToggle = () => {
     try {
@@ -118,7 +124,11 @@ export const StationCard: React.FC<StationCardProps> = ({
                   onClick={handleServiceApp}
                   className="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-700 h-7 text-xs px-2"
                 >
-                  <Smartphone className="w-3 h-3" />
+                  {appIconUrl ? (
+                    <img src={appIconUrl} alt={`${station.provider} app`} className="w-3 h-3 rounded-sm" />
+                  ) : (
+                    <Smartphone className="w-3 h-3" />
+                  )}
                   <span>App</span>
                 </Button>
                 <span className="text-xs text-muted-foreground">
