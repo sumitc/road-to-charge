@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, Map, Circle, Building2, ExternalLink } from 'lucide-react';
+import { MapPin, Star, Map, Circle, Building2, ExternalLink, Smartphone } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -117,7 +118,7 @@ export const StationCard: React.FC<StationCardProps> = ({
                   onClick={handleServiceApp}
                   className="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-700 h-7 text-xs px-2"
                 >
-                  <ExternalLink className="w-3 h-3" />
+                  <Smartphone className="w-3 h-3" />
                   <span>App</span>
                 </Button>
                 <span className="text-xs text-muted-foreground">
@@ -127,23 +128,27 @@ export const StationCard: React.FC<StationCardProps> = ({
             </div>
 
             <div className="flex items-center justify-between">
-              {station.connectorTypes && station.connectorTypes.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {station.connectorTypes.map((type, index) => (
-                    <span
-                      key={index}
-                      className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
-                    >
-                      {type}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="flex-1">
+                {station.connectorTypes && station.connectorTypes.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {station.connectorTypes.map((type, index) => (
+                      <span
+                        key={index}
+                        className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
+                      >
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFavouriteToggle}
-                className={`h-6 w-6 p-0 ${isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}`}
+                className={`h-6 w-6 p-0 flex-shrink-0 ml-2 ${isFavourite ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}`}
               >
                 <Star className={`w-3 h-3 ${isFavourite ? 'fill-current' : ''}`} />
               </Button>
