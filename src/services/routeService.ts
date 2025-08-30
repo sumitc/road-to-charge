@@ -14,10 +14,13 @@ export interface Route {
 }
 
 export class RouteService {
-  private static readonly OPENROUTE_BASE_URL = 'https://api.openrouteservice.org/v2';
-  
-  // Free tier API key for OpenRouteService (public, rate-limited)
-  private static readonly API_KEY = '5b3ce3597851110001cf6248b20188b5c9e24a6e991ba49fdb2b3a2b';
+  private static getSupabaseClient() {
+    const { createClient } = require('@supabase/supabase-js');
+    return createClient(
+      'https://hiwzxhkfkkkvglwjhnvy.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpd3p4aGtma2trdmdsd2pobnZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxNjcyNDMsImV4cCI6MjA2ODc0MzI0M30.sl4DjeJDquEjTjXCcKsdO84brM-HT0M1eIMKtURg7bc'
+    );
+  }
   
   static async calculateRoute(
     start: RoutePoint,
@@ -31,17 +34,14 @@ export class RouteService {
         [end.lng, end.lat]
       ];
 
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
+      const supabase = this.getSupabaseClient();
 
       const { data, error } = await supabase.functions.invoke('calculate-route', {
         body: { coordinates }
       });
 
       if (error) {
+        console.error('Route calculation error:', error);
         throw new Error(`Route calculation failed: ${error.message}`);
       }
 
@@ -55,17 +55,14 @@ export class RouteService {
 
   static async geocodeAddress(address: string): Promise<RoutePoint | null> {
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
+      const supabase = this.getSupabaseClient();
 
       const { data, error } = await supabase.functions.invoke('geocode', {
         body: { address }
       });
 
       if (error) {
+        console.error('Geocoding error:', error);
         throw new Error(`Geocoding failed: ${error.message}`);
       }
 

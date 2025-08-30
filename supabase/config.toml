@@ -10,6 +10,12 @@ max_rows = 1000
 [db]
 port = 54322
 
+[functions.geocode]
+verify_jwt = false
+
+[functions.calculate-route]
+verify_jwt = false
+
 [functions.sync-ev-stations]
 verify_jwt = false
 
