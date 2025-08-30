@@ -41,9 +41,9 @@ serve(async (req) => {
     const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-        'Authorization': API_KEY,
-        'Content-Type': 'application/json; charset=utf-8'
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         coordinates,
