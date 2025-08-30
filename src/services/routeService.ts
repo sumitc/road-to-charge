@@ -31,41 +31,21 @@ export class RouteService {
         [end.lng, end.lat]
       ];
 
-      const response = await fetch(`${this.OPENROUTE_BASE_URL}/directions/driving-car`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-          'Authorization': this.API_KEY,
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify({
-          coordinates,
-          format: 'geojson',
-          instructions: true,
-          geometry_simplify: true
-        })
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+
+      const { data, error } = await supabase.functions.invoke('calculate-route', {
+        body: { coordinates }
       });
 
-      if (!response.ok) {
-        throw new Error(`Route calculation failed: ${response.statusText}`);
+      if (error) {
+        throw new Error(`Route calculation failed: ${error.message}`);
       }
 
-      const data = await response.json();
-      
-      if (!data.features || data.features.length === 0) {
-        throw new Error('No route found');
-      }
-
-      const route = data.features[0];
-      const geometry = route.geometry;
-      const properties = route.properties;
-
-      return {
-        coordinates: geometry.coordinates as [number, number][],
-        distance: properties.segments[0].distance,
-        duration: properties.segments[0].duration,
-        instructions: properties.segments[0].steps.map((step: any) => step.instruction)
-      };
+      return data as Route;
 
     } catch (error) {
       console.error('Error calculating route:', error);
@@ -75,28 +55,21 @@ export class RouteService {
 
   static async geocodeAddress(address: string): Promise<RoutePoint | null> {
     try {
-      const response = await fetch(
-        `${this.OPENROUTE_BASE_URL}/geocode/search?api_key=${this.API_KEY}&text=${encodeURIComponent(address)}&size=1`
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
       );
 
-      if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.statusText}`);
+      const { data, error } = await supabase.functions.invoke('geocode', {
+        body: { address }
+      });
+
+      if (error) {
+        throw new Error(`Geocoding failed: ${error.message}`);
       }
 
-      const data = await response.json();
-      
-      if (!data.features || data.features.length === 0) {
-        throw new Error('Address not found');
-      }
-
-      const feature = data.features[0];
-      const [lng, lat] = feature.geometry.coordinates;
-
-      return {
-        lat,
-        lng,
-        address: feature.properties.label
-      };
+      return data as RoutePoint;
 
     } catch (error) {
       console.error('Error geocoding address:', error);

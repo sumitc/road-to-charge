@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, MapPin, AlertCircle } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { StationCard } from './StationCard';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
+import { useToast } from '@/hooks/use-toast';
 
 interface NearbyStationsProps {
   location: { lat: number; lng: number } | null;
   isLoadingLocation: boolean;
+  onLocationUpdate: (location: { lat: number; lng: number }) => void;
 }
 
 export const NearbyStations: React.FC<NearbyStationsProps> = ({ 
   location, 
-  isLoadingLocation 
+  isLoadingLocation,
+  onLocationUpdate 
 }) => {
   const [stations, setStations] = useState<ChargingStation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [radius, setRadius] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (location && !isLoadingLocation) {
@@ -50,6 +58,62 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   };
 
   const handleRefresh = () => {
+    if (showSearchResults) {
+      handleSearch();
+    } else {
+      loadNearbyStations();
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Please enter a location",
+        description: "Enter a city, address, or area to search",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    setShowSearchResults(true);
+
+    try {
+      // Search for stations based on query
+      const results = await EVStationService.searchStationsByLocation(searchQuery);
+      setStations(results);
+      
+      // Update location based on search results
+      if (results.length > 0) {
+        const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
+        const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
+        onLocationUpdate({ lat: avgLat, lng: avgLng });
+      }
+
+      toast({
+        title: "Search completed",
+        description: `Found ${results.length} stations for "${searchQuery}"`,
+      });
+    } catch (error) {
+      toast({
+        title: "Search failed",
+        description: "Could not search for stations. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleShowNearby = () => {
+    setShowSearchResults(false);
+    setSearchQuery('');
     loadNearbyStations();
   };
 
@@ -84,58 +148,93 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Search Bar */}
       <Card>
         <CardContent className="p-4">
+          <div className="flex space-x-2 mb-4">
+            <Input
+              placeholder="Search by location (e.g., 'Bangalore', 'Delhi to Mumbai')"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleSearch} 
+              disabled={isSearching}
+              className="bg-gradient-primary hover:opacity-90"
+            >
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <MapPin className="w-5 h-5 text-primary" />
               <span className="text-sm text-muted-foreground">
-                Within {radius} km
+                {showSearchResults ? `Search results for "${searchQuery}"` : `Nearby stations within ${radius} km`}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <select
-                value={radius}
-                onChange={(e) => setRadius(Number(e.target.value))}
-                className="px-3 py-2 text-sm border border-input bg-background rounded-md"
-              >
-                <option value={5}>5 km</option>
-                <option value={10}>10 km</option>
-                <option value={25}>25 km</option>
-                <option value={50}>50 km</option>
-              </select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Refresh'
-                )}
-              </Button>
+              {showSearchResults ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShowNearby}
+                >
+                  Show Nearby
+                </Button>
+              ) : (
+                <>
+                  <select
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="px-3 py-2 text-sm border border-input bg-background rounded-md"
+                  >
+                    <option value={5}>5 km</option>
+                    <option value={10}>10 km</option>
+                    <option value={25}>25 km</option>
+                    <option value={50}>50 km</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isLoading || isSearching}
+                  >
+                    {(isLoading || isSearching) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Refresh'
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Loading state */}
-      {isLoading && (
+      {(isLoading || isSearching) && (
         <Card>
           <CardContent className="flex items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-              <p className="text-muted-foreground">Finding charging stations...</p>
+              <p className="text-muted-foreground">
+                {isSearching ? 'Searching for charging stations...' : 'Finding nearby charging stations...'}
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Results */}
-      {!isLoading && (
+      {!isLoading && !isSearching && (
         <>
           {stations.length > 0 ? (
             <div className="space-y-3">
