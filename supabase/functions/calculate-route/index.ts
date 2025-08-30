@@ -41,15 +41,15 @@ serve(async (req) => {
     const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+        'Accept': 'application/geo+json',
         'Authorization': API_KEY,
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         coordinates,
-        format: 'geojson',
         instructions: true,
-        geometry_simplify: true
+        geometry_simplify: true,
+        geometry_format: 'geojson'
       })
     });
 
@@ -68,6 +68,7 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!data.features || data.features.length === 0) {
+      console.warn('Route calculation returned no features. Raw response:', data);
       return new Response(
         JSON.stringify({ error: 'No route found' }),
         { 
