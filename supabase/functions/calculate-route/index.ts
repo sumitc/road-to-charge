@@ -49,7 +49,7 @@ serve(async (req) => {
         coordinates,
         instructions: true,
         geometry_simplify: true,
-        geometry_format: 'geojson'
+        
       })
     });
 
