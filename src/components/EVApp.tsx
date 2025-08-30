@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, Search, Star, Zap, RefreshCw, Database } from 'lucide-react';
+import { MapPin, Search, Star, Zap, RefreshCw, Database, Route } from 'lucide-react';
 import { NearbyStations } from './NearbyStations';
 import { SearchStations } from './SearchStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ChargingStationsSync } from './ChargingStationsSync';
+import TripPlanner from './TripPlanner';
 import { LocationService } from '@/services/locationService';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useToast } from '@/hooks/use-toast';
@@ -116,7 +117,7 @@ export const EVApp = () => {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="nearby" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-card shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-card shadow-sm">
             <TabsTrigger value="nearby" className="flex items-center space-x-2">
               <MapPin className="w-4 h-4" />
               <span>Nearby</span>
@@ -124,6 +125,10 @@ export const EVApp = () => {
             <TabsTrigger value="search" className="flex items-center space-x-2">
               <Search className="w-4 h-4" />
               <span>Search</span>
+            </TabsTrigger>
+            <TabsTrigger value="trip" className="flex items-center space-x-2">
+              <Route className="w-4 h-4" />
+              <span>Trip Planner</span>
             </TabsTrigger>
             <TabsTrigger value="favourites" className="flex items-center space-x-2">
               <Star className="w-4 h-4" />
@@ -137,6 +142,10 @@ export const EVApp = () => {
 
           <TabsContent value="search" className="space-y-4">
             <SearchStations onLocationUpdate={setLocation} />
+          </TabsContent>
+
+          <TabsContent value="trip" className="space-y-4">
+            <TripPlanner />
           </TabsContent>
 
           <TabsContent value="favourites" className="space-y-4">
