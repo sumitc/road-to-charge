@@ -25,7 +25,19 @@ serve(async (req) => {
     }
 
     // Using OpenRouteService for geocoding
-    const API_KEY = '5b3ce3597851110001cf6248b20188b5c9e24a6e991ba49fdb2b3a2b';
+    const API_KEY = Deno.env.get('OPENROUTESERVICE_API_KEY');
+    if (!API_KEY) {
+      console.error('Geocoding error: API key not found');
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Geocoding request for:', address);
     const response = await fetch(
       `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}&size=1`
     );
