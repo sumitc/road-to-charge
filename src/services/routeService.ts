@@ -1,4 +1,5 @@
 import { UserLocation } from '@/types/station';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface RoutePoint {
   lat: number;
@@ -14,13 +15,6 @@ export interface Route {
 }
 
 export class RouteService {
-  private static getSupabaseClient() {
-    const { createClient } = require('@supabase/supabase-js');
-    return createClient(
-      'https://hiwzxhkfkkkvglwjhnvy.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpd3p4aGtma2trdmdsd2pobnZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxNjcyNDMsImV4cCI6MjA2ODc0MzI0M30.sl4DjeJDquEjTjXCcKsdO84brM-HT0M1eIMKtURg7bc'
-    );
-  }
   
   static async calculateRoute(
     start: RoutePoint,
@@ -33,8 +27,6 @@ export class RouteService {
         ...waypoints.map(wp => [wp.lng, wp.lat]),
         [end.lng, end.lat]
       ];
-
-      const supabase = this.getSupabaseClient();
 
       const { data, error } = await supabase.functions.invoke('calculate-route', {
         body: { coordinates }
@@ -55,8 +47,6 @@ export class RouteService {
 
   static async geocodeAddress(address: string): Promise<RoutePoint | null> {
     try {
-      const supabase = this.getSupabaseClient();
-
       const { data, error } = await supabase.functions.invoke('geocode', {
         body: { address }
       });
