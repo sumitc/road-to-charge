@@ -54,7 +54,15 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Route calculation failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Route calculation failed:', response.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Route calculation failed', status: response.status, details: errorText }),
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const data = await response.json();

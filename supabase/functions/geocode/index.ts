@@ -43,7 +43,15 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      throw new Error(`Geocoding failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Geocoding failed:', response.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Geocoding failed', status: response.status, details: errorText }),
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const data = await response.json();
