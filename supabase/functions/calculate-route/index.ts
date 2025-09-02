@@ -41,7 +41,7 @@ serve(async (req) => {
     const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'application/geo+json',
         'Authorization': API_KEY,
         'Content-Type': 'application/json'
       },
