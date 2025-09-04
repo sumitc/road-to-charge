@@ -79,8 +79,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     setShowSearchResults(true);
 
     try {
+      const normalizedQuery = searchQuery.trim();
       // Search for stations based on query
-      const results = await EVStationService.searchStationsByLocation(searchQuery);
+      const results = await EVStationService.searchStationsByLocation(normalizedQuery);
       setStations(results);
       
       // Update location based on search results
@@ -92,7 +93,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
       toast({
         title: "Search completed",
-        description: `Found ${results.length} stations for "${searchQuery}"`,
+        description: `Found ${results.length} stations for "${normalizedQuery}"`,
       });
     } catch (error) {
       toast({

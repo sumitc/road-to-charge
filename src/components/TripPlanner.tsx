@@ -66,11 +66,28 @@ const TripPlanner = () => {
 
   const findStationsAlongRoute = useCallback(async (route: Route) => {
     try {
-      // Get all stations from the database
-      const allStations = await EVStationService.getStationsWithDistance({ lat: 0, lng: 0 }, 1000);
+      // Compute route bounding box with padding
+      const lats = route.coordinates.map(([lng, lat]) => lat);
+      const lngs = route.coordinates.map(([lng, lat]) => lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+
+      const padKm = 20; // corridor half-width
+      const padLat = padKm / 111.0;
+      const midLat = (minLat + maxLat) / 2;
+      const padLng = padKm / (111.0 * Math.cos(midLat * Math.PI / 180));
+
+      const candidates = await EVStationService.getStationsInBounds(
+        minLat - padLat,
+        maxLat + padLat,
+        minLng - padLng,
+        maxLng + padLng
+      );
       
-      // Filter stations that are within 5km of the route
-      const nearbyStations = allStations.filter(station => {
+      // Keep stations within 5km of any route point
+      const nearbyStations = candidates.filter(station => {
         return route.coordinates.some(([lng, lat]) => {
           const distance = RouteService.calculateDistance(
             { lat: station.lat, lng: station.lng },

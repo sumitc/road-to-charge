@@ -69,10 +69,13 @@ export class EVStationService {
    */
   static async searchStationsByLocation(query: string): Promise<ChargingStation[]> {
     try {
+      const normalized = query.trim().replace(/\s+/g, ' ');
+      if (!normalized) return [];
+
       const { data: stations, error } = await supabase
         .from('ev_charging_stations')
         .select('*')
-        .or(`station_name.ilike.%${query}%,address.ilike.%${query}%,provider.ilike.%${query}%`)
+        .or(`station_name.ilike.%${normalized}%,address.ilike.%${normalized}%,provider.ilike.%${normalized}%`)
         .order('station_name')
         .limit(50);
 
@@ -120,6 +123,46 @@ export class EVStationService {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       };
+    }
+  }
+
+  /**
+   * Get stations within a bounding box
+   */
+  static async getStationsInBounds(minLat: number, maxLat: number, minLng: number, maxLng: number): Promise<ChargingStation[]> {
+    try {
+      const { data: stations, error } = await supabase
+        .from('ev_charging_stations')
+        .select('*')
+        .gte('latitude', minLat)
+        .lte('latitude', maxLat)
+        .gte('longitude', minLng)
+        .lte('longitude', maxLng)
+        .order('last_updated', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching stations in bounds:', error);
+        return [];
+      }
+
+      if (!stations) return [];
+
+      return stations.map(station => ({
+        id: station.id,
+        name: station.station_name,
+        provider: station.provider,
+        address: station.address,
+        lat: parseFloat(station.latitude.toString()),
+        lng: parseFloat(station.longitude.toString()),
+        distance: 0,
+        status: this.mapAvailabilityStatus(station.availability_status),
+        connectorTypes: station.connector_types || [],
+        powerOutput: station.power_output,
+        pricing: station.pricing
+      } as ChargingStation));
+    } catch (error) {
+      console.error('Error in getStationsInBounds:', error);
+      return [];
     }
   }
 
