@@ -1,19 +1,108 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { ChargingStation, UserLocation } from '@/types/station';
+import type { Tables } from '@/integrations/supabase/types';
+import type {
+  ChargingCurrent,
+  ChargingStation,
+  ConnectorDetail,
+  LocationQuality,
+  Ownership,
+  StationStatus,
+  StationType,
+  UserLocation,
+  VehicleClass,
+} from '@/types/station';
+
+type StationRow = Tables<'ev_charging_stations'>;
+
+export interface StationFilters {
+  minPowerKw?: number;
+  vehicleClass?: VehicleClass;
+  current?: ChargingCurrent;
+  connector?: string;
+  state?: string;
+  city?: string;
+  ownership?: Ownership;
+  stationType?: StationType;
+}
+
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+  const parsed = parseFloat(String(value));
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
 
 export class EVStationService {
+  /** Map a database row into the frontend dictionary shape. */
+  private static mapStation(station: StationRow, distance = 0): ChargingStation {
+    const connectors = Array.isArray(station.connectors)
+      ? (station.connectors as unknown as ConnectorDetail[])
+      : undefined;
+
+    const maxKwByStandard =
+      station.max_kw_by_standard &&
+      typeof station.max_kw_by_standard === 'object' &&
+      !Array.isArray(station.max_kw_by_standard)
+        ? (station.max_kw_by_standard as unknown as Record<string, number>)
+        : undefined;
+
+    return {
+      id: station.id,
+      name: station.station_name,
+      provider: station.provider,
+      address: station.address,
+      lat: toNumber(station.latitude) ?? 0,
+      lng: toNumber(station.longitude) ?? 0,
+      distance,
+      status: this.mapAvailabilityStatus(station.availability_status),
+      connectorTypes: station.connector_types ?? connectors?.map(c => c.standard),
+      powerOutput: station.power_output ??
+        (station.max_power_kw !== null ? `${station.max_power_kw}kW` : undefined),
+      pricing: station.pricing ?? undefined,
+
+      connectors,
+      maxPowerKw: toNumber(station.max_power_kw),
+      maxKwByStandard,
+      totalChargers: station.total_chargers ?? undefined,
+      totalConnectors: station.total_connectors ?? undefined,
+      vehicleClasses: station.vehicle_classes?.length
+        ? (station.vehicle_classes as VehicleClass[])
+        : undefined,
+      current: (station.charging_current as ChargingCurrent | null) ?? undefined,
+      ownership: (station.ownership as Ownership | null) ?? undefined,
+      state: station.state ?? undefined,
+      district: station.district ?? undefined,
+      city: station.city ?? undefined,
+      locationQuality: (station.location_quality as LocationQuality | null) ?? undefined,
+      mixedAdmin: station.mixed_admin ?? undefined,
+      openingHours: station.opening_hours ?? undefined,
+      paymentModes: station.payment_modes?.length ? station.payment_modes : undefined,
+      contactNumbers: station.contact_numbers?.length ? station.contact_numbers : undefined,
+      staff: station.staff ?? undefined,
+      access: station.access ?? undefined,
+      fee: station.fee ?? undefined,
+      stationType: (station.station_type as StationType | null) ?? undefined,
+      availableCount: station.available_count ?? undefined,
+      outOfServiceCount: station.out_of_service_count ?? undefined,
+      availabilityLastUpdate: station.availability_last_update ?? undefined,
+      lastRiderReport: station.last_rider_report ?? undefined,
+      dataAsOf: station.data_as_of ?? undefined,
+      sourceName: station.source_name ?? undefined,
+      sourceUrl: station.source_url ?? undefined,
+    };
+  }
+
   /**
    * Get stations within a specified radius of user location
    */
   static async getStationsWithDistance(
-    userLocation: UserLocation, 
+    userLocation: UserLocation,
     radius: number = 10
   ): Promise<ChargingStation[]> {
     try {
       // Calculate bounding box for efficient querying
       const latRange = radius / 111.0; // Approximate km per degree latitude
       const lngRange = radius / (111.0 * Math.cos(userLocation.lat * Math.PI / 180));
-      
+
       const { data: stations, error } = await supabase
         .from('ev_charging_stations')
         .select('*')
@@ -31,33 +120,17 @@ export class EVStationService {
       if (!stations) return [];
 
       // Calculate exact distances and filter by radius
-      const stationsWithDistance = stations
+      return stations
         .map(station => {
-          const distance = this.calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            parseFloat(station.latitude.toString()),
-            parseFloat(station.longitude.toString())
+          const lat = toNumber(station.latitude) ?? 0;
+          const lng = toNumber(station.longitude) ?? 0;
+          return this.mapStation(
+            station,
+            this.calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
           );
-          
-          return {
-            id: station.id,
-            name: station.station_name,
-            provider: station.provider,
-            address: station.address,
-            lat: parseFloat(station.latitude.toString()),
-            lng: parseFloat(station.longitude.toString()),
-            distance,
-            status: this.mapAvailabilityStatus(station.availability_status),
-            connectorTypes: station.connector_types || [],
-            powerOutput: station.power_output,
-            pricing: station.pricing
-          } as ChargingStation;
         })
         .filter(station => station.distance <= radius)
         .sort((a, b) => a.distance - b.distance);
-
-      return stationsWithDistance;
     } catch (error) {
       console.error('Error in getStationsWithDistance:', error);
       return [];
@@ -75,7 +148,7 @@ export class EVStationService {
       const { data: stations, error } = await supabase
         .from('ev_charging_stations')
         .select('*')
-        .or(`station_name.ilike.%${normalized}%,address.ilike.%${normalized}%,provider.ilike.%${normalized}%`)
+        .or(`station_name.ilike.%${normalized}%,address.ilike.%${normalized}%,provider.ilike.%${normalized}%,city.ilike.%${normalized}%,state.ilike.%${normalized}%`)
         .order('station_name')
         .limit(50);
 
@@ -86,21 +159,58 @@ export class EVStationService {
 
       if (!stations) return [];
 
-      return stations.map(station => ({
-        id: station.id,
-        name: station.station_name,
-        provider: station.provider,
-        address: station.address,
-        lat: parseFloat(station.latitude.toString()),
-        lng: parseFloat(station.longitude.toString()),
-        distance: 0, // Will be calculated on frontend if needed
-        status: this.mapAvailabilityStatus(station.availability_status),
-        connectorTypes: station.connector_types || [],
-        powerOutput: station.power_output,
-        pricing: station.pricing
-      } as ChargingStation));
+      return stations.map(station => this.mapStation(station));
     } catch (error) {
       console.error('Error in searchStationsByLocation:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Search using the enriched dictionary fields (power, vehicle, connector, etc.).
+   */
+  static async searchStationsByFilters(filters: StationFilters, limit = 50): Promise<ChargingStation[]> {
+    try {
+      let query = supabase.from('ev_charging_stations').select('*');
+
+      if (filters.minPowerKw !== undefined) {
+        query = query.gte('max_power_kw', filters.minPowerKw);
+      }
+      if (filters.vehicleClass) {
+        query = query.contains('vehicle_classes', [filters.vehicleClass]);
+      }
+      if (filters.current) {
+        query = query.ilike('charging_current', `%${filters.current}%`);
+      }
+      if (filters.connector) {
+        // Every sync source mirrors connector standards into connector_types.
+        query = query.contains('connector_types', [filters.connector]);
+      }
+      if (filters.state) {
+        query = query.ilike('state', filters.state);
+      }
+      if (filters.city) {
+        query = query.ilike('city', `%${filters.city}%`);
+      }
+      if (filters.ownership) {
+        query = query.eq('ownership', filters.ownership);
+      }
+      if (filters.stationType) {
+        query = query.eq('station_type', filters.stationType);
+      }
+
+      const { data: stations, error } = await query
+        .order('max_power_kw', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error in filtered station search:', error);
+        return [];
+      }
+
+      return (stations ?? []).map(station => this.mapStation(station));
+    } catch (error) {
+      console.error('Error in searchStationsByFilters:', error);
       return [];
     }
   }
@@ -111,7 +221,7 @@ export class EVStationService {
   static async syncStationsFromSources(): Promise<{ success: boolean; message: string }> {
     try {
       const { data, error } = await supabase.functions.invoke('sync-ev-stations');
-      
+
       if (error) {
         throw error;
       }
@@ -147,19 +257,7 @@ export class EVStationService {
 
       if (!stations) return [];
 
-      return stations.map(station => ({
-        id: station.id,
-        name: station.station_name,
-        provider: station.provider,
-        address: station.address,
-        lat: parseFloat(station.latitude.toString()),
-        lng: parseFloat(station.longitude.toString()),
-        distance: 0,
-        status: this.mapAvailabilityStatus(station.availability_status),
-        connectorTypes: station.connector_types || [],
-        powerOutput: station.power_output,
-        pricing: station.pricing
-      } as ChargingStation));
+      return stations.map(station => this.mapStation(station));
     } catch (error) {
       console.error('Error in getStationsInBounds:', error);
       return [];
@@ -198,9 +296,9 @@ export class EVStationService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
       Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
@@ -209,17 +307,23 @@ export class EVStationService {
   /**
    * Map database availability status to frontend status
    */
-  private static mapAvailabilityStatus(status: string | null): 'operational' | 'maintenance' | 'out-of-service' {
+  private static mapAvailabilityStatus(status: string | null): StationStatus {
     switch (status?.toLowerCase()) {
       case 'available':
       case 'operational':
         return 'operational';
       case 'maintenance':
       case 'under_maintenance':
+      case 'planned':
+      case 'suspended':
         return 'maintenance';
       case 'out_of_service':
+      case 'outofservice':
       case 'offline':
       case 'unavailable':
+      case 'out of service':
+      case 'inoperative':
+      case 'removed':
         return 'out-of-service';
       default:
         return 'operational';

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, Map, Circle, Building2, ExternalLink, Smartphone } from 'lucide-react';
+import { MapPin, Star, Map, Circle, Building2, ExternalLink, Smartphone, Zap, Clock, Info, Car } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -164,6 +164,47 @@ export const StationCard: React.FC<StationCardProps> = ({
                 <Star className={`w-3 h-3 ${isFavourite ? 'fill-current' : ''}`} />
               </Button>
             </div>
+
+            {(station.maxPowerKw || station.powerOutput || station.availableCount !== undefined || station.dataAsOf) && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                {(station.maxPowerKw || station.powerOutput) && (
+                  <span className="flex items-center space-x-1">
+                    <Zap className="w-3 h-3" />
+                    <span>{station.maxPowerKw ? `${station.maxPowerKw} kW` : station.powerOutput}</span>
+                  </span>
+                )}
+                {station.availableCount !== undefined && (
+                  <span className="flex items-center space-x-1 text-green-600">
+                    <Circle className="w-2 h-2 fill-green-500 text-green-500" />
+                    <span>
+                      {station.availableCount} free{station.totalConnectors ? ` / ${station.totalConnectors}` : ''}
+                    </span>
+                  </span>
+                )}
+                {station.vehicleClasses && station.vehicleClasses.length > 0 && (
+                  <span className="flex items-center space-x-1">
+                    <Car className="w-3 h-3" />
+                    <span>{station.vehicleClasses.map(v => v === 'car' ? 'Car' : '2W/3W').join(', ')}</span>
+                  </span>
+                )}
+                {station.openingHours && (
+                  <span className="flex items-center space-x-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{station.openingHours}</span>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {station.sourceName && (
+              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                <Info className="w-3 h-3" />
+                <span>{station.sourceName}{station.dataAsOf ? ` · ${station.dataAsOf}` : ''}</span>
+                {station.locationQuality === 'suspect' && (
+                  <span className="text-amber-600">· Check location</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

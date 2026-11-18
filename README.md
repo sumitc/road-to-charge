@@ -71,3 +71,21 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Charging station data sources
+
+`supabase/functions/sync-ev-stations` aggregates the station dictionary. Sources marked **keyless** need no credentials; the others are skipped unless their secret is set (see `.env.example`).
+
+| Source | Detail added | Credentials |
+| --- | --- | --- |
+| BEE API (`ev-charging-stations-api.vercel.app`) | 29k+ stations, gun-level kW, vehicle classes, ownership, admin geography | keyless |
+| OpenStreetMap Overpass | `socket:*` connectors, kW, fee, opening hours | keyless |
+| Open Charge Map | base station list | `OPEN_CHARGE_MAP_API_KEY` |
+| OpenEV – Delhi Transport | live connector availability, tariffs, payment modes | `OPEN_EV_API_KEY` |
+| Google Places API (New) | live `evChargeOptions` availability per connector | `GOOGLE_MAPS_API_KEY` |
+| OCPI 2.2.1 locations feed | live EVSE status and tariffs | `OCPI_LOCATIONS_URL`, `OCPI_TOKEN` |
+| Legacy CPO scrapers / samples | Tata Power, Ather, NITI Aayog, Jio-bp, PlugShare, ChargeZone, ABB, BrightBlu, BEE India, Statiq | — |
+
+Set Edge Function secrets with `supabase secrets set <NAME>=<value>`. Trigger a sync by calling `sync-ev-stations`; an optional JSON body `{ "maxPagesPerState": 2 }` pulls more BEE pages per state (1–10, default 1).
+
+The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql` and the frontend shape in `src/types/station.ts`.

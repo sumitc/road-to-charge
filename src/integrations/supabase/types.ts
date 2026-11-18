@@ -16,58 +16,139 @@ export type Database = {
     Tables: {
       ev_charging_stations: {
         Row: {
+          access: string | null
           address: string
+          availability_last_update: string | null
           availability_status: string | null
+          available_count: number | null
           charger_type: string | null
+          charging_current: string | null
+          city: string | null
           connector_types: string[] | null
+          connectors: Json
+          contact_numbers: string[]
           created_at: string
+          data_as_of: string | null
+          district: string | null
           external_id: string | null
+          fee: boolean | null
           id: string
+          last_rider_report: string | null
           last_updated: string
           latitude: number
+          location_quality: string
           longitude: number
           maps_link: string | null
+          max_kw_by_standard: Json
+          max_power_kw: number | null
+          mixed_admin: boolean
+          opening_hours: string | null
+          out_of_service_count: number | null
+          ownership: string | null
+          payment_modes: string[]
           power_output: string | null
           pricing: string | null
           provider: string
+          source_name: string | null
+          source_url: string | null
+          staff: string | null
+          state: string | null
           station_name: string
+          station_type: string
+          total_chargers: number | null
+          total_connectors: number | null
           updated_at: string
+          vehicle_classes: string[]
         }
         Insert: {
+          access?: string | null
           address: string
+          availability_last_update?: string | null
           availability_status?: string | null
+          available_count?: number | null
           charger_type?: string | null
+          charging_current?: string | null
+          city?: string | null
           connector_types?: string[] | null
+          connectors?: Json
+          contact_numbers?: string[]
           created_at?: string
+          data_as_of?: string | null
+          district?: string | null
           external_id?: string | null
+          fee?: boolean | null
           id?: string
+          last_rider_report?: string | null
           last_updated?: string
           latitude: number
+          location_quality?: string
           longitude: number
           maps_link?: string | null
+          max_kw_by_standard?: Json
+          max_power_kw?: number | null
+          mixed_admin?: boolean
+          opening_hours?: string | null
+          out_of_service_count?: number | null
+          ownership?: string | null
+          payment_modes?: string[]
           power_output?: string | null
           pricing?: string | null
           provider: string
+          source_name?: string | null
+          source_url?: string | null
+          staff?: string | null
+          state?: string | null
           station_name: string
+          station_type?: string
+          total_chargers?: number | null
+          total_connectors?: number | null
           updated_at?: string
+          vehicle_classes?: string[]
         }
         Update: {
+          access?: string | null
           address?: string
+          availability_last_update?: string | null
           availability_status?: string | null
+          available_count?: number | null
           charger_type?: string | null
+          charging_current?: string | null
+          city?: string | null
           connector_types?: string[] | null
+          connectors?: Json
+          contact_numbers?: string[]
           created_at?: string
+          data_as_of?: string | null
+          district?: string | null
           external_id?: string | null
+          fee?: boolean | null
           id?: string
+          last_rider_report?: string | null
           last_updated?: string
           latitude?: number
+          location_quality?: string
           longitude?: number
           maps_link?: string | null
+          max_kw_by_standard?: Json
+          max_power_kw?: number | null
+          mixed_admin?: boolean
+          opening_hours?: string | null
+          out_of_service_count?: number | null
+          ownership?: string | null
+          payment_modes?: string[]
           power_output?: string | null
           pricing?: string | null
           provider?: string
+          source_name?: string | null
+          source_url?: string | null
+          staff?: string | null
+          state?: string | null
           station_name?: string
+          station_type?: string
+          total_chargers?: number | null
+          total_connectors?: number | null
           updated_at?: string
+          vehicle_classes?: string[]
         }
         Relationships: []
       }

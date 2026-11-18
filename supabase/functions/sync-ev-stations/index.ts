@@ -5,6 +5,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface EVConnectorData {
+  standard: string;
+  kw?: number;
+  chargerKw?: number;
+  count?: number;
+  availableCount?: number;
+  outOfServiceCount?: number;
+  lastUpdate?: string;
+}
+
 interface EVStationData {
   station_name: string;
   provider: string;
@@ -18,6 +28,67 @@ interface EVStationData {
   external_id?: string;
   pricing?: string;
   power_output?: string;
+
+  // Enriched dictionary fields.
+  connectors?: EVConnectorData[];
+  max_power_kw?: number;
+  max_kw_by_standard?: Record<string, number>;
+  total_chargers?: number;
+  total_connectors?: number;
+  vehicle_classes?: string[];
+  charging_current?: string;
+  ownership?: string;
+  state?: string;
+  district?: string;
+  city?: string;
+  location_quality?: string;
+  mixed_admin?: boolean;
+  opening_hours?: string;
+  payment_modes?: string[];
+  contact_numbers?: string[];
+  staff?: string;
+  access?: string;
+  fee?: boolean;
+  station_type?: string;
+  available_count?: number;
+  out_of_service_count?: number;
+  availability_last_update?: string;
+  last_rider_report?: string;
+  data_as_of?: string;
+  source_name?: string;
+  source_url?: string;
+}
+
+/** Extract the first numeric value from strings such as "22 kW", "50", "3.3". */
+function parseKw(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  const match = String(value ?? '').match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : undefined;
+}
+
+/** Normalise the many connector spellings used by OSM / OCPI / Google. */
+function normaliseConnector(value: string): string {
+  const key = value.toLowerCase().replace(/^ev_connector_type_/, '');
+  const aliases: Record<string, string> = {
+    type2_combo: 'CCS2',
+    ccs_combo_2: 'CCS2',
+    ccs2: 'CCS2',
+    type1_combo: 'CCS1',
+    ccs_combo_1: 'CCS1',
+    type2: 'Type 2',
+    type2_ac: 'Type 2',
+    type1: 'Type 1',
+    type1_ac: 'Type 1',
+    'ccs-ii': 'CCS2',
+    chademo: 'CHAdeMO',
+    nacs: 'NACS',
+    gbt: 'GB/T',
+    lev_ac: 'LEV AC',
+    lev_dc: 'LEV DC',
+    bharat_ac001: 'Bharat AC',
+    bharat_dc001: 'Bharat DC',
+  };
+  return aliases[key] ?? value;
 }
 
 async function fetchTataPowerStations(): Promise<EVStationData[]> {
@@ -42,7 +113,7 @@ async function fetchTataPowerStations(): Promise<EVStationData[]> {
     // Try to extract station data from the HTML
     // Look for JSON data or station listings
     const jsonMatch = html.match(/var\s+stations\s*=\s*(\[.*?\]);/s) || 
-                     html.match(/stations["\']?\s*:\s*(\[.*?\])/s) ||
+                     html.match(/stations["']?\s*:\s*(\[.*?\])/s) ||
                      html.match(/"stations":\s*(\[.*?\])/s);
     
     if (jsonMatch) {
@@ -559,6 +630,471 @@ async function fetchStatiqStations(): Promise<EVStationData[]> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// New sources
+// ---------------------------------------------------------------------------
+/* eslint-disable @typescript-eslint/no-explicit-any -- external API payloads are untyped JSON */
+
+const BEE_API_BASE = 'https://ev-charging-stations-api.vercel.app';
+
+function mapBEEStation(row: any, source: any): EVStationData {
+  const lat = Number(row.latitude);
+  const lng = Number(row.longitude);
+  const chargers = Array.isArray(row.chargers) ? row.chargers : [];
+  const standards: string[] = Array.isArray(row.standards) ? row.standards : [];
+  const currents: string[] = Array.isArray(row.currents) ? row.currents : [];
+
+  return {
+    station_name: row.address || `${row.city || row.district || 'BEE'} EV Charging Station`,
+    provider: row.operator || 'Unknown Provider',
+    latitude: lat,
+    longitude: lng,
+    address: [row.address, row.city, row.district, row.state].filter(Boolean).join(', '),
+    charger_type: chargers[0]?.type_raw,
+    connector_types: standards.map(normaliseConnector),
+    // BEE does not publish live availability.
+    availability_status: 'unknown',
+    external_id: `bee_${row.id}`,
+    maps_link: `https://www.google.com/maps?q=${lat},${lng}`,
+    power_output: row.max_power_kw ? `${row.max_power_kw}kW` : undefined,
+    connectors: chargers.flatMap((charger: any) =>
+      (Array.isArray(charger.guns) ? charger.guns : []).map((gun: any) => ({
+        standard: normaliseConnector(gun.standard ?? ''),
+        kw: parseKw(gun.kw),
+        chargerKw: parseKw(charger.charger_kw),
+        count: charger.count,
+      }))
+    ),
+    max_power_kw: parseKw(row.max_power_kw),
+    max_kw_by_standard: row.max_kw_by_standard ?? {},
+    total_chargers: row.total_chargers,
+    total_connectors: row.total_connectors,
+    vehicle_classes: row.vehicle_classes,
+    charging_current: currents.join(','),
+    ownership: row.ownership,
+    state: row.state,
+    district: row.district,
+    city: row.city,
+    location_quality: row.location_quality,
+    mixed_admin: row.mixed_admin,
+    data_as_of: source?.snapshot_label ?? 'till 26th October 2025',
+    source_name: source?.name ?? 'BEE EV Public Charging Stations Data',
+    source_url: source?.url,
+  };
+}
+
+/**
+ * BEE / Ministry of Power data republished as a keyless, CORS-enabled API.
+ * One page per state keeps us well inside the 100 req / 15 min rate limit while
+ * spreading coverage across all states and UTs.
+ */
+async function fetchBEEApiStations(pagesPerState: number = 1): Promise<EVStationData[]> {
+  try {
+    console.log(`Fetching BEE stations from ${BEE_API_BASE}...`);
+
+    const statesResponse = await fetch(`${BEE_API_BASE}/v1/states`);
+    if (!statesResponse.ok) {
+      throw new Error(`BEE states API error: ${statesResponse.status}`);
+    }
+    const statesPayload = await statesResponse.json();
+    const states: any[] = Array.isArray(statesPayload.data) ? statesPayload.data : [];
+    const stateFilters = states
+      .map(state => state.state_code || state.state)
+      .filter(Boolean)
+      .slice(0, 40);
+    const targets: Array<{ state?: string }> = stateFilters.length
+      ? stateFilters.map(state => ({ state }))
+      : [{}];
+
+    const stations: EVStationData[] = [];
+
+    for (const target of targets) {
+      for (let page = 1; page <= pagesPerState; page++) {
+        const params = new URLSearchParams({
+          limit: '100',
+          page: String(page),
+          ...(target.state ? { state: target.state } : {}),
+        });
+
+        const response = await fetch(`${BEE_API_BASE}/v1/stations?${params}`);
+        if (response.status === 429) {
+          console.warn('BEE API rate limited - stopping this sync pass');
+          return stations;
+        }
+        if (!response.ok) {
+          throw new Error(`BEE stations API error: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const rows: any[] = Array.isArray(payload.data) ? payload.data : [];
+        for (const row of rows) {
+          stations.push(mapBEEStation(row, payload.meta?.source));
+        }
+        if (rows.length < 100) break;
+      }
+    }
+
+    console.log(`Found ${stations.length} BEE stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching BEE API stations:', error);
+    return [];
+  }
+}
+
+/** OpenEV - Delhi Transport: live per-connector availability and tariffs. */
+async function fetchOpenEVDelhiStations(): Promise<EVStationData[]> {
+  const apiKey = Deno.env.get('OPEN_EV_API_KEY');
+  if (!apiKey) {
+    console.log('OPEN_EV_API_KEY not set - skipping OpenEV Delhi');
+    return [];
+  }
+
+  try {
+    console.log('Fetching OpenEV Delhi stations...');
+    const response = await fetch(
+      `https://openev.delhitransport.in/api/get-ev/?key=${encodeURIComponent(apiKey)}`
+    );
+    if (!response.ok) {
+      throw new Error(`OpenEV API error: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const groups: any[] = Array.isArray(payload) ? payload : [payload];
+    const stations: EVStationData[] = [];
+
+    for (const group of groups) {
+      for (const station of Array.isArray(group.data) ? group.data : []) {
+        const lat = Number(station.coordinates?.latitude ?? station.latitude);
+        const lng = Number(station.coordinates?.longitude ?? station.longitude);
+        if (!lat || !lng) continue;
+
+        const chargers: any[] = Array.isArray(station.charger_type) ? station.charger_type : [];
+        const priced = chargers.find(ch => ch.cost_per_unit && ch.cost_per_unit !== 'NA');
+        const availableCount = Number(station.available) || 0;
+        const totalConnectors = Number(station.total) || undefined;
+
+        stations.push({
+          station_name: station.name || 'OpenEV Delhi Station',
+          provider: station.vendor || 'Delhi Transport',
+          latitude: lat,
+          longitude: lng,
+          address: [station.address, station.city, station.postal_code].filter(Boolean).join(', '),
+          charger_type: chargers[0]?.type,
+          connector_types: chargers.map(ch => normaliseConnector(ch.type)).filter(Boolean),
+          availability_status: availableCount > 0
+            ? 'available'
+            : (totalConnectors && totalConnectors > 0 ? 'unavailable' : 'unknown'),
+          external_id: `openev_${station.id}`,
+          maps_link: `https://www.google.com/maps?q=${lat},${lng}`,
+          power_output: chargers[0]?.capacity,
+          pricing: priced?.cost_per_unit ??
+            (station.cost_per_unit && station.cost_per_unit !== 'NA' ? station.cost_per_unit : undefined),
+          connectors: chargers.map(ch => ({
+            standard: normaliseConnector(ch.type ?? ''),
+            kw: parseKw(ch.capacity),
+            count: Number(ch.total) || undefined,
+            availableCount: Number(ch.available) || 0,
+          })),
+          available_count: availableCount,
+          total_connectors: totalConnectors,
+          opening_hours: [station.open, station.close].filter(Boolean).join(' - ') || undefined,
+          payment_modes: typeof station.payment_modes === 'string'
+            ? station.payment_modes.split(',').map((mode: string) => mode.trim()).filter(Boolean)
+            : station.payment_modes,
+          contact_numbers: station.contact_numbers,
+          staff: station.staff,
+          state: 'Delhi',
+          city: station.city,
+          station_type: station.station_type === 'battery_swapping' ? 'battery_swapping' : 'charging',
+          source_name: 'OpenEV - Delhi Transport',
+          source_url: 'https://openev.delhitransport.in/',
+          data_as_of: group.timestamp ?? new Date().toISOString(),
+          availability_last_update: group.timestamp ?? new Date().toISOString(),
+        });
+      }
+    }
+
+    console.log(`Found ${stations.length} OpenEV Delhi stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching OpenEV Delhi stations:', error);
+    return [];
+  }
+}
+
+/** OpenStreetMap charging stations via Overpass, including socket:* detail. */
+async function fetchOSMStations(): Promise<EVStationData[]> {
+  try {
+    console.log('Fetching OpenStreetMap charging stations...');
+    const endpoint = Deno.env.get('OVERPASS_API_URL') ?? 'https://overpass-api.de/api/interpreter';
+    // India bounding box; hard cap keeps the shared Overpass instance happy.
+    const query = `[out:json][timeout:50];nwr["amenity"="charging_station"](6.7,68.1,35.6,97.3);out center 1500;`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ data: query }).toString(),
+    });
+    if (!response.ok) {
+      throw new Error(`Overpass API error: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const elements: any[] = Array.isArray(payload.elements) ? payload.elements : [];
+    const stations: EVStationData[] = [];
+
+    for (const element of elements) {
+      const lat = element.lat ?? element.center?.lat;
+      const lng = element.lon ?? element.center?.lon ?? element.center?.longitude;
+      if (!lat || !lng) continue;
+
+      const tags = element.tags ?? {};
+      const socketKeys = Object.keys(tags).filter(key =>
+        key.startsWith('socket:') &&
+        !key.endsWith(':output') &&
+        !key.endsWith(':current') &&
+        !key.endsWith(':voltage')
+      );
+      const connectors: EVConnectorData[] = socketKeys.map(key => ({
+        standard: normaliseConnector(key.replace('socket:', '')),
+        kw: parseKw(tags[`${key}:output`]),
+        count: Number(tags[key]) || undefined,
+      }));
+      const outputs = connectors.map(c => c.kw).filter((kw): kw is number => kw !== undefined);
+      const maxPowerKw = outputs.length ? Math.max(...outputs) : undefined;
+
+      stations.push({
+        station_name: tags.name || `${tags.operator || 'OSM'} Charging Station`,
+        provider: tags.operator || tags.brand || 'OpenStreetMap',
+        latitude: Number(lat),
+        longitude: Number(lng),
+        address: [tags['addr:street'], tags['addr:city'], tags['addr:state']]
+          .filter(Boolean).join(', ') || 'Address not available',
+        charger_type: tags.frequency === '0' ? 'DC Fast Charger' : undefined,
+        connector_types: connectors.map(c => c.standard),
+        availability_status: 'unknown',
+        external_id: `osm_${element.type}_${element.id}`,
+        maps_link: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+        power_output: maxPowerKw ? `${maxPowerKw}kW` : undefined,
+        connectors,
+        max_power_kw: maxPowerKw,
+        max_kw_by_standard: Object.fromEntries(
+          connectors.filter(c => c.kw !== undefined).map(c => [c.standard, c.kw as number])
+        ),
+        total_connectors: Number(tags.capacity) || undefined,
+        charging_current: tags.frequency === '0' ? 'DC' : undefined,
+        city: tags['addr:city'],
+        state: tags['addr:state'],
+        opening_hours: tags.opening_hours,
+        access: tags.access,
+        fee: tags.fee === 'yes' ? true : (tags.fee === 'no' ? false : undefined),
+        station_type: tags['charging_station:battery_swapping'] === 'only'
+          ? 'battery_swapping'
+          : 'charging',
+        source_name: 'OpenStreetMap',
+        source_url: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+      });
+    }
+
+    console.log(`Found ${stations.length} OpenStreetMap stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching OpenStreetMap stations:', error);
+    return [];
+  }
+}
+
+/** Google Places API (New) evChargeOptions - connector-level live availability. */
+async function fetchGooglePlacesStations(): Promise<EVStationData[]> {
+  const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+  if (!apiKey) {
+    console.log('GOOGLE_MAPS_API_KEY not set - skipping Google Places');
+    return [];
+  }
+
+  const centres = [
+    { lat: 28.6139, lng: 77.2090 }, // Delhi
+    { lat: 19.0760, lng: 72.8777 }, // Mumbai
+    { lat: 12.9716, lng: 77.5946 }, // Bengaluru
+    { lat: 17.3850, lng: 78.4867 }, // Hyderabad
+  ];
+  const fieldMask = 'places.id,places.displayName,places.formattedAddress,places.location,places.evChargeOptions';
+  const stations: EVStationData[] = [];
+
+  try {
+    for (const centre of centres) {
+      const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': fieldMask,
+        },
+        body: JSON.stringify({
+          includedTypes: ['ev_charging_station'],
+          maxResultCount: 20,
+          locationRestriction: {
+            circle: {
+              center: { latitude: centre.lat, longitude: centre.lng },
+              radius: 15000,
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn(`Google Places error for ${centre.lat},${centre.lng}: ${response.status}`);
+        continue;
+      }
+
+      const payload = await response.json();
+      for (const place of Array.isArray(payload.places) ? payload.places : []) {
+        const lat = Number(place.location?.latitude);
+        const lng = Number(place.location?.longitude);
+        if (!lat || !lng) continue;
+
+        const aggregations: any[] = place.evChargeOptions?.connectorAggregation ?? [];
+        const connectors: EVConnectorData[] = aggregations.map(agg => ({
+          standard: normaliseConnector(String(agg.type ?? '')),
+          kw: parseKw(agg.maxChargeRateKw),
+          count: agg.count,
+          availableCount: agg.availableCount,
+          outOfServiceCount: agg.outOfServiceCount,
+          lastUpdate: agg.availabilityLastUpdateTime,
+        }));
+        const outputs = connectors.map(c => c.kw).filter((kw): kw is number => kw !== undefined);
+        const available = connectors.reduce((sum, c) => sum + (c.availableCount ?? 0), 0);
+        const outOfService = connectors.reduce((sum, c) => sum + (c.outOfServiceCount ?? 0), 0);
+
+        stations.push({
+          station_name: place.displayName?.text || 'Google EV Charging Station',
+          provider: 'Google Places',
+          latitude: lat,
+          longitude: lng,
+          address: place.formattedAddress || 'Address not available',
+          connector_types: connectors.map(c => c.standard),
+          availability_status: outOfService > 0 && available === 0
+            ? 'out-of-service'
+            : (outOfService > 0 ? 'maintenance' : 'operational'),
+          external_id: `google_${place.id}`,
+          maps_link: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+          power_output: outputs.length ? `${Math.max(...outputs)}kW` : undefined,
+          connectors,
+          max_power_kw: outputs.length ? Math.max(...outputs) : undefined,
+          total_connectors: place.evChargeOptions?.connectorCount,
+          available_count: available,
+          out_of_service_count: outOfService,
+          availability_last_update: aggregations
+            .map(agg => agg.availabilityLastUpdateTime)
+            .filter(Boolean)
+            .sort()
+            .pop(),
+          source_name: 'Google Places API (New)',
+          source_url: 'https://developers.google.com/maps/documentation/places/web-service',
+        });
+      }
+    }
+
+    console.log(`Found ${stations.length} Google Places stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching Google Places stations:', error);
+    return stations;
+  }
+}
+
+/** Generic OCPI 2.2.1 locations adapter (IONAGE, ChargeID, EVnnovator, etc.). */
+async function fetchOCPIStations(): Promise<EVStationData[]> {
+  const baseUrl = Deno.env.get('OCPI_LOCATIONS_URL');
+  const token = Deno.env.get('OCPI_TOKEN');
+  if (!baseUrl || !token) {
+    console.log('OCPI_LOCATIONS_URL/OCPI_TOKEN not set - skipping OCPI');
+    return [];
+  }
+
+  try {
+    console.log('Fetching OCPI locations...');
+    const response = await fetch(baseUrl, {
+      headers: {
+        Authorization: `Token ${token}`,
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`OCPI API error: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const locations: any[] = Array.isArray(payload.data) ? payload.data : [];
+    const stations: EVStationData[] = [];
+
+    for (const location of locations) {
+      const lat = Number(location.coordinates?.latitude);
+      const lng = Number(location.coordinates?.longitude);
+      if (!lat || !lng) continue;
+
+      const evses: any[] = Array.isArray(location.evses) ? location.evses : [];
+      const connectors: EVConnectorData[] = [];
+      let status = 'unknown';
+
+      for (const evse of evses) {
+        const evseStatus = String(evse.status ?? '').toUpperCase();
+        if (['AVAILABLE', 'BLOCKED', 'CHARGING'].includes(evseStatus)) status = 'available';
+        else if (['OUTOFORDER', 'INOPERATIVE', 'REMOVED'].includes(evseStatus)) status = 'out-of-service';
+        else if (['PLANNED', 'SUSPENDED'].includes(evseStatus) && status === 'unknown') status = 'maintenance';
+
+        for (const connector of Array.isArray(evse.connectors) ? evse.connectors : []) {
+          connectors.push({
+            standard: normaliseConnector(String(connector.standard ?? '')),
+            kw: connector.max_electric_power
+              ? Number(connector.max_electric_power) / 1000
+              : parseKw(connector.power),
+            lastUpdate: evse.last_updated,
+          });
+        }
+      }
+
+      stations.push({
+        station_name: location.name || `${location.operator?.name || 'OCPI'} Charging Station`,
+        provider: location.operator?.name || 'OCPI',
+        latitude: lat,
+        longitude: lng,
+        address: [location.address?.street, location.address?.city, location.address?.country]
+          .filter(Boolean).join(', '),
+        connector_types: connectors.map(c => c.standard),
+        availability_status: status,
+        external_id: `ocpi_${location.id}`,
+        maps_link: `https://www.google.com/maps?q=${lat},${lng}`,
+        connectors,
+        total_connectors: connectors.length,
+        available_count: connectors.filter(c => c.availableCount).length,
+        out_of_service_count: evses.filter(evse =>
+          ['OUTOFORDER', 'INOPERATIVE', 'REMOVED'].includes(String(evse.status ?? '').toUpperCase())
+        ).length,
+        availability_last_update: evses
+          .map(evse => evse.last_updated)
+          .filter(Boolean)
+          .sort()
+          .pop(),
+        opening_hours: location.opening_times?.regular_hours
+          ? JSON.stringify(location.opening_times.regular_hours)
+          : undefined,
+        source_name: 'OCPI locations feed',
+        source_url: baseUrl,
+      });
+    }
+
+    console.log(`Found ${stations.length} OCPI stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching OCPI stations:', error);
+    return [];
+  }
+}
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -570,22 +1106,31 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
+    // Optional: control how many pages of 100 BEE stations are pulled per state.
+    const body = await req.json().catch(() => ({}));
+    const pagesPerState = Math.min(Math.max(Number(body.maxPagesPerState) || 1, 1), 10);
+
     console.log('Starting EV stations sync...');
-    
-    // Fetch data from all sources
+
+    // Fetch data from all sources. Credential-gated sources skip themselves.
     const [
-      tataPowerStations, 
-      atherStations, 
-      nitiStations, 
-      openChargeMapStations, 
+      tataPowerStations,
+      atherStations,
+      nitiStations,
+      openChargeMapStations,
       jioBPStations,
       plugShareStations,
       chargeZoneStations,
       abbIndiaStations,
       brightBluStations,
-      beeIndiaStations, 
-      statiqStations
+      beeIndiaStations,
+      statiqStations,
+      beeApiStations,
+      openEVStations,
+      osmStations,
+      googlePlacesStations,
+      ocpiStations
     ] = await Promise.all([
       fetchTataPowerStations(),
       fetchAtherGridStations(),
@@ -597,9 +1142,14 @@ Deno.serve(async (req) => {
       fetchABBIndiaStations(),
       fetchBrightBluStations(),
       fetchBEEIndiaStations(),
-      fetchStatiqStations()
+      fetchStatiqStations(),
+      fetchBEEApiStations(pagesPerState),
+      fetchOpenEVDelhiStations(),
+      fetchOSMStations(),
+      fetchGooglePlacesStations(),
+      fetchOCPIStations()
     ]);
-    
+
     const allStations = [
       ...tataPowerStations,
       ...atherStations,
@@ -611,7 +1161,12 @@ Deno.serve(async (req) => {
       ...abbIndiaStations,
       ...brightBluStations,
       ...beeIndiaStations,
-      ...statiqStations
+      ...statiqStations,
+      ...beeApiStations,
+      ...openEVStations,
+      ...osmStations,
+      ...googlePlacesStations,
+      ...ocpiStations
     ];
     
     console.log(`Collected ${allStations.length} stations from all sources`);
@@ -626,34 +1181,41 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Insert/update stations in database
-    const { data, error } = await supabase
-      .from('ev_charging_stations')
-      .upsert(allStations, {
-        onConflict: 'provider,station_name,latitude,longitude',
-        ignoreDuplicates: false
-      });
-    
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: error.message 
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    // Insert/update stations in batches to stay within request size limits.
+    const batchSize = 500;
+    let synced = 0;
+    for (let i = 0; i < allStations.length; i += batchSize) {
+      const batch = allStations.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('ev_charging_stations')
+        .upsert(batch, {
+          onConflict: 'provider,station_name,latitude,longitude',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error('Database error:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            synced,
+            error: error.message
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      synced += batch.length;
     }
-    
-    console.log(`Successfully synced ${allStations.length} EV charging stations`);
+
+    console.log(`Successfully synced ${synced} EV charging stations`);
     
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        synced: allStations.length,
+      JSON.stringify({
+        success: true,
+        synced,
         sources: {
           'Tata Power': tataPowerStations.length,
           'Ather Grid': atherStations.length,
@@ -665,7 +1227,12 @@ Deno.serve(async (req) => {
           'ABB India': abbIndiaStations.length,
           'BrightBlu': brightBluStations.length,
           'BEE India': beeIndiaStations.length,
-          'Statiq': statiqStations.length
+          'Statiq': statiqStations.length,
+          'BEE API': beeApiStations.length,
+          'OpenEV Delhi': openEVStations.length,
+          'OpenStreetMap': osmStations.length,
+          'Google Places': googlePlacesStations.length,
+          'OCPI': ocpiStations.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -675,12 +1242,12 @@ Deno.serve(async (req) => {
     console.error('Sync error:', error);
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message 
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
       }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
