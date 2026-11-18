@@ -23,18 +23,20 @@ jobs:
     steps:
       - name: Call sync-ev-stations (availability mode)
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SYNC_URL: ${{ secrets.SYNC_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
         run: |
           set -euo pipefail
-          if [ -z "${SUPABASE_URL:-}" ]; then
-            echo "::error::SUPABASE_URL repository secret is not configured"
+          if [ -z "${SYNC_URL:-}" ]; then
+            echo "::error::SYNC_URL repository secret is not configured"
             exit 1
           fi
 
           response=$(curl -fsS -X POST \
             -H 'Content-Type: application/json' \
+            -H "Authorization: Bearer ${SYNC_SECRET}" \
             -d '{"mode":"availability"}' \
-            "${SUPABASE_URL%/}/functions/v1/sync-ev-stations")
+            "$SYNC_URL")
 
           echo "$response"
           echo "$response" | jq -e '.success == true' > /dev/null
