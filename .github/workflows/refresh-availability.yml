@@ -1,0 +1,40 @@
+name: Refresh charging station availability
+
+# Live connector status from OpenEV Delhi, Google Places and OCPI feeds.
+# Updates only availability columns on existing stations, on a free public-repo runner.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # every 30 minutes
+  workflow_dispatch:
+
+concurrency:
+  group: ev-station-availability-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Trigger availability refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call sync-ev-stations (availability mode)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "::error::SUPABASE_URL repository secret is not configured"
+            exit 1
+          fi
+
+          response=$(curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"mode":"availability"}' \
+            "${SUPABASE_URL%/}/functions/v1/sync-ev-stations")
+
+          echo "$response"
+          echo "$response" | jq -e '.success == true' > /dev/null

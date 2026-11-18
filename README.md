@@ -86,6 +86,28 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 | OCPI 2.2.1 locations feed | live EVSE status and tariffs | `OCPI_LOCATIONS_URL`, `OCPI_TOKEN` |
 | Legacy CPO scrapers / samples | Tata Power, Ather, NITI Aayog, Jio-bp, PlugShare, ChargeZone, ABB, BrightBlu, BEE India, Statiq | — |
 
-Set Edge Function secrets with `supabase secrets set <NAME>=<value>`. Trigger a sync by calling `sync-ev-stations`; an optional JSON body `{ "maxPagesPerState": 2 }` pulls more BEE pages per state (1–10, default 1).
+Set Edge Function secrets with `supabase secrets set <NAME>=<value>`.
+
+### Sync modes
+
+`sync-ev-stations` accepts a JSON body:
+
+| Body | Behaviour |
+| --- | --- |
+| `{"mode":"catalog"}` | Station records + dictionary fields (BEE, OSM, OCM, legacy sources) |
+| `{"mode":"availability"}` | Live status only; updates existing rows without overwriting catalog fields |
+| `{"mode":"full"}` | Everything (default, used by the empty-database auto-sync in the app) |
+| `{"maxPagesPerState":2}` | Extra BEE pages per state (1–10, default 1); combine with a mode |
+
+Example: `curl -X POST -H 'Content-Type: application/json' -d '{"mode":"catalog"}' "$SUPABASE_URL/functions/v1/sync-ev-stations"`
+
+### Scheduled updates
+
+Two GitHub Actions workflows keep the data current (free on this public repo):
+
+- `.github/workflows/sync-catalog.yml` — daily at 03:17 UTC
+- `.github/workflows/refresh-availability.yml` — every 30 minutes
+
+Add one repository secret: **`SUPABASE_URL`** (e.g. `https://<project>.supabase.co`). Both workflows POST to `<SUPABASE_URL>/functions/v1/sync-ev-stations`. The function has `verify_jwt = false` in `supabase/config.toml`, so no auth header is needed — if you enable JWT verification, add a bearer token to the workflows. Both can also be run manually from the Actions tab.
 
 The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql` and the frontend shape in `src/types/station.ts`.

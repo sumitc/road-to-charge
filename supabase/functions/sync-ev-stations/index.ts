@@ -1095,6 +1095,58 @@ async function fetchOCPIStations(): Promise<EVStationData[]> {
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+type SyncMode = 'full' | 'catalog' | 'availability';
+
+/**
+ * Refresh only the live fields of stations that already exist. Upserting these
+ * records would create shallow duplicates and would wipe the catalog fields
+ * (connectors, vehicle classes, provenance, ...) from the dictionary.
+ */
+async function refreshAvailability(
+  // The inferred Supabase client generics don't survive extraction into a helper.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  liveStations: EVStationData[]
+): Promise<{ updated: number; skipped: number }> {
+  const ids = [...new Set(
+    liveStations.map(station => station.external_id).filter((id): id is string => Boolean(id))
+  )];
+  if (ids.length === 0) return { updated: 0, skipped: liveStations.length };
+
+  const { data: existing, error } = await supabase
+    .from('ev_charging_stations')
+    .select('external_id')
+    .in('external_id', ids);
+
+  if (error) throw error;
+
+  const existingIds = new Set((existing ?? []).map((row: { external_id: string }) => row.external_id));
+  const matching = liveStations.filter(
+    station => station.external_id && existingIds.has(station.external_id)
+  );
+
+  const chunkSize = 20;
+  for (let i = 0; i < matching.length; i += chunkSize) {
+    const chunk = matching.slice(i, i + chunkSize);
+    const results = await Promise.all(chunk.map(station =>
+      supabase
+        .from('ev_charging_stations')
+        .update({
+          availability_status: station.availability_status,
+          available_count: station.available_count,
+          out_of_service_count: station.out_of_service_count,
+          availability_last_update: station.availability_last_update,
+          last_rider_report: station.last_rider_report,
+        })
+        .eq('external_id', station.external_id!)
+    ));
+    const failure = results.find(result => result.error);
+    if (failure?.error) throw failure.error;
+  }
+
+  return { updated: matching.length, skipped: liveStations.length - matching.length };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -1107,85 +1159,90 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Optional: control how many pages of 100 BEE stations are pulled per state.
     const body = await req.json().catch(() => ({}));
+    const requestedMode = String(body.mode ?? 'full') as SyncMode;
+    const mode: SyncMode = ['full', 'catalog', 'availability'].includes(requestedMode)
+      ? requestedMode
+      : 'full';
+    // Control how many pages of 100 BEE stations are pulled per state.
     const pagesPerState = Math.min(Math.max(Number(body.maxPagesPerState) || 1, 1), 10);
 
-    console.log('Starting EV stations sync...');
+    const includeCatalog = mode === 'full' || mode === 'catalog';
+    const includeAvailability = mode === 'full' || mode === 'availability';
 
-    // Fetch data from all sources. Credential-gated sources skip themselves.
-    const [
-      tataPowerStations,
-      atherStations,
-      nitiStations,
-      openChargeMapStations,
-      jioBPStations,
-      plugShareStations,
-      chargeZoneStations,
-      abbIndiaStations,
-      brightBluStations,
-      beeIndiaStations,
-      statiqStations,
-      beeApiStations,
-      openEVStations,
-      osmStations,
-      googlePlacesStations,
-      ocpiStations
-    ] = await Promise.all([
-      fetchTataPowerStations(),
-      fetchAtherGridStations(),
-      fetchNITIAayogData(),
-      fetchOpenChargeMapStations(),
-      fetchJioBPPulseStations(),
-      fetchPlugShareStations(),
-      fetchChargeZoneStations(),
-      fetchABBIndiaStations(),
-      fetchBrightBluStations(),
-      fetchBEEIndiaStations(),
-      fetchStatiqStations(),
-      fetchBEEApiStations(pagesPerState),
-      fetchOpenEVDelhiStations(),
-      fetchOSMStations(),
-      fetchGooglePlacesStations(),
-      fetchOCPIStations()
-    ]);
+    console.log(`Starting EV stations sync (mode: ${mode})...`);
 
-    const allStations = [
-      ...tataPowerStations,
-      ...atherStations,
-      ...nitiStations,
-      ...openChargeMapStations,
-      ...jioBPStations,
-      ...plugShareStations,
-      ...chargeZoneStations,
-      ...abbIndiaStations,
-      ...brightBluStations,
-      ...beeIndiaStations,
-      ...statiqStations,
-      ...beeApiStations,
-      ...openEVStations,
-      ...osmStations,
-      ...googlePlacesStations,
-      ...ocpiStations
-    ];
-    
-    console.log(`Collected ${allStations.length} stations from all sources`);
-    
-    if (allStations.length === 0) {
+    type FetchSpec = {
+      name: string;
+      kind: 'catalog' | 'availability';
+      run: () => Promise<EVStationData[]>;
+    };
+    const fetches: FetchSpec[] = [];
+
+    if (includeCatalog) {
+      fetches.push(
+        { name: 'Tata Power', kind: 'catalog', run: fetchTataPowerStations },
+        { name: 'Ather Grid', kind: 'catalog', run: fetchAtherGridStations },
+        { name: 'NITI Aayog', kind: 'catalog', run: fetchNITIAayogData },
+        { name: 'OpenChargeMap', kind: 'catalog', run: fetchOpenChargeMapStations },
+        { name: 'Jio-bp Pulse', kind: 'catalog', run: fetchJioBPPulseStations },
+        { name: 'PlugShare', kind: 'catalog', run: fetchPlugShareStations },
+        { name: 'ChargeZone', kind: 'catalog', run: fetchChargeZoneStations },
+        { name: 'ABB India', kind: 'catalog', run: fetchABBIndiaStations },
+        { name: 'BrightBlu', kind: 'catalog', run: fetchBrightBluStations },
+        { name: 'BEE India', kind: 'catalog', run: fetchBEEIndiaStations },
+        { name: 'Statiq', kind: 'catalog', run: fetchStatiqStations },
+        { name: 'BEE API', kind: 'catalog', run: () => fetchBEEApiStations(pagesPerState) },
+        { name: 'OpenStreetMap', kind: 'catalog', run: fetchOSMStations }
+      );
+    }
+
+    if (includeAvailability) {
+      fetches.push(
+        { name: 'OpenEV Delhi', kind: 'availability', run: fetchOpenEVDelhiStations },
+        { name: 'Google Places', kind: 'availability', run: fetchGooglePlacesStations },
+        { name: 'OCPI', kind: 'availability', run: fetchOCPIStations }
+      );
+    }
+
+    const results = await Promise.all(
+      fetches.map(async fetchSpec => ({
+        name: fetchSpec.name,
+        kind: fetchSpec.kind,
+        stations: await fetchSpec.run()
+      }))
+    );
+
+    const sources: Record<string, number> = {};
+    for (const result of results) sources[result.name] = result.stations.length;
+
+    const catalogStations = results
+      .filter(result => result.kind === 'catalog')
+      .flatMap(result => result.stations);
+    const liveStations = results
+      .filter(result => result.kind === 'availability')
+      .flatMap(result => result.stations);
+
+    console.log(
+      `Collected ${catalogStations.length} catalog and ${liveStations.length} live stations`
+    );
+
+    if (catalogStations.length === 0 && liveStations.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'No stations fetched from any source' 
+        JSON.stringify({
+          success: false,
+          mode,
+          message: 'No stations fetched from any source'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Insert/update stations in batches to stay within request size limits.
+
+    // Insert/update catalog stations in batches to stay within request size limits.
     const batchSize = 500;
     let synced = 0;
-    for (let i = 0; i < allStations.length; i += batchSize) {
-      const batch = allStations.slice(i, i + batchSize);
+    for (let i = 0; i < catalogStations.length; i += batchSize) {
+      const batch = catalogStations.slice(i, i + batchSize);
       const { error } = await supabase
         .from('ev_charging_stations')
         .upsert(batch, {
@@ -1198,6 +1255,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
+            mode,
             synced,
             error: error.message
           }),
@@ -1210,30 +1268,19 @@ Deno.serve(async (req) => {
       synced += batch.length;
     }
 
-    console.log(`Successfully synced ${synced} EV charging stations`);
-    
+    const availability = await refreshAvailability(supabase, liveStations);
+
+    console.log(
+      `Synced ${synced} catalog stations; refreshed ${availability.updated} live stations`
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
+        mode,
         synced,
-        sources: {
-          'Tata Power': tataPowerStations.length,
-          'Ather Grid': atherStations.length,
-          'NITI Aayog': nitiStations.length,
-          'OpenChargeMap': openChargeMapStations.length,
-          'Jio-bp Pulse': jioBPStations.length,
-          'PlugShare': plugShareStations.length,
-          'ChargeZone': chargeZoneStations.length,
-          'ABB India': abbIndiaStations.length,
-          'BrightBlu': brightBluStations.length,
-          'BEE India': beeIndiaStations.length,
-          'Statiq': statiqStations.length,
-          'BEE API': beeApiStations.length,
-          'OpenEV Delhi': openEVStations.length,
-          'OpenStreetMap': osmStations.length,
-          'Google Places': googlePlacesStations.length,
-          'OCPI': ocpiStations.length
-        }
+        availability,
+        sources
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
