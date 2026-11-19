@@ -69,7 +69,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     if (!searchQuery.trim()) {
       toast({
         title: "Please enter a location",
-        description: "Enter a city, address, or area to search",
+        description: "Try an area and city, like 'Koramangala, Bangalore'",
         variant: "destructive",
       });
       return;
@@ -154,7 +154,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         <CardContent className="p-4">
           <div className="flex space-x-2 mb-4">
             <Input
-              placeholder="Search by location (e.g., 'Bangalore', 'Delhi to Mumbai')"
+              placeholder="e.g. 'Koramangala, Bangalore' or 'Indiranagar Bangalore'"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -172,6 +172,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               )}
             </Button>
           </div>
+          <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+            Enter an area, city, or both. Commas or spaces both work.
+          </p>
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">

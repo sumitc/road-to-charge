@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import postgres, { type Fragment } from 'postgres';
 
 export const config = { runtime: 'nodejs' };
 
@@ -34,7 +34,7 @@ export async function GET(req: Request): Promise<Response> {
       });
     }
 
-    const conditions: ReturnType<typeof sql>[] = [];
+    const conditions: Fragment[] = [];
     let order = sql`last_updated DESC`;
     let limit = 500;
 
@@ -60,8 +60,30 @@ export async function GET(req: Request): Promise<Response> {
     } else if (mode === 'search') {
       const q = params.get('q')?.trim();
       if (q) {
-        const like = `%${q.replace(/\s+/g, ' ')}%`;
-        conditions.push(sql`(station_name ILIKE ${like} OR address ILIKE ${like} OR provider ILIKE ${like} OR city ILIKE ${like} OR state ILIKE ${like})`);
+        const aliases: Record<string, string[]> = {
+          bangalore: ['bangalore', 'bengaluru'],
+          bengaluru: ['bengaluru', 'bangalore'],
+          mumbai: ['mumbai', 'bombay'],
+          bombay: ['bombay', 'mumbai'],
+          chennai: ['chennai', 'madras'],
+          madras: ['madras', 'chennai'],
+          kolkata: ['kolkata', 'calcutta'],
+          calcutta: ['calcutta', 'kolkata'],
+        };
+        const tokens = q.toLowerCase().split(/[\s,]+/).filter(Boolean).slice(0, 6);
+        for (const token of tokens) {
+          const variants = aliases[token] ?? [token];
+          const conditionFor = (variant: string) => {
+            const like = `%${variant}%`;
+            return sql`(station_name ILIKE ${like} OR address ILIKE ${like} OR provider ILIKE ${like} OR city ILIKE ${like} OR state ILIKE ${like})`;
+          };
+          // Every term must match somewhere, so "koramangala, bangalore" is
+          // understood as locality AND city rather than one literal string.
+          const termCondition = variants.length > 1
+            ? sql`${conditionFor(variants[0])} OR ${conditionFor(variants[1])}`
+            : conditionFor(variants[0]);
+          conditions.push(termCondition);
+        }
         order = sql`station_name ASC`;
         limit = 50;
       }

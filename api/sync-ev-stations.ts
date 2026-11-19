@@ -700,18 +700,32 @@ async function fetchBEEApiStations(pagesPerState: number = 1): Promise<EVStation
     }
     const statesPayload = await statesResponse.json();
     const states: any[] = Array.isArray(statesPayload.data) ? statesPayload.data : [];
-    const stateFilters = states
-      .map(state => state.state_code || state.state)
-      .filter(Boolean)
+    // The API exposes `code` (e.g. KA) and `name` (e.g. Karnataka), not
+    // `state_code`/`state`. Using the wrong keys silently collapsed the sync
+    // into one unfiltered request and capped the catalog at ~1,000 rows.
+    const targets: Array<{ state?: string; total: number }> = states
+      .map(state => ({
+        state: state.code || state.iso || state.name,
+        total: Number(state.stations) || 0,
+      }))
+      .filter(target => Boolean(target.state))
       .slice(0, 40);
-    const targets: Array<{ state?: string }> = stateFilters.length
-      ? stateFilters.map(state => ({ state }))
-      : [{}];
+    if (targets.length === 0) targets.push({ state: undefined, total: 0 });
 
     const stations: EVStationData[] = [];
+    // Stay inside the BEE API's 100 requests / 15 minutes rate limit.
+    const requestBudget = 80;
+    let requests = 0;
 
     for (const target of targets) {
-      for (let page = 1; page <= pagesPerState; page++) {
+      const pagesForState = Math.max(
+        1,
+        Math.min(pagesPerState, Math.ceil((target.total || 100) / 100))
+      );
+      for (let page = 1; page <= pagesForState; page++) {
+        if (requests >= requestBudget) break;
+        requests++;
+
         const params = new URLSearchParams({
           limit: '100',
           page: String(page),
@@ -734,9 +748,10 @@ async function fetchBEEApiStations(pagesPerState: number = 1): Promise<EVStation
         }
         if (rows.length < 100) break;
       }
+      if (requests >= requestBudget) break;
     }
 
-    console.log(`Found ${stations.length} BEE stations`);
+    console.log(`Found ${stations.length} BEE stations from ${targets.length} states`);
     return stations;
   } catch (error) {
     console.error('Error fetching BEE API stations:', error);
