@@ -1,4 +1,4 @@
-import { POST as runSync } from './sync-ev-stations';
+import { POST as runSync } from './sync-ev-stations.js';
 
 export const config = { runtime: 'nodejs' };
 

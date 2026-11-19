@@ -1,6 +1,6 @@
 export const config = { runtime: 'nodejs' };
 
-import { createStationDb, type StationRow } from './lib/station-db'
+import { createStationDb, type StationRow } from './lib/station-db.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
