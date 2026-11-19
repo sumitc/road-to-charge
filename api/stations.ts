@@ -89,10 +89,12 @@ export async function GET(req: Request): Promise<Response> {
       if (Number.isFinite(requested) && requested > 0) limit = Math.min(requested, 500);
     }
 
-    const combined = conditions.reduce(
-      (acc, condition) => sql`${acc} AND ${condition}`,
-      sql``
-    );
+    const combined = conditions.length
+      ? conditions.slice(1).reduce(
+          (acc, condition) => sql`${acc} AND ${condition}`,
+          conditions[0]
+        )
+      : sql``;
     const where = conditions.length ? sql`WHERE ${combined}` : sql``;
     const rows = await sql`
       SELECT * FROM public.ev_charging_stations
