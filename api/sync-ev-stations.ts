@@ -1212,11 +1212,16 @@ export async function POST(req: Request): Promise<Response> {
     );
 
     if (catalogStations.length === 0 && liveStations.length === 0) {
+      await db.close();
+      // Availability-only runs are successful no-ops until live-feed keys are configured.
+      const ok = mode === 'availability';
       return new Response(
         JSON.stringify({
-          success: false,
+          success: ok,
           mode,
-          message: 'No stations fetched from any source'
+          message: ok
+            ? 'No live availability sources configured; nothing to update'
+            : 'No stations fetched from any source'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
