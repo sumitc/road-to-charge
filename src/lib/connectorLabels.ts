@@ -4,6 +4,8 @@ export interface ConnectorFilterOption {
   value: string;
   /** Speed first, technology second, e.g. "Super-fast · CCS". */
   label: string;
+  /** Short explanation shown in the filter dropdown. */
+  hint: string;
   match: string[];
 }
 
@@ -12,26 +14,31 @@ export const CONNECTOR_FILTER_OPTIONS: ConnectorFilterOption[] = [
   {
     value: 'ccs',
     label: 'Super-fast · CCS',
+    hint: 'DC · usually 50–350 kW',
     match: ['ccs'],
   },
   {
     value: 'chademo',
     label: 'Fast · CHAdeMO',
+    hint: 'DC · usually 25–50 kW',
     match: ['chademo'],
   },
   {
     value: 'bharatDc',
     label: 'Fast · Bharat DC',
+    hint: 'DC · public fast charging',
     match: ['bharat dc', 'dc001'],
   },
   {
     value: 'type2',
     label: 'Slow · Type 2',
+    hint: 'AC · usually 3–22 kW',
     match: ['type 2', 'type2', 'mennekes', 'j1772', 'type 1'],
   },
   {
     value: 'bharatAc',
     label: 'Slow · Bharat AC',
+    hint: 'AC · standard charging',
     match: ['bharat ac', 'ac001'],
   },
 ];

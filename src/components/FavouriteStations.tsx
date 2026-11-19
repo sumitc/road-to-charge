@@ -43,7 +43,7 @@ export const FavouriteStations: React.FC = () => {
     <div className="space-y-4">
       {/* Header */}
       {favourites.length > 0 && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
@@ -78,7 +78,7 @@ export const FavouriteStations: React.FC = () => {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="rounded-2xl">
           <CardContent className="flex items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Star className="w-8 h-8 text-muted-foreground mx-auto" />

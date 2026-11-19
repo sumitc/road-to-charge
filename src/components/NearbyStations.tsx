@@ -3,7 +3,6 @@ import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
@@ -128,7 +127,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
   if (isLoadingLocation) {
     return (
-      <Card>
+      <Card className="rounded-2xl">
         <CardContent className="flex items-center justify-center p-8">
           <div className="text-center space-y-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
@@ -141,7 +140,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
   if (!location) {
     return (
-      <Card>
+      <Card className="rounded-2xl">
         <CardContent className="flex items-center justify-center p-8">
           <div className="text-center space-y-3">
             <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
@@ -158,7 +157,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardContent className="p-4">
           <div className="flex gap-2 mb-4">
             <Input
@@ -193,33 +192,49 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                 {showSearchResults ? `Search results for "${searchQuery}"` : `Nearby stations within ${radius} km`}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+
+            {/* Distance and connector sit side by side on mobile. */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               {showSearchResults ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShowNearby}
-                >
-                  Show Nearby
-                </Button>
+                <>
+                  <ConnectorFilter
+                    selected={connectorFilters}
+                    onChange={setConnectorFilters}
+                    className="w-full sm:w-56"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShowNearby}
+                    className="min-h-[44px]"
+                  >
+                    Show Nearby
+                  </Button>
+                </>
               ) : (
                 <>
                   <select
                     value={radius}
                     onChange={(e) => setRadius(Number(e.target.value))}
                     aria-label="Search radius in kilometres"
-                    className="min-h-[44px] px-3 py-2 text-sm border border-input bg-background rounded-md"
+                    className="min-h-[44px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28"
                   >
                     <option value={5}>5 km</option>
                     <option value={10}>10 km</option>
                     <option value={25}>25 km</option>
                     <option value={50}>50 km</option>
                   </select>
+                  <ConnectorFilter
+                    selected={connectorFilters}
+                    onChange={setConnectorFilters}
+                    className="w-full sm:w-56"
+                  />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRefresh}
                     disabled={isLoading || isSearching}
+                    className="col-span-2 min-h-[44px] sm:col-auto"
                   >
                     {(isLoading || isSearching) ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -234,22 +249,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Connector filter */}
-      <Card>
-        <CardContent className="space-y-2 p-4">
-          <div className="space-y-1">
-            <Label>Connector / charging speed</Label>
-            <p className="text-xs text-muted-foreground">
-              Pick as many as you like. Slow = AC, Fast/Super-fast = DC.
-            </p>
-          </div>
-          <ConnectorFilter selected={connectorFilters} onChange={setConnectorFilters} />
-        </CardContent>
-      </Card>
-
       {/* Loading state */}
       {(isLoading || isSearching) && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardContent className="flex items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
@@ -280,7 +282,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               ))}
             </div>
           ) : stations.length > 0 ? (
-            <Card>
+            <Card className="rounded-2xl">
               <CardContent className="flex items-center justify-center p-8">
                 <div className="text-center space-y-3">
                   <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
@@ -297,7 +299,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="rounded-2xl">
               <CardContent className="flex items-center justify-center p-8">
                 <div className="text-center space-y-3">
                   <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />

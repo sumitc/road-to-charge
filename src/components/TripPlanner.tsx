@@ -9,8 +9,9 @@ import { MapPin, Plus, X, Route as RouteIcon, Zap, Clock, Navigation } from 'luc
 import { RouteService, RoutePoint, Route } from '@/services/routeService';
 import { EVStationService } from '@/services/evStationService';
 import { ChargingStation } from '@/types/station';
-import { connectorBadgeLabel, matchesConnectorFilters } from '@/lib/connectorLabels';
+import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { ConnectorFilter } from './ConnectorFilter';
+import { StationCard } from './StationCard';
 import TripMap from './TripMap';
 
 interface Waypoint extends RoutePoint {
@@ -190,7 +191,7 @@ const TripPlanner = () => {
   return (
     <div className="space-y-6">
       {/* Trip Planning Form */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <RouteIcon className="w-5 h-5" />
@@ -269,12 +270,18 @@ const TripPlanner = () => {
           </div>
 
           {/* Connector Filter */}
-          <div className="space-y-2">
-            <Label>Connector / charging speed</Label>
-            <p className="text-xs text-muted-foreground">
-              Pick as many as you like. Slow = AC, Fast/Super-fast = DC.
-            </p>
-            <ConnectorFilter selected={connectorFilters} onChange={setConnectorFilters} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5">
+              <Label>Connector / charging speed</Label>
+              <p className="text-xs text-muted-foreground">
+                Pick as many as you like. Slow = AC, Fast/Super-fast = DC.
+              </p>
+            </div>
+            <ConnectorFilter
+              selected={connectorFilters}
+              onChange={setConnectorFilters}
+              className="w-full sm:w-64"
+            />
           </div>
 
           {/* Action Buttons */}
@@ -303,7 +310,7 @@ const TripPlanner = () => {
 
       {/* Route Summary */}
       {currentRoute && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <RouteIcon className="w-5 h-5" />
@@ -345,7 +352,7 @@ const TripPlanner = () => {
 
       {/* Map */}
       {currentRoute && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle>Route Map</CardTitle>
           </CardHeader>
@@ -361,7 +368,7 @@ const TripPlanner = () => {
 
       {/* Stations List */}
       {allRouteStations.length > 0 && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="w-5 h-5" />
@@ -385,29 +392,8 @@ const TripPlanner = () => {
               </div>
             ) : (
             <div className="space-y-3">
-              {routeStations.map((station) => (
-                <div key={station.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold">{station.name}</h3>
-                    <Badge variant={station.status === 'operational' ? 'default' : 'secondary'}>
-                      {station.status}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">{station.address}</p>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {station.powerOutput && (
-                      <Badge variant="outline">{station.powerOutput}</Badge>
-                    )}
-                    {station.connectorTypes?.map((connector, index) => (
-                      <Badge key={index} variant="outline">
-                        {connectorBadgeLabel(connector)}
-                      </Badge>
-                    ))}
-                    {station.pricing && (
-                      <Badge variant="outline">{station.pricing}</Badge>
-                    )}
-                  </div>
-                </div>
+              {routeStations.map(station => (
+                <StationCard key={station.id} station={station} />
               ))}
             </div>
             )}
