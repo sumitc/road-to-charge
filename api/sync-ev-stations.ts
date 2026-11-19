@@ -717,13 +717,20 @@ async function fetchBEEApiStations(pagesPerState: number = 1): Promise<EVStation
     const requestBudget = 80;
     let requests = 0;
 
-    for (const target of targets) {
-      const pagesForState = Math.max(
-        1,
-        Math.min(pagesPerState, Math.ceil((target.total || 100) / 100))
-      );
-      for (let page = 1; page <= pagesForState; page++) {
+    const exhausted = new Set<string>();
+    // Fetch page 1 for every state before page 2, so the request budget is
+    // spread across India instead of being consumed by the largest states.
+    for (let page = 1; page <= pagesPerState; page++) {
+      for (const target of targets) {
         if (requests >= requestBudget) break;
+        const key = target.state ?? '';
+        if (exhausted.has(key)) continue;
+
+        const pagesForState = Math.max(
+          1,
+          Math.min(pagesPerState, Math.ceil((target.total || 100) / 100))
+        );
+        if (page > pagesForState) continue;
         requests++;
 
         const params = new URLSearchParams({
@@ -746,7 +753,7 @@ async function fetchBEEApiStations(pagesPerState: number = 1): Promise<EVStation
         for (const row of rows) {
           stations.push(mapBEEStation(row, payload.meta?.source));
         }
-        if (rows.length < 100) break;
+        if (rows.length < 100) exhausted.add(key);
       }
       if (requests >= requestBudget) break;
     }

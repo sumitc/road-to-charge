@@ -80,7 +80,7 @@ export async function GET(req: Request): Promise<Response> {
           // Every term must match somewhere, so "koramangala, bangalore" is
           // understood as locality AND city rather than one literal string.
           const termCondition = variants.length > 1
-            ? sql`${conditionFor(variants[0])} OR ${conditionFor(variants[1])}`
+            ? sql`(${conditionFor(variants[0])} OR ${conditionFor(variants[1])})`
             : conditionFor(variants[0]);
           conditions.push(termCondition);
         }
@@ -113,7 +113,7 @@ export async function GET(req: Request): Promise<Response> {
 
     const combined = conditions.length
       ? conditions.slice(1).reduce(
-          (acc, condition) => sql`${acc} AND ${condition}`,
+          (acc, condition) => sql`(${acc}) AND (${condition})`,
           conditions[0]
         )
       : sql``;
