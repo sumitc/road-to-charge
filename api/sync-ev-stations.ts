@@ -1129,10 +1129,15 @@ export async function OPTIONS(): Promise<Response> {
   return new Response(null, { headers: corsHeaders });
 }
 
+export async function GET(req: Request): Promise<Response> {
+  return POST(req);
+}
+
 export async function POST(req: Request): Promise<Response> {
-  // Optional shared-secret protection for scheduled callers (GitHub Actions).
-  const syncSecret = process.env.SYNC_SECRET;
-  if (syncSecret && req.headers.get('authorization') !== `Bearer ${syncSecret}`) {
+  // Shared-secret protection for scheduled callers (GitHub Actions / Vercel Cron).
+  const auth = req.headers.get('authorization');
+  const secrets = [process.env.SYNC_SECRET, process.env.CRON_SECRET].filter(Boolean);
+  if (secrets.length > 0 && !secrets.some(secret => auth === `Bearer ${secret}`)) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
