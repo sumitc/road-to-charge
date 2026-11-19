@@ -35,6 +35,7 @@ export async function GET(req: Request): Promise<Response> {
     }
 
     const conditions: Fragment[] = [];
+    let searchTokens: string[] = [];
     let order = sql`last_updated DESC`;
     let limit = 500;
 
@@ -71,6 +72,7 @@ export async function GET(req: Request): Promise<Response> {
           calcutta: ['calcutta', 'kolkata'],
         };
         const tokens = q.toLowerCase().split(/[\s,]+/).filter(Boolean).slice(0, 6);
+        searchTokens = tokens;
         for (const token of tokens) {
           const variants = aliases[token] ?? [token];
           const conditionFor = (variant: string) => {
@@ -118,12 +120,45 @@ export async function GET(req: Request): Promise<Response> {
         )
       : sql``;
     const where = conditions.length ? sql`WHERE ${combined}` : sql``;
-    const rows = await sql`
+    let rows = await sql`
       SELECT * FROM public.ev_charging_stations
       ${where}
       ORDER BY ${order}
       LIMIT ${limit}
     `;
+
+    // If a place query barely matches text, resolve the place to coordinates
+    // and return nearby stations. This handles areas like Koramangala that
+    // are not labelled as a city in the source catalog.
+    if (mode === 'search' && rows.length < 3 && searchTokens.length > 0) {
+      try {
+        const q = params.get('q') ?? '';
+        const geoResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+          { headers: { 'User-Agent': 'road-to-charge/1.0' }, signal: AbortSignal.timeout(5000) }
+        );
+        if (geoResponse.ok) {
+          const geo = (await geoResponse.json())?.[0];
+          const lat = Number(geo?.lat);
+          const lng = Number(geo?.lon);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            const radius = 10;
+            const latRange = radius / 111.0;
+            const lngRange = radius / (111.0 * Math.cos((lat * Math.PI) / 180));
+            rows = await sql`
+              SELECT * FROM public.ev_charging_stations
+              WHERE latitude BETWEEN ${lat - latRange} AND ${lat + latRange}
+                AND longitude BETWEEN ${lng - lngRange} AND ${lng + lngRange}
+              ORDER BY (abs(latitude::float8 - ${lat}) + abs(longitude::float8 - ${lng})) ASC
+              LIMIT 50
+            `;
+          }
+        }
+      } catch (error) {
+        console.error('Geocoding fallback failed:', error);
+      }
+    }
+
     await sql.end({ timeout: 5 });
 
     return new Response(JSON.stringify(rows), {
