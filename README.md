@@ -62,3 +62,27 @@ Required repository secrets:
 - `SYNC_SECRET` — same value as the Vercel `SYNC_SECRET` environment variable
 
 The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql` and the frontend shape in `src/types/station.ts`.
+
+## Mobile app (Capacitor)
+
+`capacitor.config.ts` uses app ID `com.ruvo.evcharging`, app name `Ruvo`, and loads
+`https://road-to-charge-v2.vercel.app` so the wrapper uses the same live API as the
+website. Native projects are not checked into this repo; create them with:
+
+```bash
+npm run build
+npx cap add android
+npx cap add ios
+# later, after code changes
+npm run build && npx cap sync
+```
+
+The Ruvo bolt app icon lives in `public/`:
+
+- `favicon.ico` — browser tab icon (16/32/48/64)
+- `apple-touch-icon.png` — iOS home screen (180×180)
+- `ruvo-icon-192.png`, `ruvo-icon-512.png` — PWA manifest icons
+- `ruvo-icon-1024.png` — master image for native launcher icons
+
+When generating the native projects, use `public/ruvo-icon-1024.png` as the source
+for Android's Image Asset Studio / adaptive icons and Xcode's `AppIcon` set.

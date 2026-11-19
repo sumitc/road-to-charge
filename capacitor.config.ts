@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.92b4a09c92e4404c929c2fa397ffeeb9',
+  appId: 'com.ruvo.evcharging',
   appName: 'Ruvo',
   webDir: 'dist',
   server: {
