@@ -79,7 +79,8 @@ npm run build && npx cap sync
 
 The Ruvo bolt app icon lives in `public/`:
 
-- `favicon.ico` — browser tab icon (16/32/48/64)
+- `ruvo-favicon-16.png`, `ruvo-favicon-32.png`, `ruvo-favicon-48.png` — browser tab icons (versioned URLs bust old cached favicons)
+- `favicon.ico` — legacy fallback
 - `apple-touch-icon.png` — iOS home screen (180×180)
 - `ruvo-icon-192.png`, `ruvo-icon-512.png` — PWA manifest icons
 - `ruvo-icon-1024.png` — master image for native launcher icons
