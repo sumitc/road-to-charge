@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Ruvo',
   webDir: 'dist',
   server: {
-    url: 'https://92b4a09c-92e4-404c-929c-2fa397ffeeb9.lovableproject.com?forceHideBadge=true',
+    // Point the native wrapper at the live app so relative /api calls resolve.
+    url: 'https://road-to-charge-v2.vercel.app',
     cleartext: true
   },
   plugins: {

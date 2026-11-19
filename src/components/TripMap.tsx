@@ -151,8 +151,8 @@ const TripMap: React.FC<TripMapProps> = ({ route, stations, routePoints }) => {
   return (
     <div 
       ref={mapRef} 
-      className="w-full h-96 rounded-lg"
-      style={{ minHeight: '400px' }}
+      className="w-full h-[320px] sm:h-96 rounded-lg"
+      style={{ minHeight: '320px' }}
     />
   );
 };

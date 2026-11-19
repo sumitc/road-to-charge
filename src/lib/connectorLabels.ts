@@ -2,37 +2,37 @@ export type ConnectorSpeed = 'slow' | 'fast' | 'super-fast';
 
 export interface ConnectorFilterOption {
   value: string;
+  /** Speed first, technology second, e.g. "Super-fast · CCS". */
   label: string;
   match: string[];
 }
 
-/** Filter options shown in Near Me and Trip Planner. */
+/** Filter options shown in Near Me and Trip Planner, ordered fastest first. */
 export const CONNECTOR_FILTER_OPTIONS: ConnectorFilterOption[] = [
-  { value: 'all', label: 'All connectors', match: [] },
   {
-    value: 'type2',
-    label: 'Type 2 — Slow (AC)',
-    match: ['type 2', 'type2', 'mennekes', 'j1772', 'type 1'],
-  },
-  {
-    value: 'bharatAc',
-    label: 'Bharat AC — Slow (AC)',
-    match: ['bharat ac', 'ac001'],
+    value: 'ccs',
+    label: 'Super-fast · CCS',
+    match: ['ccs'],
   },
   {
     value: 'chademo',
-    label: 'CHAdeMO — Fast (DC)',
+    label: 'Fast · CHAdeMO',
     match: ['chademo'],
   },
   {
     value: 'bharatDc',
-    label: 'Bharat DC — Fast (DC)',
+    label: 'Fast · Bharat DC',
     match: ['bharat dc', 'dc001'],
   },
   {
-    value: 'ccs',
-    label: 'CCS — Super-fast (DC)',
-    match: ['ccs'],
+    value: 'type2',
+    label: 'Slow · Type 2',
+    match: ['type 2', 'type2', 'mennekes', 'j1772', 'type 1'],
+  },
+  {
+    value: 'bharatAc',
+    label: 'Slow · Bharat AC',
+    match: ['bharat ac', 'ac001'],
   },
 ];
 
@@ -60,22 +60,26 @@ export function connectorSpeed(connector: string): ConnectorSpeed | undefined {
   return speedByMatch.find(entry => includesAny(value, entry.match))?.speed;
 }
 
-/** Raw connector type plus a plain-language speed hint, e.g. "CCS · Super-fast". */
+/** Speed-first badge label, e.g. "Super-fast · CCS". */
 export function connectorBadgeLabel(connector: string): string {
   const speed = connectorSpeed(connector);
-  return speed ? `${connector} · ${SPEED_LABEL[speed]}` : connector;
+  return speed ? `${SPEED_LABEL[speed]} · ${connector}` : connector;
 }
 
-/** True when any of a station's connector types matches the selected filter. */
-export function matchesConnectorFilter(
+/**
+ * True when a station matches any selected connector filter. An empty
+ * selection means "all connectors", which keeps the default view unchanged.
+ */
+export function matchesConnectorFilters(
   connectorTypes: string[] | undefined,
-  filter: string
+  filters: string[]
 ): boolean {
-  if (filter === 'all') return true;
+  if (!filters.length) return true;
   if (!connectorTypes?.length) return false;
 
-  const option = CONNECTOR_FILTER_OPTIONS.find(item => item.value === filter);
-  if (!option) return true;
-
-  return connectorTypes.some(type => includesAny(type.toLowerCase(), option.match));
+  return filters.some(filter => {
+    const option = CONNECTOR_FILTER_OPTIONS.find(item => item.value === filter);
+    if (!option) return false;
+    return connectorTypes.some(type => includesAny(type.toLowerCase(), option.match));
+  });
 }

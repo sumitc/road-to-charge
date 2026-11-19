@@ -4,20 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { StationCard } from './StationCard';
+import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
-import {
-  CONNECTOR_FILTER_OPTIONS,
-  matchesConnectorFilter,
-} from '@/lib/connectorLabels';
+import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
 
 interface NearbyStationsProps {
@@ -37,12 +28,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [connectorFilter, setConnectorFilter] = useState('all');
+  const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const visibleStations = connectorFilter === 'all'
-    ? stations
-    : stations.filter(station => matchesConnectorFilter(station.connectorTypes, connectorFilter));
+  const visibleStations = stations.filter(station =>
+    matchesConnectorFilters(station.connectorTypes, connectorFilters)
+  );
 
   useEffect(() => {
     if (location && !isLoadingLocation) {
@@ -156,7 +147,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
             <p className="text-muted-foreground">Location not available</p>
             <p className="text-sm text-muted-foreground">
-              Please use the Search tab to find stations manually
+              Search by area or city above to find stations manually
             </p>
           </div>
         </CardContent>
@@ -169,18 +160,20 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       {/* Search Bar */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex space-x-2 mb-4">
+          <div className="flex gap-2 mb-4">
             <Input
               placeholder="e.g. 'Koramangala, Bangalore' or 'Indiranagar Bangalore'"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="flex-1"
+              className="min-w-0 flex-1 min-h-[44px]"
+              aria-label="Search for charging stations by area or city"
             />
             <Button 
               onClick={handleSearch} 
               disabled={isSearching}
-              className="bg-gradient-primary hover:opacity-90"
+              aria-label="Search"
+              className="shrink-0 min-h-[44px] px-3 bg-gradient-primary hover:opacity-90"
             >
               {isSearching ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -193,14 +186,14 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             Enter an area, city, or both. Commas or spaces both work.
           </p>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <span className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              <MapPin className="w-5 h-5 shrink-0 text-primary" />
+              <span className="min-w-0 break-words text-sm text-muted-foreground">
                 {showSearchResults ? `Search results for "${searchQuery}"` : `Nearby stations within ${radius} km`}
               </span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               {showSearchResults ? (
                 <Button
                   variant="outline"
@@ -214,7 +207,8 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                   <select
                     value={radius}
                     onChange={(e) => setRadius(Number(e.target.value))}
-                    className="px-3 py-2 text-sm border border-input bg-background rounded-md"
+                    aria-label="Search radius in kilometres"
+                    className="min-h-[44px] px-3 py-2 text-sm border border-input bg-background rounded-md"
                   >
                     <option value={5}>5 km</option>
                     <option value={10}>10 km</option>
@@ -242,27 +236,14 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
       {/* Connector filter */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <Label>Connector / charging speed</Label>
-              <p className="text-xs text-muted-foreground">
-                Slow = AC, Fast/Super-fast = DC. Pick the plug you need.
-              </p>
-            </div>
-            <Select value={connectorFilter} onValueChange={setConnectorFilter}>
-              <SelectTrigger className="w-full sm:w-60">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CONNECTOR_FILTER_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="space-y-2 p-4">
+          <div className="space-y-1">
+            <Label>Connector / charging speed</Label>
+            <p className="text-xs text-muted-foreground">
+              Pick as many as you like. Slow = AC, Fast/Super-fast = DC.
+            </p>
           </div>
+          <ConnectorFilter selected={connectorFilters} onChange={setConnectorFilters} />
         </CardContent>
       </Card>
 
@@ -287,7 +268,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Found {visibleStations.length} station{visibleStations.length !== 1 ? 's' : ''}
-                {connectorFilter !== 'all' ? ' matching this connector' : ' near you'}
+                {connectorFilters.length > 0 ? ' matching your selection' : ' near you'}
               </p>
               {visibleStations.map((station) => (
                 <StationCard
@@ -303,8 +284,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               <CardContent className="flex items-center justify-center p-8">
                 <div className="text-center space-y-3">
                   <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
-                  <p className="text-muted-foreground">No stations match this connector</p>
-                  <Button variant="outline" size="sm" onClick={() => setConnectorFilter('all')}>
+                  <p className="text-muted-foreground">No stations match your selection</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px]"
+                    onClick={() => setConnectorFilters([])}
+                  >
                     Show all connectors
                   </Button>
                 </div>

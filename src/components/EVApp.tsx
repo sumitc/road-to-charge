@@ -85,18 +85,21 @@ export const EVApp = () => {
   }, [toast]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ minHeight: '100dvh' }}>
       {/* Header */}
-      <header className="bg-gradient-hero text-primary-foreground p-4 shadow-electric">
+      <header
+        className="bg-gradient-hero text-primary-foreground px-3 py-4 shadow-electric sm:px-4"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+      >
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                <Zap className="w-6 h-6" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="shrink-0 p-2 bg-primary-foreground/20 rounded-lg">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">EV Station Finder</h1>
-                <p className="text-sm opacity-90">Find charging stations near you</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold">EV Station Finder</h1>
+                <p className="text-xs sm:text-sm opacity-90">Find charging stations near you</p>
               </div>
             </div>
             <Button 
@@ -104,30 +107,46 @@ export const EVApp = () => {
               disabled={isSyncing}
               variant="outline" 
               size="sm"
-              className="bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
+              aria-label={isSyncing ? 'Syncing station data' : 'Sync station data'}
+              className="shrink-0 min-h-[44px] bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync Data'}
+              <RefreshCw className={`w-4 h-4 sm:mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Data'}</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto p-4">
+      <main
+        className="max-w-4xl mx-auto px-3 pt-4 pb-8 sm:p-4"
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <Tabs defaultValue="nearby" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-card shadow-sm">
-            <TabsTrigger value="nearby" className="flex items-center space-x-2">
+          <TabsList className="grid !h-auto w-full grid-cols-3 bg-card shadow-sm sm:!h-10">
+            <TabsTrigger
+              value="nearby"
+              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+            >
               <MapPin className="w-4 h-4" />
-              <span>Find Stations</span>
+              <span className="sm:hidden">Stations</span>
+              <span className="hidden sm:inline">Find Stations</span>
             </TabsTrigger>
-            <TabsTrigger value="trip" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="trip"
+              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+            >
               <Route className="w-4 h-4" />
-              <span>Trip Planner</span>
+              <span className="sm:hidden">Trips</span>
+              <span className="hidden sm:inline">Trip Planner</span>
             </TabsTrigger>
-            <TabsTrigger value="favourites" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="favourites"
+              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+            >
               <Star className="w-4 h-4" />
-              <span>Favourites</span>
+              <span className="sm:hidden">Saved</span>
+              <span className="hidden sm:inline">Favourites</span>
             </TabsTrigger>
           </TabsList>
 

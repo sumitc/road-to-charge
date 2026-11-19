@@ -1,20 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { MapPin, Plus, X, Route as RouteIcon, Zap, Clock, Navigation } from 'lucide-react';
 import { RouteService, RoutePoint, Route } from '@/services/routeService';
 import { EVStationService } from '@/services/evStationService';
 import { ChargingStation } from '@/types/station';
-import {
-  CONNECTOR_FILTER_OPTIONS,
-  connectorBadgeLabel,
-  matchesConnectorFilter,
-} from '@/lib/connectorLabels';
+import { connectorBadgeLabel, matchesConnectorFilters } from '@/lib/connectorLabels';
+import { ConnectorFilter } from './ConnectorFilter';
 import TripMap from './TripMap';
 
 interface Waypoint extends RoutePoint {
@@ -27,11 +23,20 @@ const TripPlanner = () => {
   const [endLocation, setEndLocation] = useState('');
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [newWaypoint, setNewWaypoint] = useState('');
-  const [connectorFilter, setConnectorFilter] = useState<string>('all');
+  const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const [isPlanning, setIsPlanning] = useState(false);
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null);
-  const [routeStations, setRouteStations] = useState<ChargingStation[]>([]);
+  const [allRouteStations, setAllRouteStations] = useState<ChargingStation[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<RoutePoint[]>([]);
+
+  // Derived so changing connector selections updates both the list and map
+  // without having to plan the trip again.
+  const routeStations = useMemo(
+    () => allRouteStations.filter(station =>
+      matchesConnectorFilters(station.connectorTypes, connectorFilters)
+    ),
+    [allRouteStations, connectorFilters]
+  );
 
   const addWaypoint = useCallback(async () => {
     if (!newWaypoint.trim()) return;
@@ -102,15 +107,12 @@ const TripPlanner = () => {
         });
       });
 
-      // Apply connector filter using shared plain-language options.
-      return nearbyStations.filter(station =>
-        matchesConnectorFilter(station.connectorTypes, connectorFilter)
-      );
+      return nearbyStations;
     } catch (error) {
       console.error('Error finding stations along route:', error);
       return [];
     }
-  }, [connectorFilter]);
+  }, []);
 
   const planTrip = useCallback(async () => {
     if (!startLocation.trim() || !endLocation.trim()) {
@@ -154,14 +156,17 @@ const TripPlanner = () => {
 
       // Find charging stations along the route
       const stations = await findStationsAlongRoute(route);
+      const visibleCount = stations.filter(station =>
+        matchesConnectorFilters(station.connectorTypes, connectorFilters)
+      ).length;
 
       setCurrentRoute(route);
-      setRouteStations(stations);
+      setAllRouteStations(stations);
       setRouteCoordinates([startPoint, ...waypoints, endPoint]);
 
       toast({
         title: 'Trip planned successfully',
-        description: `Found ${stations.length} charging stations along your ${RouteService.formatDistance(route.distance)} route.`,
+        description: `Found ${visibleCount} charging stations along your ${RouteService.formatDistance(route.distance)} route.`,
       });
 
     } catch (error) {
@@ -174,11 +179,11 @@ const TripPlanner = () => {
     } finally {
       setIsPlanning(false);
     }
-  }, [startLocation, endLocation, waypoints, connectorFilter, findStationsAlongRoute, toast]);
+  }, [startLocation, endLocation, waypoints, connectorFilters, findStationsAlongRoute, toast]);
 
   const clearTrip = useCallback(() => {
     setCurrentRoute(null);
-    setRouteStations([]);
+    setAllRouteStations([]);
     setRouteCoordinates([]);
   }, []);
 
@@ -201,6 +206,7 @@ const TripPlanner = () => {
               placeholder="Enter starting address or city"
               value={startLocation}
               onChange={(e) => setStartLocation(e.target.value)}
+              className="min-h-[44px]"
             />
           </div>
 
@@ -210,14 +216,16 @@ const TripPlanner = () => {
               <Label>Waypoints</Label>
               <div className="space-y-2">
                 {waypoints.map((waypoint) => (
-                  <div key={waypoint.id} className="flex items-center space-x-2">
-                    <Badge variant="outline" className="flex-1">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {waypoint.address}
+                  <div key={waypoint.id} className="flex items-center gap-2">
+                    <Badge variant="outline" className="min-w-0 flex-1 truncate">
+                      <MapPin className="w-3 h-3 mr-1 shrink-0" />
+                      <span className="truncate">{waypoint.address}</span>
                     </Badge>
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="Remove waypoint"
+                      className="min-h-[44px] shrink-0"
                       onClick={() => removeWaypoint(waypoint.id)}
                     >
                       <X className="w-4 h-4" />
@@ -229,14 +237,21 @@ const TripPlanner = () => {
           )}
 
           {/* Add Waypoint */}
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <Input
               placeholder="Add waypoint (optional)"
               value={newWaypoint}
               onChange={(e) => setNewWaypoint(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addWaypoint()}
+              className="min-w-0 flex-1 min-h-[44px]"
+              aria-label="Add a waypoint"
             />
-            <Button variant="outline" onClick={addWaypoint}>
+            <Button
+              variant="outline"
+              onClick={addWaypoint}
+              aria-label="Add waypoint"
+              className="min-h-[44px] shrink-0 px-3"
+            >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
@@ -249,32 +264,22 @@ const TripPlanner = () => {
               placeholder="Enter destination address or city"
               value={endLocation}
               onChange={(e) => setEndLocation(e.target.value)}
+              className="min-h-[44px]"
             />
           </div>
 
           {/* Connector Filter */}
           <div className="space-y-2">
             <Label>Connector / charging speed</Label>
-            <Select value={connectorFilter} onValueChange={setConnectorFilter}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CONNECTOR_FILTER_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <p className="text-xs text-muted-foreground">
-              Slow = AC, Fast/Super-fast = DC. Pick the plug you need.
+              Pick as many as you like. Slow = AC, Fast/Super-fast = DC.
             </p>
+            <ConnectorFilter selected={connectorFilters} onChange={setConnectorFilters} />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-2">
-            <Button onClick={planTrip} disabled={isPlanning} className="flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={planTrip} disabled={isPlanning} className="min-h-[44px] flex-1">
               {isPlanning ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -288,7 +293,7 @@ const TripPlanner = () => {
               )}
             </Button>
             {currentRoute && (
-              <Button variant="outline" onClick={clearTrip}>
+              <Button variant="outline" onClick={clearTrip} className="min-h-[44px]">
                 Clear
               </Button>
             )}
@@ -355,7 +360,7 @@ const TripPlanner = () => {
       )}
 
       {/* Stations List */}
-      {routeStations.length > 0 && (
+      {allRouteStations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -364,6 +369,21 @@ const TripPlanner = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {routeStations.length === 0 ? (
+              <div className="space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No stations match your connector selection
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px]"
+                  onClick={() => setConnectorFilters([])}
+                >
+                  Show all connectors
+                </Button>
+              </div>
+            ) : (
             <div className="space-y-3">
               {routeStations.map((station) => (
                 <div key={station.id} className="border rounded-lg p-4">
@@ -390,6 +410,7 @@ const TripPlanner = () => {
                 </div>
               ))}
             </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -111,8 +111,18 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  [role='button'] {
+    touch-action: manipulation;
   }
 }
 

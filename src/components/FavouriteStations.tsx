@@ -45,7 +45,7 @@ export const FavouriteStations: React.FC = () => {
       {favourites.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
                 <Star className="w-5 h-5 text-yellow-500" />
                 <span className="text-sm text-muted-foreground">
@@ -56,7 +56,7 @@ export const FavouriteStations: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleClearAll}
-                className="text-destructive hover:text-destructive"
+                className="min-h-[44px] text-destructive hover:text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear All
@@ -84,7 +84,7 @@ export const FavouriteStations: React.FC = () => {
               <Star className="w-8 h-8 text-muted-foreground mx-auto" />
               <p className="text-muted-foreground">No favourite stations yet</p>
               <p className="text-sm text-muted-foreground">
-                Star stations from the Nearby or Search tabs to save them here
+                Star stations from the Find Stations tab to save them here
               </p>
             </div>
           </CardContent>
