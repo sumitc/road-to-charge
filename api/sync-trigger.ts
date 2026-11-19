@@ -1,4 +1,4 @@
-import handler from './sync-ev-stations';
+import { POST as runSync } from './sync-ev-stations';
 
 export const config = { runtime: 'nodejs' };
 
@@ -11,19 +11,21 @@ const corsHeaders = {
  * Browser-friendly wrapper around the protected sync endpoint. The shared
  * secret stays server-side; this endpoint only allows a small catalog refresh.
  */
-export default async function trigger(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+export async function OPTIONS(): Promise<Response> {
+  return new Response(null, { headers: corsHeaders });
+}
+
+export async function POST(req: Request): Promise<Response> {
   try {
     const secret = process.env.SYNC_SECRET;
     if (!secret) throw new Error('SYNC_SECRET is not configured');
 
-    const incoming = new URL(req.url);
-    const base = `${incoming.protocol}//${incoming.host}`;
-    const target = new URL('/api/sync-ev-stations', base);
+    const target = new URL('http://localhost/api/sync-ev-stations');
     target.searchParams.set('mode', 'catalog');
     target.searchParams.set('maxPagesPerState', '1');
 
-    const response = await handler(new Request(target.toString(), {
+    const response = await runSync(new Request(target.toString(), {
+      method: 'POST',
       headers: { authorization: `Bearer ${secret}` },
     }));
     const body = await response.json();

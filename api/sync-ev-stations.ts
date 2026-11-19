@@ -1125,12 +1125,11 @@ async function refreshAvailability(
   return { updated: matching.length, skipped: liveStations.length - matching.length };
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+export async function OPTIONS(): Promise<Response> {
+  return new Response(null, { headers: corsHeaders });
+}
 
+export async function POST(req: Request): Promise<Response> {
   // Optional shared-secret protection for scheduled callers (GitHub Actions).
   const syncSecret = process.env.SYNC_SECRET;
   if (syncSecret && req.headers.get('authorization') !== `Bearer ${syncSecret}`) {
@@ -1143,7 +1142,7 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const db = createStationDb();
 
-    const url = new URL(req.url);
+    const url = new URL(req.url, 'http://localhost');
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const requestedMode = String(body.mode ?? url.searchParams.get('mode') ?? 'full') as SyncMode;
     const mode: SyncMode = ['full', 'catalog', 'availability'].includes(requestedMode)

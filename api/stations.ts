@@ -7,14 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
 };
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+export async function OPTIONS(): Promise<Response> {
+  return new Response(null, { headers: corsHeaders });
+}
 
+export async function GET(req: Request): Promise<Response> {
   try {
     const url = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL;
     if (!url) throw new Error('POSTGRES_URL_NON_POOLING / POSTGRES_URL is not configured');
     const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require' });
-    const params = new URL(req.url).searchParams;
+    const params = new URL(req.url, 'http://localhost').searchParams;
     const mode = params.get('mode') ?? 'all';
 
     if (mode === 'stats') {
@@ -87,9 +89,11 @@ export default async function handler(req: Request): Promise<Response> {
       if (Number.isFinite(requested) && requested > 0) limit = Math.min(requested, 500);
     }
 
-    const where = conditions.length
-      ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-      : sql``;
+    const combined = conditions.reduce(
+      (acc, condition) => sql`${acc} AND ${condition}`,
+      sql``
+    );
+    const where = conditions.length ? sql`WHERE ${combined}` : sql``;
     const rows = await sql`
       SELECT * FROM public.ev_charging_stations
       ${where}
