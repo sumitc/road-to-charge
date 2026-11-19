@@ -13,9 +13,9 @@ export async function OPTIONS(): Promise<Response> {
 
 export async function GET(req: Request): Promise<Response> {
   try {
-    const url = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL;
-    if (!url) throw new Error('POSTGRES_URL_NON_POOLING / POSTGRES_URL is not configured');
-    const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require' });
+    const url = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
+    if (!url) throw new Error('POSTGRES_URL / POSTGRES_URL_NON_POOLING is not configured');
+    const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require', prepare: false });
     const params = new URL(req.url, 'http://localhost').searchParams;
     const mode = params.get('mode') ?? 'all';
 

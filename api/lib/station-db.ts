@@ -85,14 +85,15 @@ function normalise(row: StationRow): StationRow {
 }
 
 export function createStationDb() {
-  const url = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL;
-  if (!url) throw new Error('POSTGRES_URL_NON_POOLING / POSTGRES_URL is not configured');
+  const url = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
+  if (!url) throw new Error('POSTGRES_URL / POSTGRES_URL_NON_POOLING is not configured');
 
   const sql = postgres(url, {
-    max: 4,
+    max: 1,
     idle_timeout: 20,
     connect_timeout: 20,
     ssl: 'require',
+    prepare: false,
   });
 
   const columnList = NAMES.map((name) => `"${name}"`).join(', ');
