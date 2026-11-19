@@ -102,7 +102,7 @@ export function createStationDb() {
   const upsertSql = `
     INSERT INTO public.ev_charging_stations (${columnList}, updated_at)
     SELECT ${selectList}, now()
-    FROM jsonb_to_recordset($1::jsonb) AS x(${recordTypes})
+    FROM jsonb_to_recordset($1::text::jsonb) AS x(${recordTypes})
     ON CONFLICT (${CONFLICT_KEYS.map((name) => `"${name}"`).join(', ')})
     DO UPDATE SET ${updateList}, updated_at = now()
   `;
