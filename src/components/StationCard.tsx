@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Map, Circle, Building2, ExternalLink, Smartphone, Zap, Clock, Info, Car } from 'lucide-react';
 import { ChargingStation } from '@/types/station';
+import { connectorBadgeLabel } from '@/lib/connectorLabels';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { AppIconService } from '@/services/appIconService';
@@ -147,7 +148,7 @@ export const StationCard: React.FC<StationCardProps> = ({
                         key={index}
                         className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200"
                       >
-                        {type}
+                        {connectorBadgeLabel(type)}
                       </span>
                     ))}
                   </div>

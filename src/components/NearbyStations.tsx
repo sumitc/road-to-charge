@@ -3,9 +3,21 @@ import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { StationCard } from './StationCard';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
+import {
+  CONNECTOR_FILTER_OPTIONS,
+  matchesConnectorFilter,
+} from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
 
 interface NearbyStationsProps {
@@ -25,7 +37,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [connectorFilter, setConnectorFilter] = useState('all');
   const { toast } = useToast();
+
+  const visibleStations = connectorFilter === 'all'
+    ? stations
+    : stations.filter(station => matchesConnectorFilter(station.connectorTypes, connectorFilter));
 
   useEffect(() => {
     if (location && !isLoadingLocation) {
@@ -223,6 +240,32 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         </CardContent>
       </Card>
 
+      {/* Connector filter */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <Label>Connector / charging speed</Label>
+              <p className="text-xs text-muted-foreground">
+                Slow = AC, Fast/Super-fast = DC. Pick the plug you need.
+              </p>
+            </div>
+            <Select value={connectorFilter} onValueChange={setConnectorFilter}>
+              <SelectTrigger className="w-full sm:w-60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONNECTOR_FILTER_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Loading state */}
       {(isLoading || isSearching) && (
         <Card>
@@ -240,12 +283,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       {/* Results */}
       {!isLoading && !isSearching && (
         <>
-          {stations.length > 0 ? (
+          {visibleStations.length > 0 ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Found {stations.length} station{stations.length !== 1 ? 's' : ''} near you
+                Found {visibleStations.length} station{visibleStations.length !== 1 ? 's' : ''}
+                {connectorFilter !== 'all' ? ' matching this connector' : ' near you'}
               </p>
-              {stations.map((station) => (
+              {visibleStations.map((station) => (
                 <StationCard
                   key={station.id}
                   station={station}
@@ -254,6 +298,18 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                 />
               ))}
             </div>
+          ) : stations.length > 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center p-8">
+                <div className="text-center space-y-3">
+                  <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">No stations match this connector</p>
+                  <Button variant="outline" size="sm" onClick={() => setConnectorFilter('all')}>
+                    Show all connectors
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent className="flex items-center justify-center p-8">

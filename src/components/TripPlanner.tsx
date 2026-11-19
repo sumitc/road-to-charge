@@ -10,6 +10,11 @@ import { MapPin, Plus, X, Route as RouteIcon, Zap, Clock, Navigation } from 'luc
 import { RouteService, RoutePoint, Route } from '@/services/routeService';
 import { EVStationService } from '@/services/evStationService';
 import { ChargingStation } from '@/types/station';
+import {
+  CONNECTOR_FILTER_OPTIONS,
+  connectorBadgeLabel,
+  matchesConnectorFilter,
+} from '@/lib/connectorLabels';
 import TripMap from './TripMap';
 
 interface Waypoint extends RoutePoint {
@@ -97,17 +102,10 @@ const TripPlanner = () => {
         });
       });
 
-      // Apply connector filter
-      let filteredStations = nearbyStations;
-      if (connectorFilter !== 'all') {
-        filteredStations = nearbyStations.filter(station => 
-          station.connectorTypes?.some(type => 
-            type.toLowerCase().includes(connectorFilter.toLowerCase())
-          )
-        );
-      }
-
-      return filteredStations;
+      // Apply connector filter using shared plain-language options.
+      return nearbyStations.filter(station =>
+        matchesConnectorFilter(station.connectorTypes, connectorFilter)
+      );
     } catch (error) {
       console.error('Error finding stations along route:', error);
       return [];
@@ -256,18 +254,22 @@ const TripPlanner = () => {
 
           {/* Connector Filter */}
           <div className="space-y-2">
-            <Label>Connector Type Filter</Label>
+            <Label>Connector / charging speed</Label>
             <Select value={connectorFilter} onValueChange={setConnectorFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Connectors</SelectItem>
-                <SelectItem value="ccs">CCS</SelectItem>
-                <SelectItem value="type2">Type 2</SelectItem>
-                <SelectItem value="chademo">CHAdeMO</SelectItem>
+                {CONNECTOR_FILTER_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Slow = AC, Fast/Super-fast = DC. Pick the plug you need.
+            </p>
           </div>
 
           {/* Action Buttons */}
@@ -377,7 +379,9 @@ const TripPlanner = () => {
                       <Badge variant="outline">{station.powerOutput}</Badge>
                     )}
                     {station.connectorTypes?.map((connector, index) => (
-                      <Badge key={index} variant="outline">{connector}</Badge>
+                      <Badge key={index} variant="outline">
+                        {connectorBadgeLabel(connector)}
+                      </Badge>
                     ))}
                     {station.pricing && (
                       <Badge variant="outline">{station.pricing}</Badge>

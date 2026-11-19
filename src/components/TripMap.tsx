@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Route, RoutePoint } from '@/services/routeService';
 import { ChargingStation } from '@/types/station';
+import { connectorBadgeLabel } from '@/lib/connectorLabels';
 
 // Fix for default markers in Leaflet with Webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -111,7 +112,7 @@ const TripMap: React.FC<TripMapProps> = ({ route, stations, routePoints }) => {
           <p class="text-xs text-gray-600 mb-2">${station.address}</p>
           <div class="space-y-1">
             ${station.powerOutput ? `<div class="text-xs"><strong>Power:</strong> ${station.powerOutput}</div>` : ''}
-            ${station.connectorTypes?.length ? `<div class="text-xs"><strong>Connectors:</strong> ${station.connectorTypes.join(', ')}</div>` : ''}
+            ${station.connectorTypes?.length ? `<div class="text-xs"><strong>Connectors:</strong> ${station.connectorTypes.map(connectorBadgeLabel).join(', ')}</div>` : ''}
             ${station.pricing ? `<div class="text-xs"><strong>Pricing:</strong> ${station.pricing}</div>` : ''}
             <div class="text-xs"><strong>Status:</strong> 
               <span class="inline-block w-2 h-2 rounded-full ml-1 ${
