@@ -1,6 +1,6 @@
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };
 
-import { createClient } from '@supabase/supabase-js'
+import { createStationDb, type StationRow } from './lib/station-db'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1105,9 +1105,7 @@ type SyncMode = 'full' | 'catalog' | 'availability';
  * (connectors, vehicle classes, provenance, ...) from the dictionary.
  */
 async function refreshAvailability(
-  // The inferred Supabase client generics don't survive extraction into a helper.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  db: ReturnType<typeof createStationDb>,
   liveStations: EVStationData[]
 ): Promise<{ updated: number; skipped: number }> {
   const ids = [...new Set(
@@ -1115,35 +1113,13 @@ async function refreshAvailability(
   )];
   if (ids.length === 0) return { updated: 0, skipped: liveStations.length };
 
-  const { data: existing, error } = await supabase
-    .from('ev_charging_stations')
-    .select('external_id')
-    .in('external_id', ids);
-
-  if (error) throw error;
-
-  const existingIds = new Set((existing ?? []).map((row: { external_id: string }) => row.external_id));
+  const existingIds = await db.existingExternalIds(ids);
   const matching = liveStations.filter(
     station => station.external_id && existingIds.has(station.external_id)
   );
 
-  const chunkSize = 20;
-  for (let i = 0; i < matching.length; i += chunkSize) {
-    const chunk = matching.slice(i, i + chunkSize);
-    const results = await Promise.all(chunk.map(station =>
-      supabase
-        .from('ev_charging_stations')
-        .update({
-          availability_status: station.availability_status,
-          available_count: station.available_count,
-          out_of_service_count: station.out_of_service_count,
-          availability_last_update: station.availability_last_update,
-          last_rider_report: station.last_rider_report,
-        })
-        .eq('external_id', station.external_id!)
-    ));
-    const failure = results.find(result => result.error);
-    if (failure?.error) throw failure.error;
+  for (const station of matching) {
+    await db.updateAvailability(station as unknown as StationRow);
   }
 
   return { updated: matching.length, skipped: liveStations.length - matching.length };
@@ -1165,10 +1141,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const db = createStationDb();
 
     const url = new URL(req.url);
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -1255,21 +1228,17 @@ export default async function handler(req: Request): Promise<Response> {
     let synced = 0;
     for (let i = 0; i < catalogStations.length; i += batchSize) {
       const batch = catalogStations.slice(i, i + batchSize);
-      const { error } = await supabase
-        .from('ev_charging_stations')
-        .upsert(batch, {
-          onConflict: 'provider,station_name,latitude,longitude',
-          ignoreDuplicates: false
-        });
-
-      if (error) {
+      try {
+        await db.upsert(batch as unknown as StationRow[]);
+      } catch (error) {
         console.error('Database error:', error);
+        await db.close();
         return new Response(
           JSON.stringify({
             success: false,
             mode,
             synced,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
           }),
           {
             status: 500,
@@ -1280,7 +1249,8 @@ export default async function handler(req: Request): Promise<Response> {
       synced += batch.length;
     }
 
-    const availability = await refreshAvailability(supabase, liveStations);
+    const availability = await refreshAvailability(db, liveStations);
+    await db.close();
 
     console.log(
       `Synced ${synced} catalog stations; refreshed ${availability.updated} live stations`

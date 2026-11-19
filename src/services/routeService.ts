@@ -1,5 +1,4 @@
 import { UserLocation } from '@/types/station';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface RoutePoint {
   lat: number;
@@ -22,22 +21,32 @@ export class RouteService {
     waypoints: RoutePoint[] = []
   ): Promise<Route | null> {
     try {
-      const coordinates = [
+      const coords = [
         [start.lng, start.lat],
         ...waypoints.map(wp => [wp.lng, wp.lat]),
         [end.lng, end.lat]
-      ];
+      ].map(([lng, lat]) => `${lng},${lat}`).join(';');
 
-      const { data, error } = await supabase.functions.invoke('calculate-route', {
-        body: { coordinates }
-      });
+      const response = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=true`
+      );
+      if (!response.ok) throw new Error(`Routing service returned ${response.status}`);
+      const data = await response.json();
+      const route = data.routes?.[0];
+      if (!route) return null;
 
-      if (error) {
-        console.error('Route calculation error:', error);
-        throw new Error(`Route calculation failed: ${error.message}`);
-      }
+      const instructions: string[] = (route.legs ?? []).flatMap((leg: { steps?: Array<{ name?: string; maneuver?: { type?: string } }> }) =>
+        (leg.steps ?? [])
+          .map(step => step.name || step.maneuver?.type || '')
+          .filter(Boolean)
+      );
 
-      return data as Route;
+      return {
+        coordinates: route.geometry.coordinates as [number, number][],
+        distance: route.distance,
+        duration: route.duration,
+        instructions,
+      };
 
     } catch (error) {
       console.error('Error calculating route:', error);
@@ -47,16 +56,19 @@ export class RouteService {
 
   static async geocodeAddress(address: string): Promise<RoutePoint | null> {
     try {
-      const { data, error } = await supabase.functions.invoke('geocode', {
-        body: { address }
-      });
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`
+      );
+      if (!response.ok) throw new Error(`Geocoding service returned ${response.status}`);
+      const results = await response.json();
+      const result = results?.[0];
+      if (!result) return null;
 
-      if (error) {
-        console.error('Geocoding error:', error);
-        throw new Error(`Geocoding failed: ${error.message}`);
-      }
-
-      return data as RoutePoint;
+      return {
+        lat: Number(result.lat),
+        lng: Number(result.lon),
+        address: result.display_name,
+      };
 
     } catch (error) {
       console.error('Error geocoding address:', error);

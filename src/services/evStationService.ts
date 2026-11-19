@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import type {
   ChargingCurrent,
@@ -24,6 +23,18 @@ export interface StationFilters {
   ownership?: Ownership;
   stationType?: StationType;
 }
+
+/** Read stations through our direct-SQL API (Supabase REST is unavailable on this plan). */
+const fetchStations = async (params: Record<string, string | number | undefined>): Promise<StationRow[]> => {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+  }
+  const response = await fetch(`/api/stations?${search.toString()}`);
+  if (!response.ok) throw new Error(`Stations API failed: ${response.status}`);
+  const rows = await response.json();
+  return Array.isArray(rows) ? rows as StationRow[] : [];
+};
 
 const toNumber = (value: unknown): number | undefined => {
   if (value === null || value === undefined || value === '') return undefined;
@@ -99,25 +110,12 @@ export class EVStationService {
     radius: number = 10
   ): Promise<ChargingStation[]> {
     try {
-      // Calculate bounding box for efficient querying
-      const latRange = radius / 111.0; // Approximate km per degree latitude
-      const lngRange = radius / (111.0 * Math.cos(userLocation.lat * Math.PI / 180));
-
-      const { data: stations, error } = await supabase
-        .from('ev_charging_stations')
-        .select('*')
-        .gte('latitude', userLocation.lat - latRange)
-        .lte('latitude', userLocation.lat + latRange)
-        .gte('longitude', userLocation.lng - lngRange)
-        .lte('longitude', userLocation.lng + lngRange)
-        .order('last_updated', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching stations:', error);
-        return [];
-      }
-
-      if (!stations) return [];
+      const stations = await fetchStations({
+        mode: 'distance',
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        radius,
+      });
 
       // Calculate exact distances and filter by radius
       return stations
@@ -145,19 +143,7 @@ export class EVStationService {
       const normalized = query.trim().replace(/\s+/g, ' ');
       if (!normalized) return [];
 
-      const { data: stations, error } = await supabase
-        .from('ev_charging_stations')
-        .select('*')
-        .or(`station_name.ilike.%${normalized}%,address.ilike.%${normalized}%,provider.ilike.%${normalized}%,city.ilike.%${normalized}%,state.ilike.%${normalized}%`)
-        .order('station_name')
-        .limit(50);
-
-      if (error) {
-        console.error('Error searching stations:', error);
-        return [];
-      }
-
-      if (!stations) return [];
+      const stations = await fetchStations({ mode: 'search', q: normalized });
 
       return stations.map(station => this.mapStation(station));
     } catch (error) {
@@ -171,44 +157,8 @@ export class EVStationService {
    */
   static async searchStationsByFilters(filters: StationFilters, limit = 50): Promise<ChargingStation[]> {
     try {
-      let query = supabase.from('ev_charging_stations').select('*');
-
-      if (filters.minPowerKw !== undefined) {
-        query = query.gte('max_power_kw', filters.minPowerKw);
-      }
-      if (filters.vehicleClass) {
-        query = query.contains('vehicle_classes', [filters.vehicleClass]);
-      }
-      if (filters.current) {
-        query = query.ilike('charging_current', `%${filters.current}%`);
-      }
-      if (filters.connector) {
-        // Every sync source mirrors connector standards into connector_types.
-        query = query.contains('connector_types', [filters.connector]);
-      }
-      if (filters.state) {
-        query = query.ilike('state', filters.state);
-      }
-      if (filters.city) {
-        query = query.ilike('city', `%${filters.city}%`);
-      }
-      if (filters.ownership) {
-        query = query.eq('ownership', filters.ownership);
-      }
-      if (filters.stationType) {
-        query = query.eq('station_type', filters.stationType);
-      }
-
-      const { data: stations, error } = await query
-        .order('max_power_kw', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error in filtered station search:', error);
-        return [];
-      }
-
-      return (stations ?? []).map(station => this.mapStation(station));
+      const stations = await fetchStations({ mode: 'filters', limit, ...filters });
+      return stations.map(station => this.mapStation(station));
     } catch (error) {
       console.error('Error in searchStationsByFilters:', error);
       return [];
@@ -219,21 +169,8 @@ export class EVStationService {
    * Sync stations from external data sources
    */
   static async syncStationsFromSources(): Promise<{ success: boolean; message: string }> {
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-ev-stations');
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error syncing stations:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
+    // Catalog refreshes are handled by the scheduled GitHub Actions workflow.
+    return { success: true, message: 'Station sync is scheduled server-side.' };
   }
 
   /**
@@ -241,22 +178,9 @@ export class EVStationService {
    */
   static async getStationsInBounds(minLat: number, maxLat: number, minLng: number, maxLng: number): Promise<ChargingStation[]> {
     try {
-      const { data: stations, error } = await supabase
-        .from('ev_charging_stations')
-        .select('*')
-        .gte('latitude', minLat)
-        .lte('latitude', maxLat)
-        .gte('longitude', minLng)
-        .lte('longitude', maxLng)
-        .order('last_updated', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching stations in bounds:', error);
-        return [];
-      }
-
-      if (!stations) return [];
-
+      const stations = await fetchStations({
+        mode: 'bounds', minLat, maxLat, minLng, maxLng,
+      });
       return stations.map(station => this.mapStation(station));
     } catch (error) {
       console.error('Error in getStationsInBounds:', error);
@@ -269,20 +193,9 @@ export class EVStationService {
    */
   static async getStationStats(): Promise<Record<string, number>> {
     try {
-      const { data: stations, error } = await supabase
-        .from('ev_charging_stations')
-        .select('provider');
-
-      if (error || !stations) {
-        return {};
-      }
-
-      const stats: Record<string, number> = {};
-      stations.forEach(station => {
-        stats[station.provider] = (stats[station.provider] || 0) + 1;
-      });
-
-      return stats;
+      const response = await fetch('/api/stations?mode=stats');
+      if (!response.ok) return {};
+      return await response.json() as Record<string, number>;
     } catch (error) {
       console.error('Error getting station stats:', error);
       return {};

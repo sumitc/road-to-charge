@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+
 
 export interface SyncResult {
   success: boolean;
@@ -19,27 +19,32 @@ export class ChargingStationsSync {
     radius: number = 50
   ): Promise<SyncResult> {
     try {
-      console.log(`Syncing charging stations for location ${latitude}, ${longitude}`);
-      
-      const { data, error } = await supabase.functions.invoke('fetch-charging-stations', {
-        body: {
-          latitude,
-          longitude,
-          radius
-        }
+      console.log(`Syncing charging stations near ${latitude}, ${longitude} (${radius}km)`);
+
+      const response = await fetch('/api/sync-trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude, radius }),
       });
-
-      if (error) {
-        console.error('Error calling fetch-charging-stations function:', error);
-        throw error;
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Sync failed with status ${response.status}`);
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error occurred');
-      }
+      const networks = data.sources
+        ? Object.keys(data.sources).filter((key) => data.sources[key]?.stations > 0)
+        : [];
 
-      console.log('Sync completed successfully:', data);
-      return data;
+      return {
+        success: true,
+        message: `Synced ${data.synced ?? 0} stations`,
+        stats: {
+          fetched: data.synced ?? 0,
+          new: data.synced ?? 0,
+          existing: 0,
+        },
+        networks_found: networks,
+      };
 
     } catch (error) {
       console.error('Error syncing charging stations:', error);
@@ -52,19 +57,10 @@ export class ChargingStationsSync {
 
   static async getAvailableNetworks(): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('ev_charging_stations')
-        .select('provider')
-        .order('provider');
-
-      if (error) {
-        console.error('Error fetching providers:', error);
-        return [];
-      }
-
-      // Get unique providers
-      const uniqueProviders = [...new Set(data.map(station => station.provider))];
-      return uniqueProviders.sort();
+      const response = await fetch('/api/stations?mode=stats');
+      if (!response.ok) return [];
+      const stats = await response.json() as Record<string, number>;
+      return Object.keys(stats).sort();
 
     } catch (error) {
       console.error('Error getting available networks:', error);
