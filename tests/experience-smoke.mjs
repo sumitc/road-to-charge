@@ -77,6 +77,16 @@ try {
     const brand = await page.locator('header h1').innerText();
     check(`${width}px: Ruvo is branded in the header`, brand.includes('Ruvo'), brand.replace(/\n/g, ' '));
 
+    const footer = page.locator('footer').first();
+    const footerText = await footer.innerText();
+    check(`${width}px: footer shows the copyright clause`,
+      /2026.*Fibuladreams Pvt Ltd\. All rights reserved\./.test(footerText),
+      footerText.replace(/\n/g, ' '));
+    const feedbackHref = await footer.getByRole('link', { name: /Feedback/ }).getAttribute('href');
+    check(`${width}px: feedback link opens a GitHub ticket`,
+      String(feedbackHref).startsWith('https://github.com/sumitc/road-to-charge/issues/new'),
+      String(feedbackHref).slice(0, 120));
+
     const input = page.getByLabel('Search for charging stations by area or city');
     await input.waitFor({ state: 'visible', timeout: 20000 });
 
@@ -136,6 +146,11 @@ try {
       const cs = getComputedStyle(el);
       return { fontSize: cs.fontSize, fontWeight: cs.fontWeight, fontFamily: cs.fontFamily };
     });
+    const headerTheme = p => p.locator('header').first().evaluate(el => {
+      const cs = getComputedStyle(el);
+      return { image: cs.backgroundImage, color: cs.backgroundColor };
+    });
+    const listHeaderTheme = await headerTheme(page);
     await cards.first().click();
     await page.waitForURL(/\/station\//, { timeout: 20000 });
     const detailTitle = page.locator('header h1').first();
@@ -149,6 +164,30 @@ try {
     check(`${width}px: detail/list title styling matches`,
       JSON.stringify(listBrandStyle) === JSON.stringify(detailBrandStyle),
       `${JSON.stringify(listBrandStyle)} vs ${JSON.stringify(detailBrandStyle)}`);
+    const detailHeaderTheme = await headerTheme(page);
+    check(`${width}px: detail header theme matches the list header`,
+      JSON.stringify(listHeaderTheme) === JSON.stringify(detailHeaderTheme),
+      `${JSON.stringify(listHeaderTheme)} vs ${JSON.stringify(detailHeaderTheme)}`);
+    const detailFooterText = await page.locator('footer').first().innerText();
+    check(`${width}px: detail page has the same footer`,
+      /2026.*Fibuladreams Pvt Ltd\. All rights reserved\./.test(detailFooterText),
+      detailFooterText.replace(/\n/g, ' '));
+
+    const updates = await page.evaluate(() => {
+      const title = [...document.querySelectorAll('h2')]
+        .find(el => el.textContent?.includes('Visit & community updates'));
+      const subtitle = title?.parentElement?.querySelector('span');
+      const rect = el => el ? {
+        y: Math.round(el.getBoundingClientRect().y),
+        h: Math.round(el.getBoundingClientRect().height),
+      } : null;
+      return { title: rect(title), subtitle: rect(subtitle) };
+    });
+    check(`${width}px: community updates subtitle sits below the title`,
+      Boolean(updates.title && updates.subtitle && updates.subtitle.y >= updates.title.y + updates.title.h - 1),
+      JSON.stringify(updates));
+    check(`${width}px: community updates title stays on one line`,
+      Boolean(updates.title && updates.title.h <= 24), String(updates.title?.h));
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });
 

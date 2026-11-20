@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
 import { BrandTitle } from './BrandTitle';
+import { SiteFooter } from './SiteFooter';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
@@ -168,6 +169,7 @@ export const EVApp = () => {
             <FavouriteStations />
           </TabsContent>
         </Tabs>
+        <SiteFooter />
       </main>
 
       <ContributionButton location={location} />

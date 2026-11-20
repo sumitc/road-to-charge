@@ -33,6 +33,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { BrandTitle } from '@/components/BrandTitle';
+import { SiteFooter } from '@/components/SiteFooter';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
@@ -141,9 +142,18 @@ const StationDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 p-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Back">
+      <header className="sticky top-0 z-30 bg-gradient-hero text-primary-foreground shadow-electric">
+        <div
+          className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-4"
+          style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top, 0px))' }}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/')}
+            aria-label="Back"
+            className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0 flex-1">
@@ -154,7 +164,10 @@ const StationDetail: React.FC = () => {
             size="icon"
             onClick={toggleFavourite}
             aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
-            className={cn(isFavourite ? 'text-amber-500' : 'text-muted-foreground')}
+            className={cn(
+              'hover:bg-primary-foreground/20',
+              isFavourite ? 'text-amber-300 hover:text-amber-200' : 'text-primary-foreground'
+            )}
           >
             <Star className={cn('h-5 w-5', isFavourite && 'fill-current')} />
           </Button>
@@ -327,9 +340,10 @@ const StationDetail: React.FC = () => {
 
         <Card className="rounded-2xl border-border/70">
           <CardContent className="space-y-4 p-5">
-            <div className="flex items-center justify-between">
+            {/* Stack on mobile: title on one line, subtitle directly below it. */}
+            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <MessageSquarePlus className="h-4 w-4 text-primary" /> Visit &amp; community updates
+                <MessageSquarePlus className="h-4 w-4 shrink-0 text-primary" /> Visit &amp; community updates
               </h2>
               <span className="text-[11px] text-muted-foreground">Community powered</span>
             </div>
@@ -389,6 +403,7 @@ const StationDetail: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        <SiteFooter />
       </main>
 
       <Button
