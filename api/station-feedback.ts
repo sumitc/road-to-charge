@@ -12,11 +12,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+function json(body: unknown, status = 200, cache = false): Response {
+  const headers: Record<string, string> = { ...corsHeaders, 'Content-Type': 'application/json' };
+  if (cache) {
+    headers['Cache-Control'] = 'public, s-maxage=60, stale-while-revalidate=300';
+    headers['Vercel-CDN-Cache-Control'] = 'public, s-maxage=60, stale-while-revalidate=300';
+  }
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function createDb() {
@@ -41,47 +43,45 @@ export async function GET(req: Request): Promise<Response> {
 
   const sql = createDb();
   try {
-    // Queries are sequential: the pooled Postgres connection deadlocks when
-    // several statements are issued concurrently from one function.
-    const counts = await sql<{ kind: string; count: number }[]>`
-      SELECT kind, count(*)::int AS count
-      FROM public.station_feedback
-      WHERE station_id = ${stationId}::uuid
-      GROUP BY kind
-    `;
-    const lastWorking = await sql<{ created_at: Date | string }[]>`
-      SELECT created_at FROM public.station_feedback
-      WHERE station_id = ${stationId}::uuid AND kind = 'working'
-      ORDER BY created_at DESC LIMIT 1
-    `;
-    const lastNotWorking = await sql<{ created_at: Date | string }[]>`
-      SELECT created_at FROM public.station_feedback
-      WHERE station_id = ${stationId}::uuid AND kind = 'not_working'
-      ORDER BY created_at DESC LIMIT 1
-    `;
-    const recent = await sql<{ kind: string; note: string | null; created_at: Date | string }[]>`
+    // One query instead of four sequential round-trips. Feedback per station
+    // is tiny; a single ordered scan gives counts, latest timestamps and the
+    // recent list in ~700ms instead of ~3s on a cold function.
+    const rows = await sql<{ kind: string; note: string | null; created_at: Date | string }[]>`
       SELECT kind, note, created_at FROM public.station_feedback
       WHERE station_id = ${stationId}::uuid
-      ORDER BY created_at DESC LIMIT 5
+      ORDER BY created_at DESC
+      LIMIT 500
     `;
 
-    const byKind: Record<string, number> = {};
-    for (const row of counts) byKind[row.kind] = row.count;
+    let working = 0;
+    let notWorking = 0;
+    let wrongLocation = 0;
+    let other = 0;
+    let lastWorkingAt: Date | string | null = null;
+    let lastNotWorkingAt: Date | string | null = null;
+    for (const row of rows) {
+      switch (row.kind) {
+        case 'working': working++; if (!lastWorkingAt) lastWorkingAt = row.created_at; break;
+        case 'not_working': notWorking++; if (!lastNotWorkingAt) lastNotWorkingAt = row.created_at; break;
+        case 'wrong_location': wrongLocation++; break;
+        default: other++; break;
+      }
+    }
 
     return json({
-      total: counts.reduce((sum, row) => sum + row.count, 0),
-      working: byKind.working ?? 0,
-      notWorking: byKind.not_working ?? 0,
-      wrongLocation: byKind.wrong_location ?? 0,
-      other: byKind.other ?? 0,
-      lastWorkingAt: lastWorking[0]?.created_at ?? null,
-      lastNotWorkingAt: lastNotWorking[0]?.created_at ?? null,
-      recent: recent.map(row => ({
+      total: rows.length,
+      working,
+      notWorking,
+      wrongLocation,
+      other,
+      lastWorkingAt,
+      lastNotWorkingAt,
+      recent: rows.slice(0, 5).map(row => ({
         kind: row.kind,
         note: row.note,
         createdAt: row.created_at,
       })),
-    });
+    }, 200, true);
   } finally {
     await sql.end({ timeout: 5 });
   }

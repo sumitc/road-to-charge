@@ -1028,6 +1028,91 @@ async function fetchGooglePlacesStations(): Promise<EVStationData[]> {
   }
 }
 
+/**
+ * Google Places catalog for localities the BEE snapshot does not name.
+ * BEE has no rows tagged "Kokapet", but PlugShare shows chargers there from
+ * driver submissions and CPO feeds. Google's EV place data fills that gap.
+ */
+async function fetchGooglePlacesCatalogStations(): Promise<EVStationData[]> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return [];
+
+  const queries = [
+    'EV charging station in Kokapet, Hyderabad',
+    'EV charging station near Kokapet, Hyderabad',
+    'EV charging station in Financial District, Hyderabad',
+  ];
+  const fieldMask = 'places.id,places.displayName,places.formattedAddress,places.location,places.evChargeOptions';
+  const stations: EVStationData[] = [];
+  const seen = new Set<string>();
+
+  try {
+    for (const textQuery of queries) {
+      const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': fieldMask,
+        },
+        body: JSON.stringify({
+          textQuery,
+          maxResultCount: 20,
+          locationBias: {
+            circle: {
+              center: { latitude: 17.287, longitude: 78.335 },
+              radius: 6000,
+            },
+          },
+        }),
+      });
+      if (!response.ok) {
+        console.warn(`Google Places catalog error for "${textQuery}": ${response.status}`);
+        continue;
+      }
+      const payload = await response.json();
+      for (const place of Array.isArray(payload.places) ? payload.places : []) {
+        if (!place.id || seen.has(place.id)) continue;
+        seen.add(place.id);
+        const lat = Number(place.location?.latitude);
+        const lng = Number(place.location?.longitude);
+        if (!lat || !lng) continue;
+
+        const aggregations: any[] = place.evChargeOptions?.connectorAggregation ?? [];
+        const connectors: EVConnectorData[] = aggregations.map(agg => ({
+          standard: normaliseConnector(String(agg.type ?? '')),
+          kw: parseKw(agg.maxChargeRateKw),
+          count: agg.count,
+        }));
+        const outputs = connectors.map(c => c.kw).filter((kw): kw is number => kw !== undefined);
+
+        stations.push({
+          station_name: place.displayName?.text || 'Google EV Charging Station',
+          provider: 'Google Places',
+          latitude: lat,
+          longitude: lng,
+          address: place.formattedAddress || 'Address not available',
+          connector_types: connectors.map(c => c.standard),
+          availability_status: 'unknown',
+          external_id: `google_${place.id}`,
+          maps_link: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+          power_output: outputs.length ? `${Math.max(...outputs)}kW` : undefined,
+          connectors,
+          max_power_kw: outputs.length ? Math.max(...outputs) : undefined,
+          total_connectors: place.evChargeOptions?.connectorCount,
+          source_name: 'Google Places API (New)',
+          source_url: 'https://developers.google.com/maps/documentation/places/web-service',
+        });
+      }
+    }
+    console.log(`Found ${stations.length} Google Places catalog stations`);
+    return stations;
+  } catch (error) {
+    console.error('Error fetching Google Places catalog:', error);
+    return stations;
+  }
+}
+
 /** Generic OCPI 2.2.1 locations adapter (IONAGE, ChargeID, EVnnovator, etc.). */
 async function fetchOCPIStations(): Promise<EVStationData[]> {
   const baseUrl = process.env.OCPI_LOCATIONS_URL;
@@ -1192,19 +1277,9 @@ export async function POST(req: Request): Promise<Response> {
 
     if (includeCatalog) {
       fetches.push(
-        { name: 'Tata Power', kind: 'catalog', run: fetchTataPowerStations },
-        { name: 'Ather Grid', kind: 'catalog', run: fetchAtherGridStations },
-        { name: 'NITI Aayog', kind: 'catalog', run: fetchNITIAayogData },
-        { name: 'OpenChargeMap', kind: 'catalog', run: fetchOpenChargeMapStations },
-        { name: 'Jio-bp Pulse', kind: 'catalog', run: fetchJioBPPulseStations },
-        { name: 'PlugShare', kind: 'catalog', run: fetchPlugShareStations },
-        { name: 'ChargeZone', kind: 'catalog', run: fetchChargeZoneStations },
-        { name: 'ABB India', kind: 'catalog', run: fetchABBIndiaStations },
-        { name: 'BrightBlu', kind: 'catalog', run: fetchBrightBluStations },
-        { name: 'BEE India', kind: 'catalog', run: fetchBEEIndiaStations },
-        { name: 'Statiq', kind: 'catalog', run: fetchStatiqStations },
         { name: 'BEE API', kind: 'catalog', run: () => fetchBEEApiStations(pagesPerState) },
-        { name: 'OpenStreetMap', kind: 'catalog', run: fetchOSMStations }
+        { name: 'OpenStreetMap', kind: 'catalog', run: fetchOSMStations },
+        { name: 'Google Places catalog', kind: 'catalog', run: fetchGooglePlacesCatalogStations }
       );
     }
 

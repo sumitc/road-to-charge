@@ -25,6 +25,8 @@ interface StationCardProps {
   userLocation?: { lat: number; lng: number } | null;
   /** Only the Saved tab needs this; the nearby list must not refetch on a star tap. */
   onFavouriteToggle?: () => void;
+  /** Warm the detail page before the tap completes. */
+  onPrefetch?: () => void;
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -51,7 +53,7 @@ const SPEED_DOT: Record<string, string> = {
   slow: 'bg-emerald-500',
 };
 
-const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavouriteToggle }) => {
+const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavouriteToggle, onPrefetch }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   // Local state keeps the star instant; no list refetch on toggle.
@@ -93,6 +95,9 @@ const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavourite
         <button
           type="button"
           onClick={() => navigate(`/station/${station.id}`)}
+          onPointerEnter={onPrefetch}
+          onTouchStart={onPrefetch}
+          onFocus={onPrefetch}
           className="flex w-full min-w-0 gap-3 text-left"
           aria-label={`View details for ${station.name}`}
         >

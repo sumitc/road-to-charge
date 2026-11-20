@@ -167,8 +167,9 @@ const StationDetail: React.FC = () => {
           <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/15 to-emerald-500/15 sm:aspect-[16/9]">
             {photoRef ? (
               <img
-                src={placePhotoUrl(photoRef, 1200)}
+                src={placePhotoUrl(photoRef, 800)}
                 alt={station.name}
+                loading="eager"
                 className="h-full w-full object-cover"
               />
             ) : (

@@ -2,35 +2,30 @@ import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import {
   AdMob,
-  AdmobConsentStatus,
+  BannerAdPluginEvents,
   BannerAdPosition,
   BannerAdSize,
 } from '@capacitor-community/admob';
 
 // Google's public test banner ID. Set VITE_ADMOB_BANNER_AD_ID in Vercel for real ads.
 // The matching AdMob App ID lives in android/app/src/main/res/values/strings.xml.
-const BANNER_AD_ID =
-  import.meta.env.VITE_ADMOB_BANNER_AD_ID || 'ca-app-pub-3940256099942544/6300978111';
+const CONFIGURED_BANNER_ID = import.meta.env.VITE_ADMOB_BANNER_AD_ID;
+const BANNER_AD_ID = CONFIGURED_BANNER_ID || 'ca-app-pub-3940256099942544/6300978111';
+const IS_TEST_BANNER = !CONFIGURED_BANNER_ID;
 
-let initPromise: Promise<void> | null = null;
+let initPromise: Promise<boolean> | null = null;
 
-async function initAds() {
+async function initAds(): Promise<boolean> {
   if (!initPromise) {
     initPromise = (async () => {
       await AdMob.initialize();
 
-      // UMP consent is a no-op when no GDPR message is configured in AdMob.
-      try {
-        const consent = await AdMob.requestConsentInfo();
-        if (
-          consent.status === AdmobConsentStatus.REQUIRED &&
-          consent.isConsentFormAvailable
-        ) {
-          await AdMob.showConsentForm();
-        }
-      } catch (error) {
-        console.warn('AdMob consent check skipped', error);
+      let consent = await AdMob.requestConsentInfo();
+      if (!consent.canRequestAds && consent.isConsentFormAvailable) {
+        consent = await AdMob.showConsentForm();
       }
+      // Never request an ad when UMP says ads are not allowed.
+      return consent.canRequestAds;
     })();
   }
   return initPromise;
@@ -46,6 +41,7 @@ export const AdBanner = () => {
     if (!Capacitor.isNativePlatform()) return;
 
     let cancelled = false;
+    const listeners: Array<{ remove: () => Promise<void> }> = [];
     document.documentElement.style.setProperty(
       '--ruvo-banner-height',
       'calc(58px + env(safe-area-inset-bottom, 0px))',
@@ -53,21 +49,36 @@ export const AdBanner = () => {
 
     (async () => {
       try {
-        await initAds();
-        if (cancelled) return;
+        const loaded = await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+          console.info('[RuvoAd] banner loaded');
+        });
+        const failed = await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (error) => {
+          console.warn('[RuvoAd] banner failed to load', error);
+        });
+        listeners.push(loaded, failed);
+
+        const canRequestAds = await initAds();
+        if (cancelled || !canRequestAds) return;
+
         await AdMob.showBanner({
           adId: BANNER_AD_ID,
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
+          isTesting: IS_TEST_BANNER,
+        });
+        console.info('[RuvoAd] showBanner requested', {
+          test: IS_TEST_BANNER,
+          canRequestAds,
         });
       } catch (error) {
-        console.warn('AdMob banner unavailable', error);
+        console.warn('[RuvoAd] AdMob banner unavailable', error);
       }
     })();
 
     return () => {
       cancelled = true;
+      for (const listener of listeners) void listener.remove().catch(() => undefined);
       document.documentElement.style.removeProperty('--ruvo-banner-height');
       void AdMob.hideBanner().catch(() => undefined);
     };

@@ -52,7 +52,12 @@ export async function GET(req: Request): Promise<Response> {
         });
       }
       return new Response(JSON.stringify(rows[0]), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
       });
     }
 
@@ -207,9 +212,11 @@ export async function GET(req: Request): Promise<Response> {
       ...corsHeaders,
       'Content-Type': 'application/json',
     };
-    if (mode === 'distance') {
-      // Catalog data changes daily; cached lists make back-navigation instant.
+    if (mode === 'distance' || mode === 'id') {
+      // Catalog data changes daily; cached responses make detail views instant.
+      // Vercel Functions only honour the CDN header for edge caching.
       headers['Cache-Control'] = 'public, s-maxage=300, stale-while-revalidate=600';
+      headers['Vercel-CDN-Cache-Control'] = 'public, s-maxage=300, stale-while-revalidate=600';
     }
     return new Response(JSON.stringify(rows), { headers });
   } catch (error) {

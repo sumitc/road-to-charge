@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EVStationService } from '@/services/evStationService';
 import { LocationService } from '@/services/locationService';
-import type { UserLocation } from '@/types/station';
+import type { ChargingStation, UserLocation } from '@/types/station';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 const TEN_MINUTES = 10 * 60 * 1000;
@@ -82,4 +83,27 @@ export function useStationFeedback(id: string | undefined) {
     gcTime: THIRTY_MINUTES,
     refetchOnWindowFocus: false,
   });
+}
+
+/**
+ * Called on touch/hover of a station card. Seeds the detail cache with the row
+ * we already have from the list so the detail page paints instantly, then
+ * warms the full station + feedback queries in the background.
+ */
+export function usePrefetchStation() {
+  const queryClient = useQueryClient();
+  return useCallback((station: ChargingStation) => {
+    const detailKey = stationKeys.detail(station.id);
+    queryClient.setQueryData(detailKey, station, { updatedAt: 0 });
+    void queryClient.prefetchQuery({
+      queryKey: detailKey,
+      queryFn: () => EVStationService.getStationById(station.id),
+      staleTime: 0,
+    });
+    void queryClient.prefetchQuery({
+      queryKey: stationKeys.feedback(station.id),
+      queryFn: () => EVStationService.getFeedback(station.id),
+      staleTime: 60 * 1000,
+    });
+  }, [queryClient]);
 }

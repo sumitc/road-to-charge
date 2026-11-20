@@ -8,7 +8,7 @@ import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
-import { stationKeys, useNearbyStations } from '@/hooks/useStationQueries';
+import { stationKeys, useNearbyStations, usePrefetchStation } from '@/hooks/useStationQueries';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,7 +31,15 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [searchResults, setSearchResults] = useState<ChargingStation[]>([]);
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
+  const prefetched = useRef(new Set<string>());
+  const prefetchStation = usePrefetchStation();
   const { toast } = useToast();
+
+  const prefetchOnce = (station: ChargingStation) => {
+    if (prefetched.current.has(station.id)) return;
+    prefetched.current.add(station.id);
+    prefetchStation(station);
+  };
 
   // Cached by location + radius, so detail→back never refetches the list.
   const nearbyQuery = useNearbyStations(location, radius);
@@ -245,7 +253,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                 {connectorFilters.length > 0 ? ' matching your selection' : ' near you'}
               </p>
               {visibleStations.map((station) => (
-                <StationCard key={station.id} station={station} userLocation={location} />
+                <StationCard
+                  key={station.id}
+                  station={station}
+                  userLocation={location}
+                  onPrefetch={() => prefetchOnce(station)}
+                />
               ))}
             </div>
           ) : stations.length > 0 ? (
