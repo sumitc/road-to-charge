@@ -121,7 +121,7 @@ export const EVApp = () => {
       {/* Main Content */}
       <main
         className="max-w-4xl mx-auto px-3 pt-2 pb-8 sm:p-4"
-        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(2rem + var(--ruvo-banner-height, 0px))' }}
       >
         <Tabs defaultValue="nearby" className="space-y-3 sm:space-y-6">
           <TabsList className="grid !h-auto w-full grid-cols-3 bg-card shadow-sm sm:!h-10">

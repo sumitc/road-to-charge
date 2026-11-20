@@ -108,15 +108,41 @@ Schema: `supabase/migrations/20261120010000_add_station_place_photos_and_feedbac
 
 `capacitor.config.ts` uses app ID `com.ruvo.evcharging`, app name `Ruvo`, and loads
 `https://road-to-charge-v2.vercel.app` so the wrapper uses the same live API as the
-website. Native projects are not checked into this repo; create them with:
+website. The Android native project is checked in at `android/` (including the admob
+plugin, permissions, and Ruvo launcher/splash assets). iOS is not checked in; create it
+with `npx cap add ios` if needed.
+
+### Build a debug APK
+
+Requires JDK 21, Android SDK platform 35 + build tools 35.0.0, and `ANDROID_HOME`
+pointing at the SDK. Deploy web changes first — the APK loads the live site.
 
 ```bash
+npm install
 npm run build
-npx cap add android
-npx cap add ios
-# later, after code changes
-npm run build && npx cap sync
+npx cap sync android
+cd android && ./gradlew assembleDebug
+# output: android/app/build/outputs/apk/debug/app-debug.apk
 ```
+
+`android/app/src/main/AndroidManifest.xml` requests only what the app uses:
+`INTERNET`, coarse/fine location (nearby stations), camera + image storage
+(community submission photos). Camera is declared optional so devices without one
+can still install the app.
+
+### AdMob bottom banner
+
+`src/components/AdBanner.tsx` shows a native AdMob banner at the bottom on Android
+only (it is a no-op in the browser). Both IDs default to Google's public test values:
+
+- App ID in `android/app/src/main/res/values/strings.xml` (`admob_app_id`)
+- Banner unit ID in `AdBanner.tsx`, overridable with `VITE_ADMOB_BANNER_AD_ID` at
+  Vercel build time
+
+For production, replace the App ID in `strings.xml`, set `VITE_ADMOB_BANNER_AD_ID`
+in Vercel, rebuild, redeploy, and rebuild the APK. UMP consent is requested before
+the banner; it is a no-op until a GDPR message is configured in AdMob. A CSS variable
+reserves the banner height so floating buttons and the last list row remain visible.
 
 The Ruvo bolt app icon (turquoise→emerald to match the UI theme) lives in `public/`:
 
@@ -126,5 +152,5 @@ The Ruvo bolt app icon (turquoise→emerald to match the UI theme) lives in `pub
 - `ruvo-icon-192.png`, `ruvo-icon-512.png` — PWA manifest icons
 - `ruvo-icon-1024.png` — master image for native launcher icons
 
-When generating the native projects, use `public/ruvo-icon-1024.png` as the source
-for Android's Image Asset Studio / adaptive icons and Xcode's `AppIcon` set.
+Android launcher/splash assets were generated from `public/ruvo-icon-1024.png` into
+`android/app/src/main/res/`. Use the same master image for Xcode's `AppIcon` set.
