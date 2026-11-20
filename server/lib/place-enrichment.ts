@@ -46,6 +46,11 @@ interface GooglePlace {
   googleMapsUri?: string;
 }
 
+interface Candidate {
+  place: GooglePlace;
+  distanceKm: number;
+}
+
 const FIELD_MASK = [
   'places.id',
   'places.displayName',
@@ -65,6 +70,27 @@ const GENERIC_WORDS = new Set([
   'charging', 'charge', 'charger', 'station', 'stations', 'ev', 'electric',
   'vehicle', 'vehicles', 'point', 'points', 'india', 'public', 'fast',
 ]);
+
+// Catalog providers are abbreviations; Google Maps usually lists the full
+// fuel brand (or "IndianOil" as one word). Matching both is essential.
+const PROVIDER_ALIASES: Record<string, string[]> = {
+  BPCL: ['bharat petroleum', 'bpcl', 'bharat petrol'],
+  IOCL: ['indian oil', 'indianoil', 'iocl', 'indian oil corporation'],
+  HPCL: ['hindustan petroleum', 'hpcl', 'hindustan petrol'],
+  'RELIANCE BP': ['reliance bp', 'bp pulse', 'reliance'],
+  'TATA POWER': ['tata power', 'tata'],
+  ATHER: ['ather'],
+  OLA: ['ola'],
+  REIL: ['reil'],
+  KSEB: ['kseb', 'kerala state electricity board'],
+  UJOY: ['ujoy'],
+  FORTUM: ['fortum'],
+  EESL: ['eesl'],
+  NTPC: ['ntpc'],
+};
+
+const FUEL_PROVIDERS = new Set(['BPCL', 'IOCL', 'HPCL', 'RELIANCE BP']);
+const FUEL_PLACE_RE = /petrol|fuel|indianoil|indian oil|bharat petroleum|hindustan petroleum|hpcl|bpcl|iocl/;
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (value: number) => (value * Math.PI) / 180;
@@ -95,30 +121,80 @@ function jaccard(a: string[], b: string[]): number {
   return union ? intersection / union : 0;
 }
 
+/** Remove catalog bookkeeping like ", City=..., District=..., State=...". */
+function cleanLabel(value: string): string {
+  return value
+    .replace(/,\s*(?:City|District|State|Pincode|Pin|Country)\s*=.*$/gi, '')
+    .replace(/\s*,\s*,+/g, ', ')
+    .replace(/\s*,\s*$/, '')
+    .trim();
+}
+
+function providerAliases(provider: string): string[] {
+  const key = provider.trim().toUpperCase();
+  return PROVIDER_ALIASES[key] ?? [provider];
+}
+
+function locality(station: EnrichableStation): string {
+  return [station.city, station.state]
+    .filter(Boolean)
+    .map(value => cleanLabel(String(value)))
+    .filter(Boolean)
+    .join(', ');
+}
+
+function buildQueries(station: EnrichableStation): string[] {
+  const cleanName = cleanLabel(station.station_name);
+  const area = locality(station);
+  const aliases = providerAliases(station.provider);
+  const primaryAlias = aliases[0] ?? station.provider;
+  const isFuel = FUEL_PROVIDERS.has(station.provider.trim().toUpperCase());
+
+  const queries = [
+    [cleanName, station.provider, area].filter(Boolean).join(', '),
+    isFuel
+      ? [primaryAlias, 'petrol pump', area].filter(Boolean).join(', ')
+      : [primaryAlias, 'EV charging station', area].filter(Boolean).join(', '),
+  ];
+
+  return [...new Set(queries.filter(query => query.length > 3))];
+}
+
 function isPlausibleMatch(station: EnrichableStation, place: GooglePlace, distanceKm: number): boolean {
   const placeName = place.displayName?.text ?? '';
-  const stationName = normalise(station.station_name);
   const placeNameNorm = normalise(placeName);
+  const cleanName = cleanLabel(station.station_name);
+  const cleanNameNorm = normalise(cleanName);
+  const aliases = providerAliases(station.provider);
+  const providerMatch = aliases.some(alias => placeNameNorm.includes(normalise(alias)));
   const exact =
-    stationName.length > 3 &&
-    (placeNameNorm === stationName || placeNameNorm.includes(stationName) || stationName.includes(placeNameNorm));
-
-  const similarity = jaccard(
-    tokens(`${station.station_name} ${station.provider}`),
-    tokens(placeName)
-  );
+    cleanNameNorm.length > 3 &&
+    (placeNameNorm === cleanNameNorm ||
+      placeNameNorm.includes(cleanNameNorm) ||
+      cleanNameNorm.includes(placeNameNorm));
+  const similarity = jaccard(tokens(`${cleanName} ${station.provider}`), tokens(placeName));
+  const isFuel = FUEL_PROVIDERS.has(station.provider.trim().toUpperCase());
+  const fuelPlace = FUEL_PLACE_RE.test(placeNameNorm);
 
   if (exact && distanceKm <= 5) return true;
-  if (distanceKm <= 0.3 && similarity >= 0.15) return true;
+  // Google often indexes a fuel pump simply as "IndianOil" / "Bharat
+  // Petroleum" with no catalog-style name at all. At the same coordinates
+  // that is still the right entity and its photos are the ones riders want.
+  if (distanceKm <= 0.2 && (providerMatch || exact || (isFuel && fuelPlace) || similarity >= 0.2)) return true;
+  if (distanceKm <= 0.5 && similarity >= 0.15) return true;
   if (distanceKm <= 1.5 && similarity >= 0.4) return true;
   return false;
 }
 
-function buildQuery(station: EnrichableStation): string {
-  const locality = [station.city, station.state].filter(Boolean).join(', ');
-  return [station.station_name, station.provider, locality || station.address, 'EV charging station']
-    .filter(Boolean)
-    .join(', ');
+function pickBest(candidates: Candidate[]): Candidate | undefined {
+  return [...candidates].sort((a, b) => {
+    // Two Google listings can share the same coordinates; prefer the one with
+    // photos so the list view actually shows an image.
+    if (Math.abs(a.distanceKm - b.distanceKm) < 0.15) {
+      return (b.place.photos?.length ?? 0) - (a.place.photos?.length ?? 0);
+    }
+    return a.distanceKm - b.distanceKm;
+  })[0];
 }
 
 export function createEnrichmentDb() {
@@ -173,52 +249,86 @@ export async function enrichStation(
   station: EnrichableStation,
   apiKey: string
 ): Promise<{ placeId: string | null; photoRefs: string[]; details: PlaceDetails }> {
-  const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': FIELD_MASK,
-    },
-    body: JSON.stringify({
-      textQuery: buildQuery(station),
-      locationBias: {
-        circle: {
-          center: { latitude: station.latitude, longitude: station.longitude },
-          radius: 2500,
-        },
-      },
-      maxResultCount: 5,
-    }),
-    signal: AbortSignal.timeout(20000),
-  });
+  const seen = new Set<string>();
+  const allCandidates: Candidate[] = [];
+  let match: Candidate | undefined;
+  let lastError: string | undefined;
+  let succeededAny = false;
 
-  if (!response.ok) {
-    throw new Error(`Google Places ${response.status}: ${(await response.text()).slice(0, 300)}`);
+  for (const query of buildQueries(station)) {
+    let places: GooglePlace[];
+    try {
+      // Location bias is applied here because the query string itself must
+      // stay short enough for Google's text search to return the entity.
+      const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': FIELD_MASK,
+        },
+        body: JSON.stringify({
+          textQuery: query,
+          locationBias: {
+            circle: {
+              center: { latitude: station.latitude, longitude: station.longitude },
+              radius: 3000,
+            },
+          },
+          maxResultCount: 5,
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Google Places ${response.status}: ${(await response.text()).slice(0, 300)}`);
+      }
+      const data = await response.json() as { places?: GooglePlace[] };
+      places = data.places ?? [];
+      succeededAny = true;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      continue;
+    }
+
+    const candidates: Candidate[] = places.map(place => ({
+      place,
+      distanceKm: haversineKm(
+        station.latitude,
+        station.longitude,
+        place.location?.latitude ?? 0,
+        place.location?.longitude ?? 0
+      ),
+    }));
+
+    for (const candidate of candidates) {
+      if (candidate.place.id && !seen.has(candidate.place.id)) {
+        seen.add(candidate.place.id);
+        allCandidates.push(candidate);
+      }
+    }
+
+    const plausible = candidates.filter(candidate =>
+      isPlausibleMatch(station, candidate.place, candidate.distanceKm)
+    );
+    if (plausible.length) {
+      match = pickBest(plausible);
+      break;
+    }
   }
 
-  const data = await response.json() as { places?: GooglePlace[] };
-  const places = data.places ?? [];
-  const candidates = places.map(place => {
-    const lat = place.location?.latitude ?? 0;
-    const lng = place.location?.longitude ?? 0;
-    return {
-      place,
-      distanceKm: haversineKm(station.latitude, station.longitude, lat, lng),
-    };
-  });
-
-  const match = candidates
-    .filter(candidate => isPlausibleMatch(station, candidate.place, candidate.distanceKm))
-    .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+  if (!succeededAny && lastError) throw new Error(lastError);
 
   const details: PlaceDetails = {
     match: Boolean(match),
     checkedAt: new Date().toISOString(),
-    candidates: candidates.slice(0, 5).map(candidate => ({
-      name: candidate.place.displayName?.text ?? 'Unnamed place',
-      distanceKm: Math.round(candidate.distanceKm * 100) / 100,
-    })),
+    candidates: allCandidates
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 5)
+      .map(candidate => ({
+        name: candidate.place.displayName?.text ?? 'Unnamed place',
+        distanceKm: Math.round(candidate.distanceKm * 100) / 100,
+      })),
   };
 
   if (!match) return { placeId: null, photoRefs: [], details };
