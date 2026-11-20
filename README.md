@@ -51,15 +51,13 @@ POST JSON to `/api/sync-ev-stations` with `Authorization: Bearer $SYNC_SECRET`:
 
 ### Scheduled updates
 
-Two GitHub Actions workflows keep the data current:
+A Vercel Cron keeps the catalog current on the Hobby plan:
 
-- `.github/workflows/sync-catalog.yml` — daily at 03:17 UTC
-- `.github/workflows/refresh-availability.yml` — every 30 minutes
+- `vercel.json` runs `/api/sync-ev-stations?mode=full&maxPagesPerState=2` daily at `0 3 * * *`.
+- Hobby crons run at most once per day with per-hour timing (±59 min), and functions have a 300s maximum duration.
+- No GitHub Actions workflows or GitHub repository secrets are required.
 
-Required repository secrets:
-
-- `SYNC_URL` — `https://road-to-charge-v2.vercel.app/api/sync-ev-stations`
-- `SYNC_SECRET` — same value as the Vercel `SYNC_SECRET` environment variable
+For a manual refresh, use the **Sync Networks** button (which calls `/api/sync-trigger`, keeping `SYNC_SECRET` server-side) or POST directly to `/api/sync-ev-stations` with `Authorization: Bearer $SYNC_SECRET` (or `$CRON_SECRET`).
 
 The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql` and the frontend shape in `src/types/station.ts`.
 

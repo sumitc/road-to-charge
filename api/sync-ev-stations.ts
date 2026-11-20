@@ -1156,7 +1156,7 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  // Shared-secret protection for scheduled callers (GitHub Actions / Vercel Cron).
+  // Shared-secret protection for scheduled and manual callers (Vercel Cron / sync trigger).
   const auth = req.headers.get('authorization');
   const secrets = [process.env.SYNC_SECRET, process.env.CRON_SECRET].filter(Boolean);
   if (secrets.length > 0 && !secrets.some(secret => auth === `Bearer ${secret}`)) {

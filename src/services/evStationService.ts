@@ -169,7 +169,7 @@ export class EVStationService {
    * Sync stations from external data sources
    */
   static async syncStationsFromSources(): Promise<{ success: boolean; message: string }> {
-    // Catalog refreshes are handled by the scheduled GitHub Actions workflow.
+    // Catalog refreshes are handled by the Vercel Cron in vercel.json.
     return { success: true, message: 'Station sync is scheduled server-side.' };
   }
 
