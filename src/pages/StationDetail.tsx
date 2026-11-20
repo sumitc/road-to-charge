@@ -455,6 +455,7 @@ const StationDetail: React.FC = () => {
               {isSubmittingFeedback ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-4 w-4" />}
               Submit feedback
             </Button>
+            <SiteFooter />
           </div>
         </SheetContent>
       </Sheet>

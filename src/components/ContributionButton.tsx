@@ -18,6 +18,7 @@ import {
   inferConnectorTypesFromText,
 } from '@/lib/connectorLabels';
 import { preparePhoto, type PreparedPhoto } from '@/lib/imageUpload';
+import { SiteFooter } from './SiteFooter';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContributionButtonProps {
@@ -370,6 +371,7 @@ export const ContributionButton: React.FC<ContributionButtonProps> = ({ location
           <p className="text-center text-xs text-muted-foreground">
             Photos are deleted after review. Submissions are not published until approved.
           </p>
+          <SiteFooter />
         </div>
       </SheetContent>
     </Sheet>

@@ -55,6 +55,63 @@ async function searchCardMetrics(page) {
   });
 }
 
+// Radix keeps `aria-hidden` on the app root until the dialog's exit animation
+// finishes. Closing overlays back-to-back without waiting makes the main UI
+// unavailable to role-based queries, so wait for the cleanup to complete.
+async function closeOverlay(page) {
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() =>
+    document.querySelectorAll('[role="dialog"][data-state="open"]').length === 0
+      && document.querySelectorAll('[data-aria-hidden="true"]').length === 0,
+  null, { timeout: 5000 }).catch(() => {});
+}
+
+// Overlay interactions scroll the long list to the footer and briefly set
+// `aria-hidden` on the app root, so run them on a fresh page after the layout
+// checks instead of polluting those measurements.
+async function checkOverlays(width) {
+  const page = await browser.newPage({
+    viewport: { width, height: 844 },
+    isMobile: width < 500,
+    deviceScaleFactor: 1,
+  });
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.getByLabel('Search for charging stations by area or city').waitFor({ timeout: 20000 });
+
+  const improveButton = page.locator('footer').first().getByRole('button', { name: /Help us Improve/ });
+  check(`${width}px: footer reads "Help us Improve!" instead of repeating Feedback`,
+    (await improveButton.count()) === 1);
+  await improveButton.click();
+  const feedbackDialog = page.getByRole('dialog');
+  await feedbackDialog.waitFor({ state: 'visible', timeout: 5000 });
+  const dialogText = await feedbackDialog.innerText();
+  check(`${width}px: feedback form needs no login`, /No login needed/.test(dialogText));
+  check(`${width}px: feedback form accepts a message and optional email`,
+    await feedbackDialog.getByLabel('Your feedback').isVisible()
+    && await feedbackDialog.getByLabel('Your email (optional)').isVisible());
+  await closeOverlay(page);
+
+  await page.getByRole('button', { name: 'Add a charging station' }).click();
+  const addSheet = page.getByRole('dialog');
+  await addSheet.waitFor({ state: 'visible', timeout: 5000 });
+  check(`${width}px: add-station popup includes the footer`,
+    /2026.*Fibuladreams Pvt Ltd\./.test(await addSheet.innerText()));
+  await closeOverlay(page);
+
+  // Detail page feedback sheet (target the FAB; the footer button now differs).
+  const cards = page.locator('button[aria-label^="View details for"]');
+  await cards.first().waitFor({ timeout: 25000 });
+  await cards.first().click();
+  await page.locator('button.fixed.right-4').click();
+  const stationFeedbackSheet = page.getByRole('dialog');
+  await stationFeedbackSheet.waitFor({ state: 'visible', timeout: 5000 });
+  check(`${width}px: station feedback popup includes the footer`,
+    /2026.*Fibuladreams Pvt Ltd\./.test(await stationFeedbackSheet.innerText()));
+  await closeOverlay(page);
+
+  await page.close();
+}
+
 try {
   for (const width of [320, 390]) {
     const page = await browser.newPage({
@@ -82,10 +139,8 @@ try {
     check(`${width}px: footer shows the copyright clause`,
       /2026.*Fibuladreams Pvt Ltd\. All rights reserved\./.test(footerText),
       footerText.replace(/\n/g, ' '));
-    const feedbackHref = await footer.getByRole('link', { name: /Feedback/ }).getAttribute('href');
-    check(`${width}px: feedback link opens a GitHub ticket`,
-      String(feedbackHref).startsWith('https://github.com/sumitc/road-to-charge/issues/new'),
-      String(feedbackHref).slice(0, 120));
+    check(`${width}px: footer feedback control is an in-app button (no GitHub login)`,
+      (await footer.getByRole('button', { name: /Help us Improve/ }).count()) === 1);
 
     const input = page.getByLabel('Search for charging stations by area or city');
     await input.waitFor({ state: 'visible', timeout: 20000 });
@@ -188,6 +243,7 @@ try {
       JSON.stringify(updates));
     check(`${width}px: community updates title stays on one line`,
       Boolean(updates.title && updates.title.h <= 24), String(updates.title?.h));
+
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });
 
@@ -220,6 +276,7 @@ try {
     check(`${width}px: no console/page errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
 
     await page.close();
+    await checkOverlays(width);
   }
 
   // Location stability: a failed/denied GPS lookup must never replace a real
