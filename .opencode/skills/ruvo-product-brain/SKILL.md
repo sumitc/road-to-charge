@@ -42,22 +42,34 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 - **R15** Route-level code splitting: `StationDetail` and `TripPlanner` are `React.lazy` chunks. The default list view must stay the small entry chunk; do not statically import detail/trips back into the entry.
 - **R16** Daily catalog sync now only uses real sources: BEE API pages, OpenStreetMap Overpass, and Google Places catalog. All hard-coded provider "samples" (Tata/Ather/Jio-bp/PlugShare/ChargeZone/ABB/BrightBlu/Statiq/NITI) were removed from the fetch list because they were fabricated.
 - **R17** Detail speed: station cards seed the React Query detail cache on touch/focus and prefetch station + feedback; `mode=id` and feedback GET responses use `Vercel-CDN-Cache-Control`; feedback is one SQL query instead of four; hero photo is 800px eager. Measured warm detail API **0.42 s HIT**, feedback **0.38 s HIT**; clean browser list→card→detail loads in ~0.7 s.
+- **R18** Photo matching: rank Google photos by resolution + landscape ratio as a proxy for "looks like a place, not a screenshot"; if a station has no usable photo, borrow from a landmark within **75 m** only (gas station > store > service > restaurant > cafe), never move the station's coordinates, and disclose the source in `place_details.photoSource`. This also applies to the Trip Planner via `mode=bounds` compact `place_details` + shared `StationCard`.
+- **R19** Trip Planner: route responses drop unused `steps=true`; station/route proximity uses a spatial grid instead of O(n·m); Trips chunk is warmed on hover/focus with a skeleton fallback, and Leaflet `TripMap` is a separate lazy chunk. Station list has no wrapping Card border on mobile; detail prefetch is wired like the nearby list.
+- **R20** `place_details` must be written with `sql.json(details)`, never `JSON.stringify(details)::jsonb` — the latter stored a JSON *string scalar*. Migration `20261120190000_fix_double_encoded_place_details.sql` unwrapped all 5,545 affected rows.
+- **R21** Distance shown on cards is progressively upgraded from straight-line to **road distance** via a post-render OSRM table request (`useDrivingDistances`, 80 stations/call, cached 10 min). Directions links now pin `origin=` to the same location. This adds no load-blocking request.
+- **R22** Header brand is **Ruvo** with "EV station finder" on the same line (no extra subtitle row). Mobile search layout uses a stable two-line status/controls structure so long queries never reflow the filter row. Add new experience regressions to `tests/experience-smoke.mjs` (`npm run test:experience`).
+- **R23** Every screen header (list AND station detail, future screens too) MUST use the shared `src/components/BrandTitle.tsx` component for the "Ruvo + descriptor" wordmark. Never hand-roll a different title style (the detail page previously used a two-line uppercase `Ruvo` + `Station details` stack). `tests/experience-smoke.mjs` asserts font size/weight/family match between list and detail headers — keep this passing for future builds.
+- Full photo backfill completed: **1,157 of 1,797** already-enriched no-photo rows repaired (0 failures); DB is 29,215 rows / 4,905 with photos / 1,197 landmark-sourced / 5,545 enriched.
 
 ## Architecture map
 
 Frontend (Vite + React 18 + TypeScript + Tailwind + shadcn/ui, **not Next.js**):
 - `src/App.tsx` — QueryClientProvider, TooltipProvider, toasts, BrowserRouter, routes `/`, `/station/:id`, `*`; renders `<AdBanner />` and `<WebAdBanner />` globally.
 - `src/pages/Index.tsx` — renders `EVApp`; now also handles scroll restoration for list→detail→back.
-- `src/components/EVApp.tsx` — header, tabs (Stations / Trips / Saved), location, sync button, `ContributionButton`.
+- `src/components/BrandTitle.tsx` — shared one-line "Ruvo + descriptor" header wordmark used by list and detail screens (see R23).
+- `src/components/EVApp.tsx` — header, tabs (Stations / Trips / Saved), location, sync button, `ContributionButton`; warms the Trips chunk on hover/focus and shows a skeleton fallback.
 - `src/components/NearbyStations.tsx` — search card, radius select, `ConnectorFilter`, loading/empty states, station list. Uses `useNearbyStations`/`useStationSearch`.
-- `src/components/StationCard.tsx` — photo-first row, Maps/app/Directions/Details/Favourite actions.
+- `src/components/StationCard.tsx` — photo-first row, Maps/app/Directions/Details/Favourite actions; shows a "Nearby <kind> · <distance>" badge for borrowed photos.
+- `src/components/TripPlanner.tsx` — route form + compact mobile result list; `usePrefetchStation()` warms detail cards. `src/components/TripMap.tsx` is lazy-loaded only after a route exists.
+- `src/lib/placePhotos.ts` — `placePhotoUrl()` plus `photoSourceLabel()` disclosure helper.
 - `src/pages/StationDetail.tsx` — gallery, details, Maps/app links, feedback sheet + FAB. Uses `useStationDetail`/`useStationFeedback`.
 - `src/components/ContributionButton.tsx` — community submission sheet (camera/gallery, OCR, verification, review email).
 - `src/components/AdBanner.tsx` — native AdMob banner, sets `--ruvo-banner-height` CSS var so FABs/list bottom stay clear.
 - `src/components/WebAdBanner.tsx` — browser-only AdSense banner; no-op without both Vite AdSense env vars.
 - `src/hooks/useStationQueries.ts` — React Query keys and hooks for location, nearby, search, detail, feedback, plus `usePrefetchStation()` used by station cards.
 - `src/services/` — `evStationService.ts` (API mapping), `locationService.ts` (cached geolocation), `favouritesService.ts`, `appIconService.ts`, `chargingStationsSync.ts`.
-- `src/lib/` — `connectorLabels.ts`, `appLinks.ts`, `placePhotos.ts`, `utils.ts`.
+- `src/lib/` — `connectorLabels.ts`, `appLinks.ts` (`directionsUrl` pins origin), `placePhotos.ts`, `utils.ts`.
+- `src/hooks/useDrivingDistances.ts` — non-blocking OSRM road-distance table cache.
+- `tests/experience-smoke.mjs` — Playwright regression checks for search layout, FAB visibility, refresh stability, branding, and distance semantics.
 
 Serverless API (`api/`, Vercel Node functions, direct Postgres):
 - `api/stations.ts` — `mode=all|distance|bounds|search|filters|stats|id`. Distance mode is the list hot path.
@@ -69,6 +81,9 @@ Serverless API (`api/`, Vercel Node functions, direct Postgres):
 - `server/lib/place-enrichment.ts` — query builder, provider aliases, matcher, batch runner.
 - `scripts/import-full-bee-snapshot.mjs` — one-off full BEE JSON import + fake-row cleanup.
 - `scripts/enrich-google-catalog.mjs` — targeted photo enrichment for Google Places gap-fill rows only (avoids spending credits on all 29k rows at once).
+- `scripts/repair-place-photos.mjs` — re-run full matching for already-enriched rows with no/poor photos (Hyderabad fast-track; `--all`, `--google-only`, `--include-unscored`).
+- `scripts/backfill-landmark-photos.mjs` — cheapest backfill: one Nearby Search per already-enriched no-photo row; keeps `google_place_id` intact via `db.updatePhotos()`.
+- `supabase/migrations/20261120190000_fix_double_encoded_place_details.sql` — unwraps jsonb string scalars.
 
 Data / infra:
 - `supabase/migrations/20261120010000_add_station_place_photos_and_feedback.sql` — photo columns, `station_feedback`, reset trigger.
@@ -86,7 +101,8 @@ Environment (names only, never values): `POSTGRES_URL`, `POSTGRES_URL_NON_POOLIN
 2. **Detail:** tap card → `/station/:id` → cached detail query + feedback query → gallery/details/links. Back button or browser back returns to `/` with cached list and restored scroll.
 3. **Community report:** floating **+** → sheet → photo + OCR + Google/OSM verification → Resend review email to `develop.sumit@gmail.com` with signed links → approve/reject → Blob photo cleanup on reject/review completion.
 4. **Feedback:** floating Feedback FAB on detail → working / not working / wrong location / other + note → `station_feedback` → counts/recent list updates.
-5. **Mobile APK:** Android WebView loads the live Vercel app; AdMob banner is native at bottom; CSS var reserves height; FABs sit above it.
+5. **Trip planner:** start/destination (+ waypoints) → Nominatim geocode → OSRM route → compact `mode=bounds` stations → 5 km corridor via spatial grid → connector-filtered list + lazy map. Cards use the same photo/source logic as nearby results.
+6. **Mobile APK:** Android WebView loads the live Vercel app; AdMob banner is native at bottom; CSS var reserves height; FABs sit above it.
 
 ## Performance state (done — Nov 20 2026)
 
@@ -115,7 +131,9 @@ Measured after: distance API **32.5 KB for 36 rows** (~70% smaller); cold ~2.3 s
 ```bash
 cd /Users/sumitc/projects/road-to-charge
 ./node_modules/.bin/tsc --noEmit -p tsconfig.app.json
+./node_modules/.bin/tsc --noEmit -p tsconfig.node.json
 npm run build
+npm run test:experience   # mobile layout/FAB/refresh/distance regressions
 git add -A && git commit -m "..." && git push origin main
 vercel --prod --yes
 # Patterns split here so the scan does not match its own documentation.
@@ -137,6 +155,20 @@ node --experimental-strip-types scripts/import-full-bee-snapshot.mjs /tmp/ruvo-b
 # After a sync adds Google Places catalog rows:
 node --experimental-strip-types scripts/enrich-google-catalog.mjs
 curl -sS 'https://road-to-charge-v2.vercel.app/api/stations?mode=search&q=Kokapet' | head -c 500
+```
+
+Photo repair / backfill:
+```bash
+node --experimental-strip-types scripts/repair-place-photos.mjs --limit=200
+node --experimental-strip-types scripts/backfill-landmark-photos.mjs --limit=2000
+# Check disclosure + coverage:
+node --input-type=module <<'NODE'
+import fs from 'node:fs'; import postgres from 'postgres';
+const env=Object.fromEntries(fs.readFileSync('.env.vercel','utf8').split('\n').filter(l=>l&&!l.startsWith('#')).map(l=>{const i=l.indexOf('=');return [l.slice(0,i),l.slice(i+1).replace(/^["']|["']$/g,'')];}));
+const sql=postgres(env.POSTGRES_URL_NON_POOLING,{ssl:'require',max:1,prepare:false});
+console.log(await sql`SELECT count(*)::int total, count(*) FILTER (WHERE coalesce(cardinality(photo_references),0)>0)::int with_photos, count(*) FILTER (WHERE place_details ? 'photoSource')::int landmark FROM public.ev_charging_stations`);
+await sql.end();
+NODE
 ```
 
 List API smoke test (replace coords):
@@ -168,12 +200,14 @@ DB stats pattern: read `.env.vercel`, connect with `postgres` using `POSTGRES_UR
 - Feedback FK type mismatch (`text` vs `uuid`) and `FUNCTION_INVOCATION_TIMEOUT` were fixed; don't reintroduce them.
 - Google matcher must strip `City=…, District=…, State=…` from station names; raw text queries returned irrelevant results. Provider aliases matter.
 - `/api/stations` and `/api/place-photo` caching is intentional; stale browser cache was ruled out as the missing-photo cause (the data was genuinely un-enriched).
+- Google Places does not label photo *content*. "Not a screenshot/video" is approximated by resolution + landscape aspect ratio ranking; never claim images were visually verified. Landmark photos are only borrowed within 75 m and are always disclosed in the UI.
 - `/api/station-feedback` GET is sequential to avoid deadlocks; POST uses the uuid FK.
 - Entry bundle is ~418 KB (133 KB gzip) after code splitting; detail/trips are separate lazy chunks. Still above Vite's 500 kB-style warning threshold historically, but no longer a single monolith.
 - iOS native project is not checked in; only Android is supported right now.
 - AdMob IDs are public test IDs. Production needs both the native `strings.xml` App ID and Vercel `VITE_ADMOB_BANNER_AD_ID`, then a web redeploy + APK rebuild. Web-only changes do **not** need an APK rebuild because the APK loads the live Vercel URL.
 - PlugShare does not offer a personal/non-commercial API license; never scrape or present its data as a direct source. Its apparent extra Kokapet coverage is now approximated by Google Places catalog rows.
-- Full BEE snapshot is 29,184 rows / ~21 MB from `https://raw.githubusercontent.com/shrinivas-sn/ev-charging-stations-api/main/backend/data/stations.json`. Do not enrich all 29k rows with Google Places at once (cost); enrich targeted localities with `scripts/enrich-google-catalog.mjs`.
+- Full BEE snapshot is 29,184 rows / ~21 MB from `https://raw.githubusercontent.com/shrinivas-sn/ev-charging-stations-api/main/backend/data/stations.json`. Do not enrich all 29k rows with Google Places at once (cost); enrich targeted localities with `scripts/enrich-google-catalog.mjs`. After the approved backfill: **4,905 / 29,215 rows have photos**, 1,197 use disclosed nearby-landmark photos. Only 5,545 rows have ever been enriched; ~24k BEE rows remain un-enriched by design.
+- Google `places:searchNearby` rejects `rankBy` and the `ev_charging_station` included type; use `gas_station`/`convenience_store`/`car_repair`/`restaurant`/`cafe` and sort client-side. `postgres.js` exposes `sql.json()`, not `sql.jsonb()`.
 - Secrets: Google key was pasted in chat historically but never committed. Restrict/rotate when convenient. Keep `git grep` clean.
 
 ## Working rules

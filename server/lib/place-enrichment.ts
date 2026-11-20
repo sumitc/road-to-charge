@@ -23,6 +23,14 @@ export interface PlaceDetails {
   match?: boolean;
   checkedAt?: string;
   candidates?: Array<{ name: string; distanceKm: number }>;
+  photoQuality?: 'good' | 'mixed' | 'poor';
+  photoSource?: {
+    name: string;
+    kind: string;
+    distanceMeters: number;
+    placeId?: string;
+    note: string;
+  };
   error?: string;
 }
 
@@ -38,6 +46,7 @@ interface GooglePlace {
   displayName?: { text?: string };
   formattedAddress?: string;
   location?: { latitude?: number; longitude?: number };
+  types?: string[];
   photos?: Array<{ name?: string; widthPx?: number; heightPx?: number }>;
   rating?: number;
   userRatingCount?: number;
@@ -56,6 +65,7 @@ const FIELD_MASK = [
   'places.displayName',
   'places.formattedAddress',
   'places.location',
+  'places.types',
   'places.photos.name',
   'places.photos.widthPx',
   'places.photos.heightPx',
@@ -91,6 +101,25 @@ const PROVIDER_ALIASES: Record<string, string[]> = {
 
 const FUEL_PROVIDERS = new Set(['BPCL', 'IOCL', 'HPCL', 'RELIANCE BP']);
 const FUEL_PLACE_RE = /petrol|fuel|indianoil|indian oil|bharat petroleum|hindustan petroleum|hpcl|bpcl|iocl/;
+
+// Landmark photos are only borrowed for a station when the station itself has
+// no usable Google photo. The radius is deliberately tiny so we never borrow a
+// photo from a different, merely nearby, business.
+const LANDMARK_TYPES = [
+  'gas_station',
+  'convenience_store',
+  'car_repair',
+  'restaurant',
+  'cafe',
+];
+const LANDMARK_RANK: Record<string, number> = {
+  gas_station: 0,
+  convenience_store: 1,
+  car_repair: 2,
+  restaurant: 3,
+  cafe: 4,
+};
+const MAX_LANDMARK_DISTANCE_KM = 0.075;
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (value: number) => (value * Math.PI) / 180;
@@ -186,6 +215,49 @@ function isPlausibleMatch(station: EnrichableStation, place: GooglePlace, distan
   return false;
 }
 
+/** Google does not label photo content, so rank by resolution/shape signals. */
+function photoScore(photo: { widthPx?: number; heightPx?: number }): number {
+  const width = photo.widthPx ?? 0;
+  const height = photo.heightPx ?? 0;
+  if (width <= 0 || height <= 0) return 0;
+  const ratio = width / height;
+  let score = 0;
+  if (width >= 1200) score += 3;
+  else if (width >= 800) score += 2;
+  else if (width >= 640) score += 1;
+  // Wide/landscape photos are much more likely to show the forecourt/site than
+  // a portrait screenshot, poster or text-heavy close-up.
+  if (ratio >= 1.15 && ratio <= 2.2) score += 3;
+  else if (ratio >= 0.85 && ratio < 1.15) score += 1;
+  else if (ratio < 0.65 || ratio > 2.8) score -= 3;
+  return score;
+}
+
+function selectPhotos(photos: NonNullable<GooglePlace['photos']>): {
+  refs: string[];
+  quality: 'good' | 'mixed' | 'poor';
+  score: number;
+} {
+  const ranked = photos
+    .filter(photo => Boolean(photo.name))
+    .map(photo => ({ photo, score: photoScore(photo) }))
+    .sort((a, b) => b.score - a.score);
+  const score = ranked[0]?.score ?? 0;
+  return {
+    refs: ranked.slice(0, 5).map(item => item.photo.name!),
+    quality: score >= 4 ? 'good' : score >= 2 ? 'mixed' : 'poor',
+    score,
+  };
+}
+
+function landmarkRank(place: GooglePlace): number {
+  const types = place.types ?? [];
+  const ranks = types
+    .map(type => LANDMARK_RANK[type] ?? Number.MAX_SAFE_INTEGER)
+    .filter(Number.isFinite);
+  return ranks.length ? Math.min(...ranks) : Number.MAX_SAFE_INTEGER;
+}
+
 function pickBest(candidates: Candidate[]): Candidate | undefined {
   return [...candidates].sort((a, b) => {
     // Two Google listings can share the same coordinates; prefer the one with
@@ -233,7 +305,19 @@ export function createEnrichmentDb() {
         SET
           google_place_id = ${placeId},
           photo_references = ${photoRefs},
-          place_details = ${JSON.stringify(details)}::jsonb,
+          place_details = ${sql.json(details)},
+          photo_enriched_at = now()
+        WHERE id = ${id}::uuid
+      `;
+    },
+
+    /** Backfill photos only; keeps the existing Google place match intact. */
+    async updatePhotos(id: string, photoRefs: string[], details: PlaceDetails): Promise<void> {
+      await sql`
+        UPDATE public.ev_charging_stations
+        SET
+          photo_references = ${photoRefs},
+          place_details = ${sql.json(details)},
           photo_enriched_at = now()
         WHERE id = ${id}::uuid
       `;
@@ -243,6 +327,78 @@ export function createEnrichmentDb() {
       await sql.end({ timeout: 5 });
     },
   };
+}
+
+/**
+ * Borrow a photo from a *very* close landmark when the station has no usable
+ * photo of its own. We never move the catalog coordinates or rename the
+ * station; the source is stored in `place_details.photoSource` for the UI to
+ * disclose. Gas stations/charging sites outrank restaurants/cafes.
+ */
+async function findNearbyLandmark(
+  station: EnrichableStation,
+  apiKey: string
+): Promise<{ place: GooglePlace; distanceKm: number; photos: ReturnType<typeof selectPhotos> } | null> {
+  const fieldMask = [
+    'places.id',
+    'places.displayName',
+    'places.location',
+    'places.types',
+    'places.photos.name',
+    'places.photos.widthPx',
+    'places.photos.heightPx',
+  ].join(',');
+
+  try {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': fieldMask,
+      },
+      body: JSON.stringify({
+        includedTypes: LANDMARK_TYPES,
+        maxResultCount: 20,
+        locationRestriction: {
+          circle: {
+            center: { latitude: station.latitude, longitude: station.longitude },
+            radius: MAX_LANDMARK_DISTANCE_KM * 1000,
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!response.ok) return null;
+    const data = await response.json() as { places?: GooglePlace[] };
+
+    const candidates = (data.places ?? [])
+      .map(place => ({
+        place,
+        distanceKm: haversineKm(
+          station.latitude,
+          station.longitude,
+          place.location?.latitude ?? 0,
+          place.location?.longitude ?? 0
+        ),
+        photos: selectPhotos(place.photos ?? []),
+      }))
+      .filter(candidate =>
+        candidate.distanceKm <= MAX_LANDMARK_DISTANCE_KM &&
+        candidate.photos.refs.length > 0 &&
+        landmarkRank(candidate.place) !== Number.MAX_SAFE_INTEGER
+      )
+      .sort((a, b) => {
+        const typeDelta = landmarkRank(a.place) - landmarkRank(b.place);
+        if (typeDelta !== 0) return typeDelta;
+        if (b.photos.score !== a.photos.score) return b.photos.score - a.photos.score;
+        return a.distanceKm - b.distanceKm;
+      });
+
+    return candidates[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function enrichStation(
@@ -331,26 +487,88 @@ export async function enrichStation(
       })),
   };
 
-  if (!match) return { placeId: null, photoRefs: [], details };
+  const place = match?.place;
+  let placeId = place?.id ?? null;
+  let photos = place ? selectPhotos(place.photos ?? []) : { refs: [] as string[], quality: 'poor' as const, score: -99 };
 
-  const place = match.place;
-  Object.assign(details, {
-    displayName: place.displayName?.text,
-    formattedAddress: place.formattedAddress,
-    rating: place.rating,
-    userRatingCount: place.userRatingCount,
-    businessStatus: place.businessStatus,
-    websiteUri: place.websiteUri,
-    googleMapsUri: place.googleMapsUri,
-    location: place.location,
-  });
+  if (place) {
+    Object.assign(details, {
+      displayName: place.displayName?.text,
+      formattedAddress: place.formattedAddress,
+      rating: place.rating,
+      userRatingCount: place.userRatingCount,
+      businessStatus: place.businessStatus,
+      websiteUri: place.websiteUri,
+      googleMapsUri: place.googleMapsUri,
+      location: place.location,
+    });
+  }
 
-  const photoRefs = (place.photos ?? [])
-    .map(photo => photo.name)
-    .filter((name): name is string => Boolean(name))
-    .slice(0, 5);
+  // Direct photos win only when they exist and look usable. Otherwise borrow
+  // from a very close, clearly disclosed landmark rather than showing nothing
+  // or a likely text-only/screenshot image.
+  if (photos.refs.length === 0 || photos.quality !== 'good') {
+    const landmark = await findNearbyLandmark(station, apiKey);
+    if (
+      landmark &&
+      (photos.refs.length === 0 || landmark.photos.score > photos.score)
+    ) {
+      photos = landmark.photos;
+      if (!placeId) placeId = landmark.place.id ?? null;
+      if (!details.googleMapsUri && landmark.place.id) {
+        details.googleMapsUri = `https://www.google.com/maps/place/?q=place_id:${landmark.place.id}`;
+      }
+      details.photoSource = {
+        name: landmark.place.displayName?.text ?? 'Nearby landmark',
+        kind: (landmark.place.types ?? []).find(type => type in LANDMARK_RANK) ?? 'landmark',
+        distanceMeters: Math.round(landmark.distanceKm * 1000),
+        placeId: landmark.place.id,
+        note: 'Photo is from a nearby landmark; station location is unchanged.',
+      };
+      details.candidates = [
+        {
+          name: `Landmark: ${details.photoSource.name}`,
+          distanceKm: Math.round(landmark.distanceKm * 100) / 100,
+        },
+        ...(details.candidates ?? []),
+      ].slice(0, 5);
+    }
+  }
 
-  return { placeId: place.id ?? null, photoRefs, details };
+  details.photoQuality = photos.quality;
+  return { placeId, photoRefs: photos.refs, details };
+}
+
+/**
+ * Cheapest possible backfill: one Nearby Search per station. Used for rows
+ * that were already matched by the catalog but never received a photo. The
+ * station's own place match and coordinates are left untouched.
+ */
+export async function backfillPhotosFromLandmark(
+  station: EnrichableStation,
+  apiKey: string,
+  existing: PlaceDetails = {}
+): Promise<{ photoRefs: string[]; details: PlaceDetails } | null> {
+  const landmark = await findNearbyLandmark(station, apiKey);
+  if (!landmark) return null;
+
+  const source = {
+    name: landmark.place.displayName?.text ?? 'Nearby landmark',
+    kind: (landmark.place.types ?? []).find(type => type in LANDMARK_RANK) ?? 'landmark',
+    distanceMeters: Math.round(landmark.distanceKm * 1000),
+    placeId: landmark.place.id,
+    note: 'Photo is from a nearby landmark; station location is unchanged.',
+  };
+  const details: PlaceDetails = {
+    ...existing,
+    photoQuality: landmark.photos.quality,
+    photoSource: source,
+    candidates: [
+      { name: `Landmark: ${source.name}`, distanceKm: Math.round(landmark.distanceKm * 100) / 100 },
+      ...(existing.candidates ?? []),
+    ].slice(0, 5),
+  };
+  return { photoRefs: landmark.photos.refs, details };
 }
 
 export async function runPhotoEnrichment(

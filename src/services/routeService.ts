@@ -27,25 +27,22 @@ export class RouteService {
         [end.lng, end.lat]
       ].map(([lng, lat]) => `${lng},${lat}`).join(';');
 
+      // `steps=true` returns turn-by-turn data we never render; dropping it
+      // makes long routes dramatically smaller and faster to fetch.
       const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=true`
+        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`,
+        { signal: AbortSignal.timeout(20000) }
       );
       if (!response.ok) throw new Error(`Routing service returned ${response.status}`);
       const data = await response.json();
       const route = data.routes?.[0];
       if (!route) return null;
 
-      const instructions: string[] = (route.legs ?? []).flatMap((leg: { steps?: Array<{ name?: string; maneuver?: { type?: string } }> }) =>
-        (leg.steps ?? [])
-          .map(step => step.name || step.maneuver?.type || '')
-          .filter(Boolean)
-      );
-
       return {
         coordinates: route.geometry.coordinates as [number, number][],
         distance: route.distance,
         duration: route.duration,
-        instructions,
+        instructions: [],
       };
 
     } catch (error) {

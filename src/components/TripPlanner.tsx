@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { lazy, Suspense, useState, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,12 @@ import { ChargingStation } from '@/types/station';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { ConnectorFilter } from './ConnectorFilter';
 import { StationCard } from './StationCard';
-import TripMap from './TripMap';
+import { usePrefetchStation } from '@/hooks/useStationQueries';
+import { useDrivingDistances } from '@/hooks/useDrivingDistances';
+
+// Leaflet and its CSS are only needed once a route exists. Keeping the map in
+// its own chunk makes the Trips tab form render as soon as possible.
+const TripMap = lazy(() => import('./TripMap'));
 
 interface Waypoint extends RoutePoint {
   id: string;
@@ -29,6 +34,14 @@ const TripPlanner = () => {
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null);
   const [allRouteStations, setAllRouteStations] = useState<ChargingStation[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<RoutePoint[]>([]);
+  const prefetched = useRef(new Set<string>());
+  const prefetchStation = usePrefetchStation();
+
+  const prefetchOnce = useCallback((station: ChargingStation) => {
+    if (prefetched.current.has(station.id)) return;
+    prefetched.current.add(station.id);
+    prefetchStation(station);
+  }, [prefetchStation]);
 
   // Derived so changing connector selections updates both the list and map
   // without having to plan the trip again.
@@ -38,6 +51,7 @@ const TripPlanner = () => {
     ),
     [allRouteStations, connectorFilters]
   );
+  const { data: drivingDistances } = useDrivingDistances(routeCoordinates[0] ?? null, routeStations);
 
   const addWaypoint = useCallback(async () => {
     if (!newWaypoint.trim()) return;
@@ -77,13 +91,15 @@ const TripPlanner = () => {
 
   const findStationsAlongRoute = useCallback(async (route: Route) => {
     try {
-      // Compute route bounding box with padding
-      const lats = route.coordinates.map(([lng, lat]) => lat);
-      const lngs = route.coordinates.map(([lng, lat]) => lng);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLng = Math.min(...lngs);
-      const maxLng = Math.max(...lngs);
+      // Iterative bounds — spreading thousands of coordinates into Math.min
+      // can blow the call stack on long routes.
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      for (const [lng, lat] of route.coordinates) {
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      }
 
       const padKm = 20; // corridor half-width
       const padLat = padKm / 111.0;
@@ -96,19 +112,39 @@ const TripPlanner = () => {
         minLng - padLng,
         maxLng + padLng
       );
-      
-      // Keep stations within 5km of any route point
-      const nearbyStations = candidates.filter(station => {
-        return route.coordinates.some(([lng, lat]) => {
-          const distance = RouteService.calculateDistance(
-            { lat: station.lat, lng: station.lng },
-            { lat, lng }
-          );
-          return distance <= 5; // 5km radius
-        });
-      });
 
-      return nearbyStations;
+      // Spatial grid: with the full 29k-station catalog, comparing every
+      // candidate against every route point is O(n*m) and freezes the UI.
+      // Bucket sampled route points into ~11km cells and only do exact
+      // haversine checks for cells adjacent to a station.
+      const CELL = 0.1;
+      const step = Math.max(1, Math.floor(route.coordinates.length / 400));
+      const grid = new Map<string, Array<[number, number]>>();
+      for (let i = 0; i < route.coordinates.length; i += step) {
+        const [lng, lat] = route.coordinates[i];
+        const key = `${Math.floor(lat / CELL)}:${Math.floor(lng / CELL)}`;
+        const bucket = grid.get(key);
+        if (bucket) bucket.push([lat, lng]);
+        else grid.set(key, [[lat, lng]]);
+      }
+
+      return candidates.filter(station => {
+        const cellLat = Math.floor(station.lat / CELL);
+        const cellLng = Math.floor(station.lng / CELL);
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const bucket = grid.get(`${cellLat + dy}:${cellLng + dx}`);
+            if (!bucket) continue;
+            for (const [lat, lng] of bucket) {
+              if (RouteService.calculateDistance(
+                { lat: station.lat, lng: station.lng },
+                { lat, lng }
+              ) <= 5) return true;
+            }
+          }
+        }
+        return false;
+      });
     } catch (error) {
       console.error('Error finding stations along route:', error);
       return [];
@@ -308,42 +344,36 @@ const TripPlanner = () => {
         </CardContent>
       </Card>
 
-      {/* Route Summary */}
+      {/* Route Summary — compact on mobile so the list starts higher up. */}
       {currentRoute && (
         <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <RouteIcon className="w-5 h-5" />
-              <span>Route Summary</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardContent className="p-3 sm:p-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
               <div className="text-center">
-                <div className="font-semibold text-lg">
+                <div className="font-semibold text-base sm:text-lg">
                   {RouteService.formatDistance(currentRoute.distance)}
                 </div>
-                <div className="text-sm text-muted-foreground">Distance</div>
+                <div className="text-xs text-muted-foreground sm:text-sm">Distance</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg">
+                <div className="font-semibold text-base sm:text-lg">
                   {RouteService.formatDuration(currentRoute.duration)}
                 </div>
-                <div className="text-sm text-muted-foreground">Duration</div>
+                <div className="text-xs text-muted-foreground sm:text-sm">Duration</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg flex items-center justify-center">
-                  <Zap className="w-4 h-4 mr-1" />
+                <div className="flex items-center justify-center font-semibold text-base sm:text-lg">
+                  <Zap className="mr-1 h-4 w-4" />
                   {routeStations.length}
                 </div>
-                <div className="text-sm text-muted-foreground">Charging Stations</div>
+                <div className="text-xs text-muted-foreground sm:text-sm">Charging Stations</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg flex items-center justify-center">
-                  <MapPin className="w-4 h-4 mr-1" />
+                <div className="flex items-center justify-center font-semibold text-base sm:text-lg">
+                  <MapPin className="mr-1 h-4 w-4" />
                   {waypoints.length + 2}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Stops</div>
+                <div className="text-xs text-muted-foreground sm:text-sm">Total Stops</div>
               </div>
             </div>
           </CardContent>
@@ -353,31 +383,34 @@ const TripPlanner = () => {
       {/* Map */}
       {currentRoute && (
         <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle>Route Map</CardTitle>
-          </CardHeader>
           <CardContent className="p-0">
-            <TripMap
-              route={currentRoute}
-              stations={routeStations}
-              routePoints={routeCoordinates}
-            />
+            <Suspense
+              fallback={
+                <div className="flex h-64 items-center justify-center bg-muted/40 text-sm text-muted-foreground">
+                  Loading route map…
+                </div>
+              }
+            >
+              <TripMap
+                route={currentRoute}
+                stations={routeStations}
+                routePoints={routeCoordinates}
+              />
+            </Suspense>
           </CardContent>
         </Card>
       )}
 
-      {/* Stations List */}
+      {/* Stations list — no wrapping Card/border on mobile, matching the
+          nearby/search list so cards get the full width and less chrome. */}
       {allRouteStations.length > 0 && (
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Zap className="w-5 h-5" />
-              <span>Charging Stations Along Route</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {routeStations.length === 0 ? (
-              <div className="space-y-3 text-center">
+        <div className="space-y-3">
+          <p className="hidden text-sm text-muted-foreground sm:block">
+            {routeStations.length} charging station{routeStations.length !== 1 ? 's' : ''} along your route
+          </p>
+          {routeStations.length === 0 ? (
+            <Card className="rounded-2xl">
+              <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   No stations match your connector selection
                 </p>
@@ -389,16 +422,20 @@ const TripPlanner = () => {
                 >
                   Show all connectors
                 </Button>
-              </div>
-            ) : (
-            <div className="space-y-3">
-              {routeStations.map(station => (
-                <StationCard key={station.id} station={station} />
-              ))}
-            </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            routeStations.map(station => (
+              <StationCard
+                key={station.id}
+                station={station}
+                userLocation={routeCoordinates[0]}
+                drivingDistanceKm={drivingDistances?.[station.id]}
+                onPrefetch={() => prefetchOnce(station)}
+              />
+            ))
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,15 @@
 import type { ChargingStation } from '@/types/station';
 
-export function directionsUrl(station: ChargingStation): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}&travelmode=driving`;
+export function directionsUrl(
+  station: ChargingStation,
+  origin?: { lat: number; lng: number } | null
+): string {
+  // Pin the origin to the same point used for the displayed distance; otherwise
+  // Maps uses its own idea of "current location" and the numbers disagree.
+  const originParam = origin
+    ? `&origin=${origin.lat.toFixed(6)},${origin.lng.toFixed(6)}`
+    : '';
+  return `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}&travelmode=driving${originParam}`;
 }
 
 export function mapsPlaceUrl(station: ChargingStation): string {

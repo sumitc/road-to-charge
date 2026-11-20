@@ -14,7 +14,7 @@ import {
 import { ChargingStation } from '@/types/station';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl } from '@/lib/appLinks';
-import { placePhotoUrl } from '@/lib/placePhotos';
+import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { AppIconService } from '@/services/appIconService';
@@ -27,6 +27,8 @@ interface StationCardProps {
   onFavouriteToggle?: () => void;
   /** Warm the detail page before the tap completes. */
   onPrefetch?: () => void;
+  /** Road distance fetched after render; falls back to straight-line distance. */
+  drivingDistanceKm?: number;
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -53,7 +55,13 @@ const SPEED_DOT: Record<string, string> = {
   slow: 'bg-emerald-500',
 };
 
-const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavouriteToggle, onPrefetch }) => {
+const StationCardComponent: React.FC<StationCardProps> = ({
+  station,
+  userLocation,
+  onFavouriteToggle,
+  onPrefetch,
+  drivingDistanceKm,
+}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   // Local state keeps the star instant; no list refetch on toggle.
@@ -88,6 +96,10 @@ const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavourite
   const status = (station.status ?? '').toLowerCase();
   const photoRef = station.photoRefs?.[0];
   const rating = station.placeDetails?.rating;
+  const photoSource = photoSourceLabel(station.placeDetails?.photoSource);
+  // Progressively upgraded to road distance once the post-render OSRM table
+  // resolves. Until then the existing straight-line estimate is still useful.
+  const shownDistance = drivingDistanceKm ?? station.distance;
 
   return (
     <Card className="animate-fade-in overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-electric">
@@ -111,8 +123,11 @@ const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavourite
                   decoding="async"
                   className="h-full w-full object-cover"
                 />
-                <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white">
-                  Google Maps
+                <span
+                  className="absolute bottom-1 left-1 max-w-[calc(100%-0.5rem)] truncate rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white"
+                  title={station.placeDetails?.photoSource?.name ?? 'Photo from Google Maps'}
+                >
+                  {photoSource ?? 'Google Maps'}
                 </span>
               </>
             ) : (
@@ -128,9 +143,12 @@ const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavourite
               <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-card-foreground">
                 {station.name}
               </h3>
-              {typeof station.distance === 'number' && (
-                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                  {station.distance.toFixed(1)} km
+              {typeof shownDistance === 'number' && (
+                <span
+                  className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+                  title={drivingDistanceKm !== undefined ? 'Driving distance' : 'Straight-line distance'}
+                >
+                  {drivingDistanceKm !== undefined ? '' : '~'}{shownDistance.toFixed(1)} km
                 </span>
               )}
             </div>
@@ -186,7 +204,7 @@ const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavourite
         <div className="mt-2 flex items-center gap-2 border-t pt-2 sm:mt-3 sm:pt-3">
           <Button
             size="sm"
-            onClick={() => window.open(directionsUrl(station), '_blank')}
+            onClick={() => window.open(directionsUrl(station, userLocation), '_blank')}
             className="h-10 flex-1 rounded-xl sm:flex-none"
           >
             <Map className="h-4 w-4" />

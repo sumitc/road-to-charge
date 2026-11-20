@@ -156,7 +156,8 @@ export async function GET(req: Request): Promise<Response> {
     // The list view only needs a subset of columns. Returning full rows
     // (place_details, connectors, audit fields) made this hot path ~107 KB for
     // 36 stations. Only the first photo ref is used on a card.
-    const columns = mode === 'distance'
+    const compact = mode === 'distance' || mode === 'bounds';
+    const columns = compact
       ? sql`
           id, station_name, provider, address, city, state, district,
           latitude, longitude, availability_status, connector_types,
@@ -164,7 +165,12 @@ export async function GET(req: Request): Promise<Response> {
           station_type, maps_link, location_quality,
           photo_references[1:1] AS photo_references,
           CASE WHEN place_details IS NULL THEN NULL
-               ELSE jsonb_build_object('rating', place_details->'rating') END AS place_details
+               ELSE jsonb_build_object(
+                 'rating', place_details->'rating',
+                 'match', place_details->'match',
+                 'photoQuality', place_details->'photoQuality',
+                 'photoSource', place_details->'photoSource'
+               ) END AS place_details
         `
       : sql`*`;
     let rows = await sql`
@@ -212,7 +218,7 @@ export async function GET(req: Request): Promise<Response> {
       ...corsHeaders,
       'Content-Type': 'application/json',
     };
-    if (mode === 'distance' || mode === 'id') {
+    if (mode === 'distance' || mode === 'bounds' || mode === 'id') {
       // Catalog data changes daily; cached responses make detail views instant.
       // Vercel Functions only honour the CDN header for edge caching.
       headers['Cache-Control'] = 'public, s-maxage=300, stale-while-revalidate=600';

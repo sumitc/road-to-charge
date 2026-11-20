@@ -32,11 +32,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { BrandTitle } from '@/components/BrandTitle';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
-import { placePhotoUrl } from '@/lib/placePhotos';
+import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { EVStationService } from '@/services/evStationService';
-import { useStationDetail, useStationFeedback } from '@/hooks/useStationQueries';
+import { useStationDetail, useStationFeedback, useUserLocation } from '@/hooks/useStationQueries';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,7 @@ const StationDetail: React.FC = () => {
   // list) shows instantly instead of re-fetching station + feedback.
   const { data: station, isLoading } = useStationDetail(id);
   const { data: feedback, refetch: refetchFeedback } = useStationFeedback(id);
+  const { data: userLocation } = useUserLocation();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackKind, setFeedbackKind] = useState<string>('working');
@@ -109,6 +111,7 @@ const StationDetail: React.FC = () => {
   const photos = station.photoRefs ?? [];
   const photoRef = photos[photoIndex];
   const details = station.placeDetails;
+  const photoSourceLabelText = photoSourceLabel(details?.photoSource);
   const isFavourite = FavouritesService.isFavourite(station.id);
   const status = (station.status ?? '').toLowerCase();
 
@@ -144,8 +147,7 @@ const StationDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Ruvo</p>
-            <p className="truncate text-sm font-medium">Station details</p>
+            <BrandTitle subtitle="Station details" />
           </div>
           <Button
             variant="ghost"
@@ -189,8 +191,13 @@ const StationDetail: React.FC = () => {
               </div>
             )}
             {photoRef && (
-              <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white">
-                Photo: Google Maps
+              <span
+                className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white"
+                title={details?.photoSource?.name ?? 'Photo from Google Maps'}
+              >
+                {photoSourceLabelText
+                  ? `Photo: ${photoSourceLabelText} · ${details?.photoSource?.name}`
+                  : 'Photo: Google Maps'}
               </span>
             )}
             {photos.length > 1 && (
@@ -212,6 +219,13 @@ const StationDetail: React.FC = () => {
               </div>
             )}
           </div>
+
+          {details?.photoSource && (
+            <p className="border-t bg-muted/40 px-4 py-2 text-[11px] leading-relaxed text-muted-foreground">
+              {details.photoSource.note} The photo is from{' '}
+              <span className="font-medium">{details.photoSource.name}</span>, not a verified image of this charger.
+            </p>
+          )}
 
           <CardContent className="space-y-4 p-5">
             <div className="space-y-2">
@@ -289,7 +303,7 @@ const StationDetail: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 border-t pt-4 sm:grid-cols-4">
-              <Button onClick={() => window.open(directionsUrl(station), '_blank')}>
+              <Button onClick={() => window.open(directionsUrl(station, userLocation), '_blank')}>
                 <Navigation className="h-4 w-4" /> Directions
               </Button>
               <Button variant="outline" onClick={() => window.open(mapsPlaceUrl(station), '_blank')}>

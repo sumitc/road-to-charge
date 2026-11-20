@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
+import { BrandTitle } from './BrandTitle';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
@@ -11,8 +12,18 @@ import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/
 import { useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
 
-// Only loaded when the Trips tab is opened.
-const TripPlanner = lazy(() => import('./TripPlanner'));
+// Only loaded when the Trips tab is opened (or warmed on hover/focus).
+const loadTripPlanner = () => import('./TripPlanner');
+const TripPlanner = lazy(loadTripPlanner);
+
+function TripPlannerSkeleton() {
+  return (
+    <div className="space-y-3" aria-label="Loading trip planner">
+      <div className="h-72 animate-pulse rounded-2xl bg-muted/60 sm:h-64" />
+      <div className="h-16 animate-pulse rounded-2xl bg-muted/60" />
+    </div>
+  );
+}
 
 export const EVApp = () => {
   const queryClient = useQueryClient();
@@ -85,8 +96,7 @@ export const EVApp = () => {
                 <Zap className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-bold">EV Station Finder</h1>
-                <p className="hidden text-xs opacity-90 sm:block sm:text-sm">Find charging stations near you</p>
+                <BrandTitle subtitle="EV station finder" />
               </div>
             </div>
             <Button 
@@ -121,6 +131,8 @@ export const EVApp = () => {
             </TabsTrigger>
             <TabsTrigger
               value="trip"
+              onPointerEnter={loadTripPlanner}
+              onFocus={loadTripPlanner}
               className="flex min-h-[44px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
             >
               <Route className="w-4 h-4" />
@@ -146,7 +158,7 @@ export const EVApp = () => {
           </TabsContent>
 
           <TabsContent value="trip" className="space-y-4">
-            <Suspense fallback={null}>
+            <Suspense fallback={<TripPlannerSkeleton />}>
               <TripPlanner />
             </Suspense>
           </TabsContent>

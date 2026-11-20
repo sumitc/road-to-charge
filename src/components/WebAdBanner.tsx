@@ -15,7 +15,7 @@ declare global {
 
 /** Bottom AdSense banner for the browser build (AdMob is native-only). */
 export const WebAdBanner = () => {
-  const adRef = useRef<HTMLElement | null>(null);
+  const adRef = useRef<HTMLModElement | null>(null);
 
   useEffect(() => {
     if (!ENABLED) return;

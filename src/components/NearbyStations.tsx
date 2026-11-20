@@ -9,6 +9,7 @@ import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
 import { stationKeys, useNearbyStations, usePrefetchStation } from '@/hooks/useStationQueries';
+import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
 
@@ -52,6 +53,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const visibleStations = stations.filter(station =>
     matchesConnectorFilters(station.connectorTypes, connectorFilters)
   );
+  // Non-blocking: straight-line distances render immediately, road distances
+  // replace them after this post-render table request finishes.
+  const { data: drivingDistances } = useDrivingDistances(location, visibleStations);
 
   // Only sync once per area if the catalog happens to be empty.
   useEffect(() => {
@@ -176,21 +180,26 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               )}
             </Button>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:justify-between">
-            <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+          {/* Stable two-line layout on mobile: a truncated status label and
+              one control row. A long search query must never reflow the
+              filter controls below it. */}
+          <div className="space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
+            <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
               {showSearchResults && <MapPin className="w-4 h-4 shrink-0 text-primary" />}
               {showSearchResults ? (
-                `Search results for "${searchQuery}"`
+                <span className="min-w-0 truncate" title={`Search results for "${searchQuery}"`}>
+                  Search results for &ldquo;{searchQuery}&rdquo;
+                </span>
               ) : (
                 <>
                   <span className="sm:hidden">Within</span>
                   <span className="hidden sm:inline">Nearby stations within</span>
                 </>
               )}
-            </span>
+            </div>
 
             {/* Distance and connector sit side by side on mobile. */}
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+            <div data-testid="search-controls" className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-none">
               {showSearchResults ? (
                 <>
                   <ConnectorFilter
@@ -257,6 +266,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                   key={station.id}
                   station={station}
                   userLocation={location}
+                  drivingDistanceKm={drivingDistances?.[station.id]}
                   onPrefetch={() => prefetchOnce(station)}
                 />
               ))}

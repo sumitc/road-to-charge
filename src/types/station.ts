@@ -31,6 +31,14 @@ export interface PlaceDetails {
   match?: boolean;
   checkedAt?: string;
   candidates?: Array<{ name: string; distanceKm: number }>;
+  photoQuality?: 'good' | 'mixed' | 'poor';
+  photoSource?: {
+    name: string;
+    kind: string;
+    distanceMeters: number;
+    placeId?: string;
+    note: string;
+  };
 }
 
 export interface StationFeedback {
