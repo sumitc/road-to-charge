@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { del } from '@vercel/blob';
-import { createStationDb } from './station-db';
-import { createSubmissionDb, type SubmissionRow } from './submission-db';
+import { createStationDb } from './station-db.js';
+import { createSubmissionDb, type SubmissionRow } from './submission-db.js';
 
 const DUPLICATE_RADIUS_KM = 0.5;
 
