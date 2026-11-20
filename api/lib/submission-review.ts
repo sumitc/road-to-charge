@@ -108,10 +108,15 @@ async function checkGoogle(submission: SubmissionRow) {
 async function checkOsm(submission: SubmissionRow) {
   try {
     const query = `[out:json][timeout:20];nwr["amenity"="charging_station"](around:500,${submission.latitude},${submission.longitude});out center 20;`;
-    const data = await fetchJson('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: JSON.stringify({ data: query }),
-    });
+    const response = await fetch(
+      `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+      {
+        headers: { 'User-Agent': 'Ruvo/1.0 (+https://road-to-charge-v2.vercel.app)' },
+        signal: AbortSignal.timeout(20000),
+      }
+    );
+    if (!response.ok) throw new Error(`${response.status} ${await response.text()}`);
+    const data = await response.json();
 
     const matches: PlaceMatch[] = (data.elements ?? []).map((element: any) => {
       const lat = element.lat ?? element.center?.lat ?? 0;
