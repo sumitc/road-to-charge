@@ -64,14 +64,6 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     }
   };
 
-  const handleRefresh = () => {
-    if (showSearchResults) {
-      handleSearch();
-    } else {
-      loadNearbyStations();
-    }
-  };
-
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       toast({
@@ -229,19 +221,6 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                     onChange={setConnectorFilters}
                     className="w-full sm:w-56"
                   />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRefresh}
-                    disabled={isLoading || isSearching}
-                    className="col-span-2 min-h-[44px] sm:col-auto"
-                  >
-                    {(isLoading || isSearching) ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      'Refresh'
-                    )}
-                  </Button>
                 </>
               )}
             </div>
