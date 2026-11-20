@@ -89,7 +89,7 @@ export const StationCard: React.FC<StationCardProps> = ({
 
   return (
     <Card className="animate-fade-in overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-electric">
-      <CardContent className="p-3">
+      <CardContent className="p-2.5 sm:p-3">
         <button
           type="button"
           onClick={() => navigate(`/station/${station.id}`)}
@@ -117,7 +117,7 @@ export const StationCard: React.FC<StationCardProps> = ({
             )}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1.5 py-0.5">
+          <div className="min-w-0 flex-1 space-y-1 py-0.5 sm:space-y-1.5">
             <div className="flex items-start justify-between gap-2">
               <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-card-foreground">
                 {station.name}
@@ -177,7 +177,7 @@ export const StationCard: React.FC<StationCardProps> = ({
           </div>
         </button>
 
-        <div className="mt-3 flex items-center gap-2 border-t pt-3">
+        <div className="mt-2 flex items-center gap-2 border-t pt-2 sm:mt-3 sm:pt-3">
           <Button
             size="sm"
             onClick={() => window.open(directionsUrl(station), '_blank')}

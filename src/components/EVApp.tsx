@@ -89,18 +89,18 @@ export const EVApp = () => {
     <div className="min-h-screen bg-background" style={{ minHeight: '100dvh' }}>
       {/* Header */}
       <header
-        className="bg-gradient-hero text-primary-foreground px-3 py-4 shadow-electric sm:px-4"
-        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+        className="bg-gradient-hero text-primary-foreground px-3 py-2.5 shadow-electric sm:px-4 sm:py-4"
+        style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top, 0px))' }}
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <div className="shrink-0 p-2 bg-primary-foreground/20 rounded-lg">
-                <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="shrink-0 p-1.5 bg-primary-foreground/20 rounded-lg sm:p-2">
+                <Zap className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold">EV Station Finder</h1>
-                <p className="text-xs sm:text-sm opacity-90">Find charging stations near you</p>
+                <h1 className="text-base sm:text-xl font-bold">EV Station Finder</h1>
+                <p className="hidden text-xs opacity-90 sm:block sm:text-sm">Find charging stations near you</p>
               </div>
             </div>
             <Button 
@@ -109,7 +109,7 @@ export const EVApp = () => {
               variant="outline" 
               size="sm"
               aria-label={isSyncing ? 'Syncing station data' : 'Sync station data'}
-              className="shrink-0 min-h-[44px] bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
+              className="h-9 min-h-0 shrink-0 bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30 sm:h-10 sm:min-h-[44px]"
             >
               <RefreshCw className={`w-4 h-4 sm:mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Data'}</span>
@@ -120,14 +120,14 @@ export const EVApp = () => {
 
       {/* Main Content */}
       <main
-        className="max-w-4xl mx-auto px-3 pt-4 pb-8 sm:p-4"
+        className="max-w-4xl mx-auto px-3 pt-2 pb-8 sm:p-4"
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
       >
-        <Tabs defaultValue="nearby" className="space-y-6">
+        <Tabs defaultValue="nearby" className="space-y-3 sm:space-y-6">
           <TabsList className="grid !h-auto w-full grid-cols-3 bg-card shadow-sm sm:!h-10">
             <TabsTrigger
               value="nearby"
-              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+              className="flex min-h-[44px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
             >
               <MapPin className="w-4 h-4" />
               <span className="sm:hidden">Stations</span>
@@ -135,7 +135,7 @@ export const EVApp = () => {
             </TabsTrigger>
             <TabsTrigger
               value="trip"
-              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+              className="flex min-h-[44px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
             >
               <Route className="w-4 h-4" />
               <span className="sm:hidden">Trips</span>
@@ -143,7 +143,7 @@ export const EVApp = () => {
             </TabsTrigger>
             <TabsTrigger
               value="favourites"
-              className="flex min-h-[56px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+              className="flex min-h-[44px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
             >
               <Star className="w-4 h-4" />
               <span className="sm:hidden">Saved</span>

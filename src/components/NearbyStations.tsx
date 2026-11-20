@@ -120,10 +120,10 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   if (isLoadingLocation) {
     return (
       <Card className="rounded-2xl">
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-center space-y-3">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground">Detecting your location...</p>
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="text-center space-y-2">
+            <Loader2 className="w-7 h-7 animate-spin text-primary mx-auto" />
+            <p className="text-sm text-muted-foreground">Detecting your location...</p>
           </div>
         </CardContent>
       </Card>
@@ -133,12 +133,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   if (!location) {
     return (
       <Card className="rounded-2xl">
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
-            <p className="text-muted-foreground">Location not available</p>
-            <p className="text-sm text-muted-foreground">
-              Search by area or city above to find stations manually
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="text-center space-y-2">
+            <AlertCircle className="w-7 h-7 text-destructive mx-auto" />
+            <p className="text-sm text-muted-foreground">Location not available</p>
+            <p className="text-xs text-muted-foreground">
+              Search by area or city to find stations manually
             </p>
           </div>
         </CardContent>
@@ -147,11 +147,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Search Bar */}
       <Card className="rounded-2xl">
-        <CardContent className="p-4">
-          <div className="flex gap-2 mb-4">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex gap-2 mb-2.5">
             <Input
               placeholder="e.g. 'Koramangala, Bangalore' or 'Indiranagar Bangalore'"
               value={searchQuery}
@@ -173,35 +173,40 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               )}
             </Button>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-2">
-              {showSearchResults && <MapPin className="w-5 h-5 shrink-0 text-primary" />}
-              <span className="min-w-0 break-words text-sm text-muted-foreground">
-                {showSearchResults ? `Search results for "${searchQuery}"` : 'Nearby stations within'}
-              </span>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-between">
+            <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+              {showSearchResults && <MapPin className="w-4 h-4 shrink-0 text-primary" />}
+              {showSearchResults ? (
+                `Search results for "${searchQuery}"`
+              ) : (
+                <>
+                  <span className="sm:hidden">Within</span>
+                  <span className="hidden sm:inline">Nearby stations within</span>
+                </>
+              )}
+            </span>
 
             {/* Distance and connector sit side by side on mobile. */}
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
               {showSearchResults ? (
                 <>
                   <ConnectorFilter
                     selected={connectorFilters}
                     onChange={setConnectorFilters}
-                    className="w-full sm:w-56"
+                    className="min-w-0 flex-1 sm:w-56 sm:flex-none"
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleShowNearby}
-                    className="min-h-[44px]"
+                    className="h-10 min-h-0 shrink-0"
                   >
                     Show Nearby
                   </Button>
                 </>
               ) : (
                 <>
-                  <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:flex-none">
                     <MapPin className="w-4 h-4 shrink-0 text-primary" />
                     <select
                       value={radius}
@@ -218,7 +223,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                   <ConnectorFilter
                     selected={connectorFilters}
                     onChange={setConnectorFilters}
-                    className="w-full sm:w-56"
+                    className="min-w-0 flex-1 sm:w-56 sm:flex-none"
                   />
                 </>
               )}
@@ -227,18 +232,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Loading state */}
+      {/* Loading state — kept slim so results stay visible on mobile. */}
       {(isLoading || isSearching) && (
-        <Card className="rounded-2xl">
-          <CardContent className="flex items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-              <p className="text-muted-foreground">
-                {isSearching ? 'Searching for charging stations...' : 'Finding nearby charging stations...'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          {isSearching ? 'Searching stations…' : 'Finding nearby stations…'}
+        </div>
       )}
 
       {/* Results */}
@@ -246,7 +245,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         <>
           {visibleStations.length > 0 ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="hidden text-sm text-muted-foreground sm:block">
                 Found {visibleStations.length} station{visibleStations.length !== 1 ? 's' : ''}
                 {connectorFilters.length > 0 ? ' matching your selection' : ' near you'}
               </p>
@@ -261,9 +260,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             </div>
           ) : stations.length > 0 ? (
             <Card className="rounded-2xl">
-              <CardContent className="flex items-center justify-center p-8">
-                <div className="text-center space-y-3">
-                  <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
+              <CardContent className="flex items-center justify-center p-6">
+                <div className="text-center space-y-2">
+                  <AlertCircle className="w-7 h-7 text-muted-foreground mx-auto" />
                   <p className="text-muted-foreground">No stations match your selection</p>
                   <Button
                     variant="outline"
@@ -278,9 +277,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             </Card>
           ) : (
             <Card className="rounded-2xl">
-              <CardContent className="flex items-center justify-center p-8">
-                <div className="text-center space-y-3">
-                  <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
+              <CardContent className="flex items-center justify-center p-6">
+                <div className="text-center space-y-2">
+                  <AlertCircle className="w-7 h-7 text-muted-foreground mx-auto" />
                   <p className="text-muted-foreground">No charging stations found</p>
                   <p className="text-sm text-muted-foreground">
                     Try increasing the search radius or check your location
