@@ -5,6 +5,8 @@ import type {
   ConnectorDetail,
   LocationQuality,
   Ownership,
+  PlaceDetails,
+  StationFeedback,
   StationStatus,
   StationType,
   UserLocation,
@@ -97,6 +99,13 @@ export class EVStationService {
       availabilityLastUpdate: station.availability_last_update ?? undefined,
       lastRiderReport: station.last_rider_report ?? undefined,
       dataAsOf: station.data_as_of ?? undefined,
+      mapsLink: station.maps_link ?? undefined,
+      googlePlaceId: station.google_place_id ?? undefined,
+      photoRefs: Array.isArray(station.photo_references) ? station.photo_references : undefined,
+      placeDetails: station.place_details && typeof station.place_details === 'object' && !Array.isArray(station.place_details)
+        ? (station.place_details as unknown as PlaceDetails)
+        : undefined,
+      photoEnrichedAt: station.photo_enriched_at ?? undefined,
       sourceName: station.source_name ?? undefined,
       sourceUrl: station.source_url ?? undefined,
     };
@@ -199,6 +208,50 @@ export class EVStationService {
     } catch (error) {
       console.error('Error getting station stats:', error);
       return {};
+    }
+  }
+
+  /** Load one station for the detail page. */
+  static async getStationById(id: string): Promise<ChargingStation | null> {
+    try {
+      const response = await fetch(`/api/stations?mode=id&id=${encodeURIComponent(id)}`);
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Station API failed: ${response.status}`);
+      const row = await response.json() as StationRow;
+      return this.mapStation(row);
+    } catch (error) {
+      console.error('Error in getStationById:', error);
+      return null;
+    }
+  }
+
+  /** Community reports for a station. */
+  static async getFeedback(stationId: string): Promise<StationFeedback | null> {
+    try {
+      const response = await fetch(`/api/station-feedback?stationId=${encodeURIComponent(stationId)}`);
+      if (!response.ok) return null;
+      return await response.json() as StationFeedback;
+    } catch (error) {
+      console.error('Error in getFeedback:', error);
+      return null;
+    }
+  }
+
+  static async submitFeedback(
+    stationId: string,
+    kind: 'working' | 'not_working' | 'wrong_location' | 'other',
+    note: string
+  ): Promise<boolean> {
+    try {
+      const response = await fetch('/api/station-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stationId, kind, note }),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error in submitFeedback:', error);
+      return false;
     }
   }
 

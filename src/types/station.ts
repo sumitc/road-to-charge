@@ -18,6 +18,32 @@ export interface ConnectorDetail {
   lastUpdate?: string;
 }
 
+/** Google Places details cached server-side for a station. */
+export interface PlaceDetails {
+  displayName?: string;
+  formattedAddress?: string;
+  rating?: number;
+  userRatingCount?: number;
+  businessStatus?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  location?: { latitude: number; longitude: number };
+  match?: boolean;
+  checkedAt?: string;
+  candidates?: Array<{ name: string; distanceKm: number }>;
+}
+
+export interface StationFeedback {
+  total: number;
+  working: number;
+  notWorking: number;
+  wrongLocation: number;
+  other: number;
+  lastWorkingAt?: string | null;
+  lastNotWorkingAt?: string | null;
+  recent: Array<{ kind: string; note?: string | null; createdAt: string }>;
+}
+
 export interface ChargingStation {
   id: string;
   name: string;
@@ -57,6 +83,11 @@ export interface ChargingStation {
   availabilityLastUpdate?: string;
   lastRiderReport?: string;
   dataAsOf?: string;
+  mapsLink?: string;
+  googlePlaceId?: string;
+  photoRefs?: string[];
+  placeDetails?: PlaceDetails;
+  photoEnrichedAt?: string;
   sourceName?: string;
   sourceUrl?: string;
 }

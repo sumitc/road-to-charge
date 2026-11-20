@@ -5,6 +5,13 @@
     {
       "path": "/api/sync-ev-stations?mode=full&maxPagesPerState=2",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/enrich-place-photos?limit=100",
+      "schedule": "0 4 * * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

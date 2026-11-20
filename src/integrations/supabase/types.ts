@@ -32,6 +32,7 @@ export type Database = {
           district: string | null
           external_id: string | null
           fee: boolean | null
+          google_place_id: string | null
           id: string
           last_rider_report: string | null
           last_updated: string
@@ -46,6 +47,9 @@ export type Database = {
           out_of_service_count: number | null
           ownership: string | null
           payment_modes: string[]
+          photo_enriched_at: string | null
+          photo_references: string[]
+          place_details: Json
           power_output: string | null
           pricing: string | null
           provider: string
@@ -77,6 +81,7 @@ export type Database = {
           district?: string | null
           external_id?: string | null
           fee?: boolean | null
+          google_place_id?: string | null
           id?: string
           last_rider_report?: string | null
           last_updated?: string
@@ -91,6 +96,9 @@ export type Database = {
           out_of_service_count?: number | null
           ownership?: string | null
           payment_modes?: string[]
+          photo_enriched_at?: string | null
+          photo_references?: string[]
+          place_details?: Json
           power_output?: string | null
           pricing?: string | null
           provider: string
@@ -122,6 +130,7 @@ export type Database = {
           district?: string | null
           external_id?: string | null
           fee?: boolean | null
+          google_place_id?: string | null
           id?: string
           last_rider_report?: string | null
           last_updated?: string
@@ -136,6 +145,9 @@ export type Database = {
           out_of_service_count?: number | null
           ownership?: string | null
           payment_modes?: string[]
+          photo_enriched_at?: string | null
+          photo_references?: string[]
+          place_details?: Json
           power_output?: string | null
           pricing?: string | null
           provider?: string

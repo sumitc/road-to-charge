@@ -34,6 +34,28 @@ export async function GET(req: Request): Promise<Response> {
       });
     }
 
+    if (mode === 'id') {
+      const id = params.get('id') ?? '';
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        await sql.end({ timeout: 5 });
+        return new Response(JSON.stringify({ error: 'Valid station id is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const rows = await sql`SELECT * FROM public.ev_charging_stations WHERE id = ${id}::uuid LIMIT 1`;
+      await sql.end({ timeout: 5 });
+      if (!rows.length) {
+        return new Response(JSON.stringify({ error: 'Station not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify(rows[0]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const conditions: Fragment[] = [];
     let searchTokens: string[] = [];
     let order = sql`last_updated DESC`;

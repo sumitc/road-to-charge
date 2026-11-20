@@ -23,6 +23,11 @@ Node.js 24.x is used by Vercel. `.env` files are local-only and ignored by Git.
 - `api/submission-decision.ts` — signed Approve/Reject links from the review email
 - `api/review-submission.ts` — secret-protected retry for the automated review
 - `api/lib/submission-review.ts` — Google Places/OSM checks, Resend email, publishing, photo cleanup
+- `api/enrich-place-photos.ts` — batch Google Places enrichment for new/changed stations
+- `api/place-photo.ts` — CDN-cached proxy for Google Places photos (keeps the API key server-side)
+- `api/station-feedback.ts` — community working/not-working/wrong-location reports
+- `api/lib/place-enrichment.ts` — place matching, photo references, and rating/details cache
+- `src/pages/StationDetail.tsx` — photo gallery, visit details, maps/app links, feedback FAB
 - `api/lib/station-db.ts` — shared Postgres access helpers
 - `supabase/migrations/` — database schema for `public.ev_charging_stations`
 
@@ -58,6 +63,7 @@ POST JSON to `/api/sync-ev-stations` with `Authorization: Bearer $SYNC_SECRET`:
 A Vercel Cron keeps the catalog current on the Hobby plan:
 
 - `vercel.json` runs `/api/sync-ev-stations?mode=full&maxPagesPerState=2` daily at `0 3 * * *`.
+- `/api/enrich-place-photos?limit=100` runs daily at `0 4 * * *` to add Google Places photos/details to stations added or changed by the catalog sync.
 - Hobby crons run at most once per day with per-hour timing (±59 min), and functions have a 300s maximum duration.
 - No GitHub Actions workflows or GitHub repository secrets are required.
 
@@ -79,6 +85,22 @@ Required Vercel environment variables:
 - `APP_URL` — optional, defaults to the production Vercel URL
 
 The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql`, submissions in `supabase/migrations/20261120000000_create_station_submissions.sql`, and the frontend shape in `src/types/station.ts`.
+
+### Station photos, detail view, and feedback
+
+List rows are now photo-first: the primary Google Places photo (if available), station name, address, connector types, provider/status, and direct Directions/Charging app hooks. Tapping the row opens `/station/:id`, which shows a larger photo gallery (up to five Google photos), rating, website, payment/contact details, source accuracy, and maps/app links.
+
+Google enrichment is continuous and incremental:
+
+- A database trigger clears `google_place_id`, `photo_references`, `place_details`, and `photo_enriched_at` whenever a station's name, address, or coordinates change.
+- The daily enrichment cron only queries rows where `photo_enriched_at IS NULL`, so new/changed stations are picked up automatically and existing rows are never re-queried.
+- Removed catalog rows disappear with their photos and feedback via the foreign-key cascade.
+- `GET /api/enrich-place-photos?limit=100` can be called manually with `Authorization: Bearer $SYNC_SECRET` (or `$CRON_SECRET`) to process a batch immediately.
+- Photos are served through `/api/place-photo?ref=...&width=...`, which keeps `GOOGLE_MAPS_API_KEY` on the server and sets long-lived CDN cache headers.
+
+The detail page also has a floating **Feedback** button. Reports (`working`, `not_working`, `wrong_location`, `other`) are stored in `public.station_feedback` and shown as community confidence counts and recent notes. Live "in use" and "recently used" sections are intentionally placeholders for future network integrations.
+
+Schema: `supabase/migrations/20261120010000_add_station_place_photos_and_feedback.sql`.
 
 ## Mobile app (Capacitor)
 
