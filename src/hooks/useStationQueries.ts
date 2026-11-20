@@ -28,9 +28,18 @@ export function useUserLocation() {
   return useQuery<UserLocation>({
     queryKey: ['user-location'],
     queryFn: async () => {
-      const location = await LocationService.getCurrentLocation();
-      LocationService.saveLocation(location);
-      return location;
+      const resolved = await LocationService.getCurrentLocation();
+      // A denied/timed-out GPS lookup must never replace a real cached
+      // location with the Delhi fallback (that made every refresh load Delhi
+      // and made the list refetch for it forever). Keep the last real fix if
+      // we have one; only persist genuine GPS results. A first-time visitor
+      // with no cache can still see the fallback for this session, but it is
+      // intentionally not written to storage.
+      if (resolved.isFallback) {
+        return cached?.location ?? resolved.location;
+      }
+      LocationService.saveLocation(resolved.location);
+      return resolved.location;
     },
     initialData: cached?.location,
     initialDataUpdatedAt: cached?.timestamp ?? 0,

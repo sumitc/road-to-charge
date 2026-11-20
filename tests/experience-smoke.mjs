@@ -182,6 +182,73 @@ try {
 
     await page.close();
   }
+
+  // Location stability: a failed/denied GPS lookup must never replace a real
+  // cached location with the Delhi fallback, and searching another city must
+  // not overwrite the saved home location. Regression for "page loads with my
+  // location, then randomly starts loading Delhi forever".
+  const failGps = () => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(_ok, err) {
+          setTimeout(() => err({ code: 2, message: 'Permission denied' }), 150);
+        },
+      },
+    });
+  };
+  const staleHyderabad = {
+    location: { lat: 17.4485, lng: 78.3908 },
+    timestamp: Date.now() - 30 * 60 * 1000,
+  };
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const locationPage = await context.newPage();
+  await locationPage.addInitScript(cache => {
+    localStorage.setItem('ruvo_last_location', JSON.stringify(cache));
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(_ok, err) {
+          setTimeout(() => err({ code: 2, message: 'Permission denied' }), 150);
+        },
+      },
+    });
+  }, staleHyderabad);
+  await locationPage.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await locationPage.waitForTimeout(4000); // stale cache triggers a background GPS refetch
+  const readCache = p => p.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('ruvo_last_location') ?? 'null'); } catch { return null; }
+  });
+  let cachedLocation = await readCache(locationPage);
+  check('failed GPS keeps the real cached location',
+    Math.abs((cachedLocation?.location?.lat ?? 0) - 17.4485) < 0.001,
+    JSON.stringify(cachedLocation?.location ?? null));
+  const nearbyNames = await locationPage.locator('button[aria-label^="View details for"]')
+    .evaluateAll(els => els.slice(0, 5).map(el => el.getAttribute('aria-label') ?? ''));
+  check('station list does not drift to Delhi after GPS failure',
+    nearbyNames.length > 0 && !nearbyNames.some(name => /New Delhi|Delhi/i.test(name)),
+    nearbyNames.slice(0, 2).join(' | '));
+
+  await locationPage.getByLabel('Search for charging stations by area or city').fill('Kokapet');
+  await locationPage.getByRole('button', { name: 'Search' }).click();
+  await locationPage.waitForTimeout(2500);
+  cachedLocation = await readCache(locationPage);
+  check('searching another area does not overwrite the saved home location',
+    Math.abs((cachedLocation?.location?.lat ?? 0) - 17.4485) < 0.001,
+    JSON.stringify(cachedLocation?.location ?? null));
+
+  // First-time visitor (no cache) with failing GPS: the fallback is fine to
+  // display, but must not be written to storage and reused on every reload.
+  const firstVisitContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const firstVisit = await firstVisitContext.newPage();
+  await firstVisit.addInitScript(failGps);
+  await firstVisit.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await firstVisit.waitForTimeout(3000);
+  check('Delhi fallback is not persisted for a first-time visitor',
+    (await readCache(firstVisit)) === null, JSON.stringify(await readCache(firstVisit)));
+  await firstVisitContext.close();
+  await context.close();
 } finally {
   await browser.close();
 }

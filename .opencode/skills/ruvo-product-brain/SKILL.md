@@ -48,6 +48,7 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 - **R21** Distance shown on cards is progressively upgraded from straight-line to **road distance** via a post-render OSRM table request (`useDrivingDistances`, 80 stations/call, cached 10 min). Directions links now pin `origin=` to the same location. This adds no load-blocking request.
 - **R22** Header brand is **Ruvo** with "EV station finder" on the same line (no extra subtitle row). Mobile search layout uses a stable two-line status/controls structure so long queries never reflow the filter row. Add new experience regressions to `tests/experience-smoke.mjs` (`npm run test:experience`).
 - **R23** Every screen header (list AND station detail, future screens too) MUST use the shared `src/components/BrandTitle.tsx` component for the "Ruvo + descriptor" wordmark. Never hand-roll a different title style (the detail page previously used a two-line uppercase `Ruvo` + `Station details` stack). `tests/experience-smoke.mjs` asserts font size/weight/family match between list and detail headers — keep this passing for future builds.
+- **R24** `LocationService.getCurrentLocation()` returns `ResolvedLocation { location, isFallback }`. The Delhi fallback (28.6139, 77.2090) is display-only for a first-time visitor: it is **never** written to `localStorage` and **never** replaces a real cached fix when GPS is denied/timed out. `EVApp.handleLocationUpdate` only sets the in-memory `user-location` query cache (searching another city must not overwrite the saved home location). Root cause fixed: a stale cached location triggered a background GPS refetch; on failure the fallback was saved as `ruvo_last_location`, so the list permanently switched to Delhi and refetched for it on every load. Regression checks live in `tests/experience-smoke.mjs`.
 - Full photo backfill completed: **1,157 of 1,797** already-enriched no-photo rows repaired (0 failures); DB is 29,215 rows / 4,905 with photos / 1,197 landmark-sourced / 5,545 enriched.
 
 ## Architecture map
@@ -66,7 +67,7 @@ Frontend (Vite + React 18 + TypeScript + Tailwind + shadcn/ui, **not Next.js**):
 - `src/components/AdBanner.tsx` — native AdMob banner, sets `--ruvo-banner-height` CSS var so FABs/list bottom stay clear.
 - `src/components/WebAdBanner.tsx` — browser-only AdSense banner; no-op without both Vite AdSense env vars.
 - `src/hooks/useStationQueries.ts` — React Query keys and hooks for location, nearby, search, detail, feedback, plus `usePrefetchStation()` used by station cards.
-- `src/services/` — `evStationService.ts` (API mapping), `locationService.ts` (cached geolocation), `favouritesService.ts`, `appIconService.ts`, `chargingStationsSync.ts`.
+- `src/services/` — `evStationService.ts` (API mapping), `locationService.ts` (cached geolocation + `ResolvedLocation` fallback contract, see R24), `favouritesService.ts`, `appIconService.ts`, `chargingStationsSync.ts`.
 - `src/lib/` — `connectorLabels.ts`, `appLinks.ts` (`directionsUrl` pins origin), `placePhotos.ts`, `utils.ts`.
 - `src/hooks/useDrivingDistances.ts` — non-blocking OSRM road-distance table cache.
 - `tests/experience-smoke.mjs` — Playwright regression checks for search layout, FAB visibility, refresh stability, branding, and distance semantics.
@@ -200,6 +201,7 @@ DB stats pattern: read `.env.vercel`, connect with `postgres` using `POSTGRES_UR
 - Feedback FK type mismatch (`text` vs `uuid`) and `FUNCTION_INVOCATION_TIMEOUT` were fixed; don't reintroduce them.
 - Google matcher must strip `City=…, District=…, State=…` from station names; raw text queries returned irrelevant results. Provider aliases matter.
 - `/api/stations` and `/api/place-photo` caching is intentional; stale browser cache was ruled out as the missing-photo cause (the data was genuinely un-enriched).
+- A poisoned `ruvo_last_location` from before R24 self-heals on the next successful GPS fix (the stale timestamp keeps triggering a background refetch, and real fixes now overwrite storage). Do not "fix" this by hard-coding a clear of Delhi coordinates — a user may genuinely live in Delhi.
 - Google Places does not label photo *content*. "Not a screenshot/video" is approximated by resolution + landscape aspect ratio ranking; never claim images were visually verified. Landmark photos are only borrowed within 75 m and are always disclosed in the UI.
 - `/api/station-feedback` GET is sequential to avoid deadlocks; POST uses the uuid FK.
 - Entry bundle is ~418 KB (133 KB gzip) after code splitting; detail/trips are separate lazy chunks. Still above Vite's 500 kB-style warning threshold historically, but no longer a single monolith.

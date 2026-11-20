@@ -6,6 +6,12 @@ interface CachedLocation {
 }
 
 const CACHE_KEY = 'ruvo_last_location';
+const DELHI_FALLBACK: UserLocation = { lat: 28.6139, lng: 77.2090 };
+
+export interface ResolvedLocation {
+  location: UserLocation;
+  isFallback: boolean;
+}
 
 export class LocationService {
   /** Last known location, used for an instant first paint before GPS resolves. */
@@ -38,10 +44,15 @@ export class LocationService {
     }
   }
 
-  static async getCurrentLocation(): Promise<UserLocation> {
+  /**
+   * A failed/denied GPS lookup must be distinguishable from a real fix: the
+   * Delhi value is only a last-resort display location, never a user location
+   * that should be persisted or replace a known-good cached one.
+   */
+  static async getCurrentLocation(): Promise<ResolvedLocation> {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi fallback
+        resolve({ location: DELHI_FALLBACK, isFallback: true });
         return;
       }
 
@@ -50,12 +61,15 @@ export class LocationService {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+            location: {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            },
+            isFallback: false,
           });
         },
         () => {
-          resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi fallback
+          resolve({ location: DELHI_FALLBACK, isFallback: true });
         },
         {
           enableHighAccuracy: false,

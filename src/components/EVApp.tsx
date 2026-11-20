@@ -7,7 +7,6 @@ import { BrandTitle } from './BrandTitle';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
-import { LocationService } from '@/services/locationService';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +33,9 @@ export const EVApp = () => {
   const { toast } = useToast();
 
   const handleLocationUpdate = (next: { lat: number; lng: number }) => {
-    LocationService.saveLocation(next);
+    // Searching another city only moves the active list/map centre for this
+    // session. Never persist it as the user's home location — doing so made a
+    // search for Delhi replace the real GPS location in localStorage forever.
     queryClient.setQueryData(['user-location'], next);
   };
 
