@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,12 +50,23 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const isLoading = nearbyQuery.isPending;
 
   const stations = showSearchResults ? searchResults : nearbyStations;
-  const visibleStations = stations.filter(station =>
+  // Non-blocking: straight-line distances render immediately, road distances
+  // replace them after this post-render table request finishes. Query the full
+  // (unfiltered) list so toggling a connector does not re-request distances.
+  const distanceQuery = useDrivingDistances(location, stations);
+  const drivingDistances = distanceQuery.data;
+  // The list starts sorted by straight-line distance. Once road distances
+  // arrive, re-sort by the value actually shown on each card — otherwise a
+  // 2.1 km row can sit above a 1.9 km row and look unsorted.
+  const orderedStations = useMemo(() => {
+    if (!distanceQuery.isSuccess || !drivingDistances) return stations;
+    const distanceOf = (station: ChargingStation) =>
+      drivingDistances[station.id] ?? station.distance ?? Number.POSITIVE_INFINITY;
+    return [...stations].sort((a, b) => distanceOf(a) - distanceOf(b));
+  }, [stations, drivingDistances, distanceQuery.isSuccess]);
+  const visibleStations = orderedStations.filter(station =>
     matchesConnectorFilters(station.connectorTypes, connectorFilters)
   );
-  // Non-blocking: straight-line distances render immediately, road distances
-  // replace them after this post-render table request finishes.
-  const { data: drivingDistances } = useDrivingDistances(location, visibleStations);
 
   // Only sync once per area if the catalog happens to be empty.
   useEffect(() => {

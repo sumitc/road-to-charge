@@ -37,7 +37,9 @@ async function fetchChunk(origin: Origin, stations: ChargingStation[]): Promise<
 }
 
 export function useDrivingDistances(origin: Origin | null, stations: ChargingStation[]) {
-  const key = stations.map(station => station.id).join(',');
+  // Sort IDs so re-ordering the visible cards never changes the cache key and
+  // triggers a second routing table call.
+  const key = stations.map(station => station.id).sort().join(',');
   return useQuery<Record<string, number>>({
     queryKey: ['driving-distances', origin?.lat.toFixed(3), origin?.lng.toFixed(3), key],
     enabled: Boolean(origin && stations.length > 0),

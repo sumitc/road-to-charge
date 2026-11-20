@@ -249,6 +249,39 @@ try {
     (await readCache(firstVisit)) === null, JSON.stringify(await readCache(firstVisit)));
   await firstVisitContext.close();
   await context.close();
+
+  // The cards must stay ordered by the distance the user actually sees. The
+  // list first renders straight-line estimates, then OSRM road distances
+  // arrive — without re-sorting, a 2.1 km card could sit above a 1.9 km card.
+  const orderContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const orderPage = await orderContext.newPage();
+  await orderPage.addInitScript(() => {
+    const here = { lat: 17.4485, lng: 78.3908 };
+    localStorage.setItem('ruvo_last_location', JSON.stringify({ location: here, timestamp: Date.now() }));
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(ok) {
+          ok({ coords: { latitude: here.lat, longitude: here.lng } });
+        },
+      },
+    });
+  });
+  await orderPage.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await orderPage.locator('button[aria-label^="View details for"]').first().waitFor({ timeout: 25000 });
+  await orderPage.waitForFunction(() => {
+    const badges = [...document.querySelectorAll('span[title$="distance"]')];
+    return badges.length >= 5 && badges.every(b => b.getAttribute('title') === 'Driving distance');
+  }, null, { timeout: 20000 }).catch(() => {});
+  const distances = await orderPage.evaluate(() =>
+    [...document.querySelectorAll('span[title$="distance"]')]
+      .map(el => parseFloat((el.textContent ?? '').replace('~', '')))
+      .filter(Number.isFinite));
+  const inversions = distances.reduce((n, v, i) => n + (i > 0 && v < distances[i - 1] ? 1 : 0), 0);
+  check('card order matches the displayed road distances',
+    distances.length >= 5 && inversions === 0,
+    `${distances.length} cards, ${inversions} inversions: ${distances.slice(0, 12).join(', ')}`);
+  await orderContext.close();
 } finally {
   await browser.close();
 }
