@@ -1,15 +1,52 @@
 import { UserLocation } from '@/types/station';
 
+interface CachedLocation {
+  location: UserLocation;
+  timestamp: number;
+}
+
+const CACHE_KEY = 'ruvo_last_location';
+
 export class LocationService {
+  /** Last known location, used for an instant first paint before GPS resolves. */
+  static getCachedLocation(): CachedLocation | null {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as CachedLocation;
+      if (
+        Number.isFinite(parsed?.location?.lat) &&
+        Number.isFinite(parsed?.location?.lng) &&
+        Number.isFinite(parsed?.timestamp)
+      ) {
+        return parsed;
+      }
+    } catch {
+      // ignore malformed cache
+    }
+    return null;
+  }
+
+  static saveLocation(location: UserLocation): void {
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ location, timestamp: Date.now() } satisfies CachedLocation),
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   static async getCurrentLocation(): Promise<UserLocation> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        // Fallback to IP-based location (mock for now)
-        resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi
+        resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi fallback
         return;
       }
 
-      // Try GPS first
+      // City-level accuracy is enough for nearby stations and resolves much
+      // faster than enableHighAccuracy on phones.
       navigator.geolocation.getCurrentPosition(
         (position) => {
           resolve({
@@ -17,14 +54,12 @@ export class LocationService {
             lng: position.coords.longitude,
           });
         },
-        (error) => {
-          console.warn('GPS location failed:', error);
-          // Fallback to IP-based location (mock for now)
-          resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi
+        () => {
+          resolve({ lat: 28.6139, lng: 77.2090 }); // Delhi fallback
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
+          enableHighAccuracy: false,
+          timeout: 8000,
           maximumAge: 300000, // 5 minutes
         }
       );
@@ -51,6 +86,6 @@ export class LocationService {
   }
 
   private static toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
+    return degrees * Math.PI / 180;
   }
 }

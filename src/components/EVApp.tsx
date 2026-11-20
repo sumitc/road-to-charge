@@ -1,21 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, Search, Star, Zap, RefreshCw, Database, Route } from 'lucide-react';
+import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
-import { ChargingStationsSync } from './ChargingStationsSync';
 import { ContributionButton } from './ContributionButton';
 import TripPlanner from './TripPlanner';
 import { LocationService } from '@/services/locationService';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
+import { useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
 
 export const EVApp = () => {
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const queryClient = useQueryClient();
+  // Cached in React Query across routes and in localStorage across launches,
+  // so returning from a detail page never re-runs geolocation.
+  const { data: location, isLoading: isLoadingLocation } = useUserLocation();
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+
+  const handleLocationUpdate = (next: { lat: number; lng: number }) => {
+    LocationService.saveLocation(next);
+    queryClient.setQueryData(['user-location'], next);
+  };
 
   const handleSync = async () => {
     if (!location) {
@@ -40,7 +48,9 @@ export const EVApp = () => {
           title: "Sync successful",
           description: `Added ${result.stats?.new || 0} new stations`,
         });
-        window.location.reload();
+        // Refetch station lists instead of a full page reload so the cached
+        // location and UI state survive.
+        await queryClient.invalidateQueries({ queryKey: ['stations'] });
       } else {
         toast({
           title: "Sync failed",
@@ -58,32 +68,6 @@ export const EVApp = () => {
       setIsSyncing(false);
     }
   };
-
-  useEffect(() => {
-    const getLocation = async () => {
-      try {
-        setIsLoadingLocation(true);
-        const userLocation = await LocationService.getCurrentLocation();
-        setLocation(userLocation);
-        toast({
-          title: "Location detected",
-          description: "Finding nearby charging stations...",
-        });
-      } catch (error) {
-        toast({
-          title: "Location not available",
-          description: "Using default location. You can search manually.",
-          variant: "destructive",
-        });
-        // Default to a central location if geolocation fails
-        setLocation({ lat: 28.6139, lng: 77.2090 }); // Delhi
-      } finally {
-        setIsLoadingLocation(false);
-      }
-    };
-
-    getLocation();
-  }, [toast]);
 
   return (
     <div className="min-h-screen bg-background" style={{ minHeight: '100dvh' }}>
@@ -153,9 +137,9 @@ export const EVApp = () => {
 
           <TabsContent value="nearby" className="space-y-4">
             <NearbyStations 
-              location={location} 
+              location={location}
               isLoadingLocation={isLoadingLocation}
-              onLocationUpdate={setLocation}
+              onLocationUpdate={handleLocationUpdate}
             />
           </TabsContent>
 

@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 interface StationCardProps {
   station: ChargingStation;
   userLocation?: { lat: number; lng: number } | null;
+  /** Only the Saved tab needs this; the nearby list must not refetch on a star tap. */
   onFavouriteToggle?: () => void;
 }
 
@@ -50,13 +51,11 @@ const SPEED_DOT: Record<string, string> = {
   slow: 'bg-emerald-500',
 };
 
-export const StationCard: React.FC<StationCardProps> = ({
-  station,
-  onFavouriteToggle,
-}) => {
+const StationCardComponent: React.FC<StationCardProps> = ({ station, onFavouriteToggle }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isFavourite = FavouritesService.isFavourite(station.id);
+  // Local state keeps the star instant; no list refetch on toggle.
+  const [isFavourite, setIsFavourite] = useState(() => FavouritesService.isFavourite(station.id));
   const [appIconUrl, setAppIconUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,6 +69,7 @@ export const StationCard: React.FC<StationCardProps> = ({
       } else {
         FavouritesService.addFavourite(station);
       }
+      setIsFavourite(!isFavourite);
       toast({
         title: isFavourite ? 'Removed from favourites' : 'Added to favourites',
         description: station.name,
@@ -103,6 +103,7 @@ export const StationCard: React.FC<StationCardProps> = ({
                   src={placePhotoUrl(photoRef, 320)}
                   alt={station.name}
                   loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
                 <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white">
@@ -226,3 +227,6 @@ export const StationCard: React.FC<StationCardProps> = ({
     </Card>
   );
 };
+
+export const StationCard = React.memo(StationCardComponent);
+StationCard.displayName = 'StationCard';

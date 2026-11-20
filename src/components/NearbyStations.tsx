@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService } from '@/services/evStationService';
+import { stationKeys, useNearbyStations } from '@/hooks/useStationQueries';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,53 +18,41 @@ interface NearbyStationsProps {
   onLocationUpdate: (location: { lat: number; lng: number }) => void;
 }
 
-export const NearbyStations: React.FC<NearbyStationsProps> = ({ 
-  location, 
+export const NearbyStations: React.FC<NearbyStationsProps> = ({
+  location,
   isLoadingLocation,
-  onLocationUpdate 
+  onLocationUpdate,
 }) => {
-  const [stations, setStations] = useState<ChargingStation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [radius, setRadius] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchResults, setSearchResults] = useState<ChargingStation[]>([]);
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
+  const syncedFor = useRef<string | null>(null);
   const { toast } = useToast();
 
+  // Cached by location + radius, so detail→back never refetches the list.
+  const nearbyQuery = useNearbyStations(location, radius);
+  const nearbyStations = nearbyQuery.data ?? [];
+  const isLoading = nearbyQuery.isFetching;
+
+  const stations = showSearchResults ? searchResults : nearbyStations;
   const visibleStations = stations.filter(station =>
     matchesConnectorFilters(station.connectorTypes, connectorFilters)
   );
 
+  // Only sync once per area if the catalog happens to be empty.
   useEffect(() => {
-    if (location && !isLoadingLocation) {
-      loadNearbyStations();
-    }
-  }, [location, isLoadingLocation, radius]);
-
-  const loadNearbyStations = async () => {
-    if (!location) return;
-    
-    setIsLoading(true);
-    try {
-      // Try to sync stations first if database is empty
-      const stations = await EVStationService.getStationsWithDistance(location, radius);
-      if (stations.length === 0) {
-        console.log('No stations found, triggering sync...');
-        await EVStationService.syncStationsFromSources();
-        // Try again after sync
-        const syncedStations = await EVStationService.getStationsWithDistance(location, radius);
-        setStations(syncedStations);
-      } else {
-        setStations(stations);
-      }
-    } catch (error) {
-      console.error('Error loading stations:', error);
-      setStations([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    if (showSearchResults || !location || nearbyQuery.isFetching || nearbyStations.length > 0) return;
+    const key = `${location.lat.toFixed(3)},${location.lng.toFixed(3)},${radius}`;
+    if (syncedFor.current === key) return;
+    syncedFor.current = key;
+    EVStationService.syncStationsFromSources()
+      .then(() => queryClient.invalidateQueries({ queryKey: ['stations'] }))
+      .catch(() => undefined);
+  }, [showSearchResults, location, nearbyQuery.isFetching, nearbyStations.length, radius, queryClient]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -79,11 +69,14 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 
     try {
       const normalizedQuery = searchQuery.trim();
-      // Search for stations based on query
-      const results = await EVStationService.searchStationsByLocation(normalizedQuery);
-      setStations(results);
-      
-      // Update location based on search results
+      const results = await queryClient.fetchQuery({
+        queryKey: stationKeys.search(normalizedQuery),
+        queryFn: () => EVStationService.searchStationsByLocation(normalizedQuery),
+        staleTime: 10 * 60 * 1000,
+      });
+      setSearchResults(results);
+
+      // Move the nearby map centre to the searched area (cached for Show Nearby).
       if (results.length > 0) {
         const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
         const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
@@ -114,7 +107,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const handleShowNearby = () => {
     setShowSearchResults(false);
     setSearchQuery('');
-    loadNearbyStations();
+    setSearchResults([]);
   };
 
   if (isLoadingLocation) {
@@ -160,8 +153,8 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               className="min-w-0 flex-1 min-h-[44px]"
               aria-label="Search for charging stations by area or city"
             />
-            <Button 
-              onClick={handleSearch} 
+            <Button
+              onClick={handleSearch}
               disabled={isSearching}
               aria-label="Search"
               className="shrink-0 min-h-[44px] px-3 bg-gradient-primary hover:opacity-90"
@@ -250,12 +243,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                 {connectorFilters.length > 0 ? ' matching your selection' : ' near you'}
               </p>
               {visibleStations.map((station) => (
-                <StationCard
-                  key={station.id}
-                  station={station}
-                  userLocation={location}
-                  onFavouriteToggle={loadNearbyStations}
-                />
+                <StationCard key={station.id} station={station} userLocation={location} />
               ))}
             </div>
           ) : stations.length > 0 ? (

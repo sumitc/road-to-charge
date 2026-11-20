@@ -70,7 +70,13 @@ export async function GET(req: Request): Promise<Response> {
         const lngRange = radius / (111.0 * Math.cos((lat * Math.PI) / 180));
         conditions.push(sql`latitude BETWEEN ${lat - latRange} AND ${lat + latRange}`);
         conditions.push(sql`longitude BETWEEN ${lng - lngRange} AND ${lng + lngRange}`);
+        // Rough proximity sort in SQL; the service computes exact distances.
+        order = sql`(abs(latitude::float8 - ${lat}) + abs(longitude::float8 - ${lng})) ASC`;
       }
+      const requested = Number(params.get('limit'));
+      limit = Number.isFinite(requested) && requested > 0
+        ? Math.min(requested, 200)
+        : radius <= 10 ? 100 : 200;
     } else if (mode === 'bounds') {
       const minLat = Number(params.get('minLat'));
       const maxLat = Number(params.get('maxLat'));
@@ -142,8 +148,22 @@ export async function GET(req: Request): Promise<Response> {
         )
       : sql``;
     const where = conditions.length ? sql`WHERE ${combined}` : sql``;
+    // The list view only needs a subset of columns. Returning full rows
+    // (place_details, connectors, audit fields) made this hot path ~107 KB for
+    // 36 stations. Only the first photo ref is used on a card.
+    const columns = mode === 'distance'
+      ? sql`
+          id, station_name, provider, address, city, state, district,
+          latitude, longitude, availability_status, connector_types,
+          max_power_kw, max_kw_by_standard, charging_current, ownership,
+          station_type, maps_link, location_quality,
+          photo_references[1:1] AS photo_references,
+          CASE WHEN place_details IS NULL THEN NULL
+               ELSE jsonb_build_object('rating', place_details->'rating') END AS place_details
+        `
+      : sql`*`;
     let rows = await sql`
-      SELECT * FROM public.ev_charging_stations
+      SELECT ${columns} FROM public.ev_charging_stations
       ${where}
       ORDER BY ${order}
       LIMIT ${limit}
@@ -183,9 +203,15 @@ export async function GET(req: Request): Promise<Response> {
 
     await sql.end({ timeout: 5 });
 
-    return new Response(JSON.stringify(rows), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const headers: Record<string, string> = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+    };
+    if (mode === 'distance') {
+      // Catalog data changes daily; cached lists make back-navigation instant.
+      headers['Cache-Control'] = 'public, s-maxage=300, stale-while-revalidate=600';
+    }
+    return new Response(JSON.stringify(rows), { headers });
   } catch (error) {
     console.error('Stations API error:', error);
     return new Response(

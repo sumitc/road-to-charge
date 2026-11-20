@@ -1,0 +1,85 @@
+import { useQuery } from '@tanstack/react-query';
+import { EVStationService } from '@/services/evStationService';
+import { LocationService } from '@/services/locationService';
+import type { UserLocation } from '@/types/station';
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+const TEN_MINUTES = 10 * 60 * 1000;
+const THIRTY_MINUTES = 30 * 60 * 1000;
+
+export const stationKeys = {
+  nearby: (location: UserLocation, radius: number) =>
+    [
+      'stations',
+      'nearby',
+      Number(location.lat.toFixed(4)),
+      Number(location.lng.toFixed(4)),
+      radius,
+    ] as const,
+  search: (query: string) => ['stations', 'search', query.trim().toLowerCase()] as const,
+  detail: (id: string) => ['station', id] as const,
+  feedback: (id: string) => ['station-feedback', id] as const,
+};
+
+/** Location is cached in memory across route changes and in storage across launches. */
+export function useUserLocation() {
+  const cached = LocationService.getCachedLocation();
+  return useQuery<UserLocation>({
+    queryKey: ['user-location'],
+    queryFn: async () => {
+      const location = await LocationService.getCurrentLocation();
+      LocationService.saveLocation(location);
+      return location;
+    },
+    initialData: cached?.location,
+    initialDataUpdatedAt: cached?.timestamp ?? 0,
+    staleTime: FIVE_MINUTES,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useNearbyStations(location: UserLocation | null, radius: number) {
+  return useQuery({
+    queryKey: location ? stationKeys.nearby(location, radius) : ['stations', 'nearby', 'none'],
+    queryFn: () => EVStationService.getStationsWithDistance(location!, radius),
+    enabled: Boolean(location),
+    staleTime: FIVE_MINUTES,
+    gcTime: THIRTY_MINUTES,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useStationSearch(query: string) {
+  return useQuery({
+    queryKey: stationKeys.search(query),
+    queryFn: () => EVStationService.searchStationsByLocation(query),
+    enabled: Boolean(query.trim()),
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useStationDetail(id: string) {
+  return useQuery({
+    queryKey: stationKeys.detail(id),
+    queryFn: () => EVStationService.getStationById(id),
+    enabled: Boolean(id),
+    staleTime: FIVE_MINUTES,
+    gcTime: THIRTY_MINUTES,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useStationFeedback(id: string | undefined) {
+  return useQuery({
+    queryKey: stationKeys.feedback(id ?? 'none'),
+    queryFn: () => EVStationService.getFeedback(id!),
+    enabled: Boolean(id),
+    staleTime: 60 * 1000,
+    gcTime: THIRTY_MINUTES,
+    refetchOnWindowFocus: false,
+  });
+}

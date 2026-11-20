@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -32,11 +32,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { ChargingStation, StationFeedback } from '@/types/station';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { placePhotoUrl } from '@/lib/placePhotos';
 import { EVStationService } from '@/services/evStationService';
+import { useStationDetail, useStationFeedback } from '@/hooks/useStationQueries';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -67,30 +67,19 @@ const StationDetail: React.FC = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [station, setStation] = useState<ChargingStation | null>(null);
-  const [feedback, setFeedback] = useState<StationFeedback | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Both queries are cached, so revisiting a station (or going back to the
+  // list) shows instantly instead of re-fetching station + feedback.
+  const { data: station, isLoading } = useStationDetail(id);
+  const { data: feedback, refetch: refetchFeedback } = useStationFeedback(id);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackKind, setFeedbackKind] = useState<string>('working');
   const [feedbackNote, setFeedbackNote] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-  const loadFeedback = async (stationId: string) => {
-    setFeedback(await EVStationService.getFeedback(stationId));
+  const loadFeedback = async () => {
+    await refetchFeedback();
   };
-
-  useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-    EVStationService.getStationById(id).then(async result => {
-      if (!active) return;
-      setStation(result);
-      if (result) await loadFeedback(result.id);
-      setIsLoading(false);
-    });
-    return () => { active = false; };
-  }, [id]);
 
   if (isLoading) {
     return (
@@ -143,7 +132,7 @@ const StationDetail: React.FC = () => {
     }
     setFeedbackNote('');
     setFeedbackOpen(false);
-    await loadFeedback(station.id);
+    await loadFeedback();
     toast({ title: 'Thanks — feedback recorded' });
   };
 
