@@ -41,29 +41,29 @@ export async function GET(req: Request): Promise<Response> {
 
   const sql = createDb();
   try {
-    const [counts, lastWorking, lastNotWorking, recent] = await Promise.all([
-      sql<{ kind: string; count: number }[]>`
-        SELECT kind, count(*)::int AS count
-        FROM public.station_feedback
-        WHERE station_id = ${stationId}::uuid
-        GROUP BY kind
-      `,
-      sql<{ created_at: Date | string }[]>`
-        SELECT created_at FROM public.station_feedback
-        WHERE station_id = ${stationId}::uuid AND kind = 'working'
-        ORDER BY created_at DESC LIMIT 1
-      `,
-      sql<{ created_at: Date | string }[]>`
-        SELECT created_at FROM public.station_feedback
-        WHERE station_id = ${stationId}::uuid AND kind = 'not_working'
-        ORDER BY created_at DESC LIMIT 1
-      `,
-      sql<{ kind: string; note: string | null; created_at: Date | string }[]>`
-        SELECT kind, note, created_at FROM public.station_feedback
-        WHERE station_id = ${stationId}::uuid
-        ORDER BY created_at DESC LIMIT 5
-      `,
-    ]);
+    // Queries are sequential: the pooled Postgres connection deadlocks when
+    // several statements are issued concurrently from one function.
+    const counts = await sql<{ kind: string; count: number }[]>`
+      SELECT kind, count(*)::int AS count
+      FROM public.station_feedback
+      WHERE station_id = ${stationId}::uuid
+      GROUP BY kind
+    `;
+    const lastWorking = await sql<{ created_at: Date | string }[]>`
+      SELECT created_at FROM public.station_feedback
+      WHERE station_id = ${stationId}::uuid AND kind = 'working'
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    const lastNotWorking = await sql<{ created_at: Date | string }[]>`
+      SELECT created_at FROM public.station_feedback
+      WHERE station_id = ${stationId}::uuid AND kind = 'not_working'
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    const recent = await sql<{ kind: string; note: string | null; created_at: Date | string }[]>`
+      SELECT kind, note, created_at FROM public.station_feedback
+      WHERE station_id = ${stationId}::uuid
+      ORDER BY created_at DESC LIMIT 5
+    `;
 
     const byKind: Record<string, number> = {};
     for (const row of counts) byKind[row.kind] = row.count;

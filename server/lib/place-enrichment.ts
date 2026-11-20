@@ -259,29 +259,51 @@ export async function runPhotoEnrichment(
   try {
     const stations = await db.pending(limit, offset);
     const concurrency = 4;
+    const lookups: Array<{
+      station: EnrichableStation;
+      enriched?: Awaited<ReturnType<typeof enrichStation>>;
+      error?: string;
+    }> = [];
+
+    // Google calls can run in parallel, but writes stay sequential: the pooled
+    // Postgres connection used on Vercel deadlocks under concurrent updates.
     for (let index = 0; index < stations.length; index += concurrency) {
       const batch = stations.slice(index, index + concurrency);
-      const batchResults = await Promise.all(
+      lookups.push(...await Promise.all(
         batch.map(async station => {
           try {
-            const enriched = await enrichStation(station, apiKey);
-            await db.update(station.id, enriched.placeId, enriched.photoRefs, enriched.details);
             return {
-              id: station.id,
-              matched: Boolean(enriched.placeId),
-              photoCount: enriched.photoRefs.length,
+              station,
+              enriched: await enrichStation(station, apiKey),
             };
           } catch (error) {
             return {
-              id: station.id,
-              matched: false,
-              photoCount: 0,
+              station,
               error: error instanceof Error ? error.message : String(error),
             };
           }
         })
-      );
-      results.push(...batchResults);
+      ));
+      console.log(`Enriched ${Math.min(index + concurrency, stations.length)}/${stations.length} place lookups`);
+    }
+
+    for (const lookup of lookups) {
+      if (lookup.error) {
+        results.push({
+          id: lookup.station.id,
+          matched: false,
+          photoCount: 0,
+          error: lookup.error,
+        });
+        continue;
+      }
+      const enriched = lookup.enriched!;
+      await db.update(lookup.station.id, enriched.placeId, enriched.photoRefs, enriched.details);
+      results.push({
+        id: lookup.station.id,
+        matched: Boolean(enriched.placeId),
+        photoCount: enriched.photoRefs.length,
+      });
     }
 
     return {
