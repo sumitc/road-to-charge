@@ -38,7 +38,8 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 - **R11** No-photo rows were reset with `photo_enriched_at = NULL` and reprocessed with the improved matcher. Full second pass finished with 0 errors; final DB stats: `total=5428`, `with_photos=3642`, `matched=3993`, `pending=0`. Hyderabad was fast-tracked separately (58 pending rows → 26 gained photos).
 - **R12** Android native project is checked in at `android/`. Debug APK is built with JDK 21 + Android SDK 35. Permissions: INTERNET, coarse/fine location, CAMERA, image storage (camera optional).
 - **R13** AdMob bottom banner uses `@capacitor-community/admob@7.2.0` with Google's public test IDs: App ID in `android/app/src/main/res/values/strings.xml`, banner unit ID in `src/components/AdBanner.tsx` overridable with `VITE_ADMOB_BANNER_AD_ID`. UMP consent is requested before showing the banner. Native-only; no-op in browser.
-- **R14 (active)** List→detail→back lag is being fixed with React Query caching (location + station lists + detail + feedback), a compact/proximity-sorted distance API with CDN cache headers, instant cached geolocation, local favourite state, and scroll restoration. See "Active performance work" below.
+- **R14** List→detail→back lag is fixed with React Query caching (location + station lists + detail + feedback), a compact/proximity-sorted distance API with CDN cache headers, instant cached geolocation, local favourite state, and scroll restoration. See "Performance state (done)" below.
+- **R15** Route-level code splitting: `StationDetail` and `TripPlanner` are `React.lazy` chunks. The default list view must stay the small entry chunk; do not statically import detail/trips back into the entry.
 
 ## Architecture map
 
@@ -82,23 +83,27 @@ Environment (names only, never values): `POSTGRES_URL`, `POSTGRES_URL_NON_POOLIN
 4. **Feedback:** floating Feedback FAB on detail → working / not working / wrong location / other + note → `station_feedback` → counts/recent list updates.
 5. **Mobile APK:** Android WebView loads the live Vercel app; AdMob banner is native at bottom; CSS var reserves height; FABs sit above it.
 
-## Active performance work (Nov 20 2026)
+## Performance state (done — Nov 20 2026)
 
 User reported lag and a full reload when going back from details to the list. Root causes found:
 - `EVApp` remounted on route change and re-ran `navigator.geolocation.getCurrentPosition` with `enableHighAccuracy: true` (up to 10s) plus a toast every time.
 - `NearbyStations` had no cache; `useEffect` refetched the whole list on every mount/radius change. Favourite toggle also triggered a full refetch via `onFavouriteToggle={loadNearbyStations}`.
-- `StationDetail` fetched station + feedback fresh on every visit.
+- `StationDetail` fetched station + feedback fresh on every visit, sequentially.
 - Measured list API before fix: **2.75 s / 107 KB for 36 rows** (full rows with `place_details`, up to 500 rows by `last_updated`).
 - No scroll restoration on back.
 
-Fixes in progress (do not revert):
-- React Query hooks in `src/hooks/useStationQueries.ts` with `staleTime` 5 min (location/nearby/detail), 10 min (search), `gcTime` 30 min; location also cached in `localStorage` and `enableHighAccuracy: false`.
-- `api/stations.ts`: distance mode gets a compact column list, `photo_references[1:1]`, rating-only `place_details`, proximity ordering, `limit` (default 100, max 200), and `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
-- `StationCard`: local favourite state, `React.memo`, `decoding="async"`; no refetch on star.
-- `Index.tsx`: save/restore `window.scrollY` in `sessionStorage`.
-- Station detail uses `useStationDetail`/`useStationFeedback` so back/forward is instant.
+Fixes shipped (do not revert):
+- `src/hooks/useStationQueries.ts`: React Query keys + hooks. `staleTime` 5 min (location/nearby/detail), 10 min (search), `gcTime` 30 min for station data and `Infinity` for location. `refetchOnWindowFocus: false` everywhere.
+- `src/services/locationService.ts`: last location in `localStorage`, `enableHighAccuracy: false`, 8s timeout, 5-min `maximumAge`, Delhi fallback resolves instead of rejects.
+- `EVApp`: uses `useUserLocation()` (no geolocation on remount, no toast), updates the query cache on search, and invalidates `['stations']` after sync instead of `window.location.reload()`.
+- `NearbyStations`: data from `useNearbyStations`; `isPending` gates first load only, cached rows stay visible while `isFetching`; search uses `queryClient.fetchQuery` so it is cached too; one-time empty-catalog sync guarded by a ref; no refetch on favourite tap.
+- `api/stations.ts`: distance mode selects ~20 compact columns, `photo_references[1:1]`, rating-only `place_details`, SQL proximity ordering, `limit` default 100 (200 for radius > 10, max 200), CDN cache headers. Other modes still `SELECT *`.
+- `StationCard`: local favourite state, `React.memo`, `decoding="async"`. `onFavouriteToggle` is optional and **only** passed by the Saved tab, which needs to refresh its list.
+- `StationDetail`: `useStationDetail` + `useStationFeedback` run in parallel and are cached; feedback refresh uses `refetch`.
+- `Index.tsx`: saves/restores `window.scrollY` in `sessionStorage` across detail navigation.
+- `App.tsx`: `StationDetail` is a lazy route chunk; `EVApp` lazy-loads `TripPlanner`; Suspense fallbacks are minimal spinners.
 
-When this work is finished, replace this section with a short "Performance state (done)" summary including final timings.
+Measured after: distance API **32.5 KB for 36 rows** (~70% smaller); cold ~2.3 s, **warm CDN HIT 0.37 s**. Entry JS **418 KB / 133 KB gzip** (was 606 KB / 188 KB), with 25 KB detail and 163 KB trip chunks loaded on demand. Vercel reports `X-Vercel-Cache: HIT` on repeat requests even though the response header is normalized to `Cache-Control: public`.
 
 ## Verification / commands (memorize)
 
@@ -120,6 +125,9 @@ curl -X GET 'https://road-to-charge-v2.vercel.app/api/enrich-place-photos?limit=
 List API smoke test (replace coords):
 ```bash
 curl --http1.1 -sS 'https://road-to-charge-v2.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
+# Expect ~30 KB / 36 rows near Hitech City, X-Vercel-Cache: HIT on the 2nd call.
+curl --http1.1 -sS -o /dev/null -D - -w '%{time_total}\n' \
+  'https://road-to-charge-v2.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
 ```
 
 APK rebuild (SDK path in this machine was temp; set your own `ANDROID_HOME`):
@@ -143,7 +151,7 @@ DB stats pattern: read `.env.vercel`, connect with `postgres` using `POSTGRES_UR
 - Google matcher must strip `City=…, District=…, State=…` from station names; raw text queries returned irrelevant results. Provider aliases matter.
 - `/api/stations` and `/api/place-photo` caching is intentional; stale browser cache was ruled out as the missing-photo cause (the data was genuinely un-enriched).
 - `/api/station-feedback` GET is sequential to avoid deadlocks; POST uses the uuid FK.
-- Bundle is ~595 KB (warning only); dynamic imports/chunking are optional, not a blocker.
+- Entry bundle is ~418 KB (133 KB gzip) after code splitting; detail/trips are separate lazy chunks. Still above Vite's 500 kB-style warning threshold historically, but no longer a single monolith.
 - iOS native project is not checked in; only Android is supported right now.
 - AdMob IDs are public test IDs. Production needs both the native `strings.xml` App ID and Vercel `VITE_ADMOB_BANNER_AD_ID`, then a web redeploy + APK rebuild.
 - Secrets: Google key was pasted in chat historically but never committed. Restrict/rotate when convenient. Keep `git grep` clean.
