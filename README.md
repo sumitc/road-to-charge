@@ -75,7 +75,7 @@ npx cap add ios
 npm run build && npx cap sync
 ```
 
-The Ruvo bolt app icon lives in `public/`:
+The Ruvo bolt app icon (turquoise→emerald to match the UI theme) lives in `public/`:
 
 - `ruvo-favicon-16.png`, `ruvo-favicon-32.png`, `ruvo-favicon-48.png` — browser tab icons (versioned URLs bust old cached favicons)
 - `favicon.ico` — legacy fallback
