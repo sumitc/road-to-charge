@@ -19,6 +19,10 @@ Node.js 24.x is used by Vercel. `.env` files are local-only and ignored by Git.
 - `api/stations.ts` — direct-SQL read API used by the frontend
 - `api/sync-ev-stations.ts` — catalog/availability sync API (protected by `SYNC_SECRET`)
 - `api/sync-trigger.ts` — browser-friendly wrapper for the manual "Sync Networks" button
+- `api/submissions.ts` — community "Add station" submissions, photo upload, and review trigger
+- `api/submission-decision.ts` — signed Approve/Reject links from the review email
+- `api/review-submission.ts` — secret-protected retry for the automated review
+- `api/lib/submission-review.ts` — Google Places/OSM checks, Resend email, publishing, photo cleanup
 - `api/lib/station-db.ts` — shared Postgres access helpers
 - `supabase/migrations/` — database schema for `public.ev_charging_stations`
 
@@ -59,7 +63,22 @@ A Vercel Cron keeps the catalog current on the Hobby plan:
 
 For a manual refresh, use the **Sync Networks** button (which calls `/api/sync-trigger`, keeping `SYNC_SECRET` server-side) or POST directly to `/api/sync-ev-stations` with `Authorization: Bearer $SYNC_SECRET` (or `$CRON_SECRET`).
 
-The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql` and the frontend shape in `src/types/station.ts`.
+### Community submissions
+
+The floating **+** button opens a form for a new station: name, location (auto-detected or manual), connector type, optional station/connector photos, and notes. Connector photos are read in the browser with the free `tesseract.js` OCR library; detected text is matched against the connector options and always confirmed by the reviewer.
+
+Submissions are stored in `public.station_submissions` with status `pending`. The review service checks Google Places (with an OpenStreetMap Overpass fallback), writes its findings, emails `develop.sumit@gmail.com` via Resend with signed one-click **Approve & publish** / **Reject** links, and deletes the temporary photos from Vercel Blob once a decision is made. Approval upserts the station into `public.ev_charging_stations` with `source_name = 'Community submission'` and `location_quality = 'suspect'`.
+
+Required Vercel environment variables:
+
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob, for temporary photos
+- `RESEND_API_KEY` and `RESEND_FROM` — review/decision emails
+- `REVIEW_SECRET` — HMAC signing for the email decision links
+- `GOOGLE_MAPS_API_KEY` — Places API (New) verification
+- `REVIEW_EMAIL` — optional, defaults to `develop.sumit@gmail.com`
+- `APP_URL` — optional, defaults to the production Vercel URL
+
+The dictionary schema lives in `supabase/migrations/20261118220000_enhance_station_dictionary.sql`, submissions in `supabase/migrations/20261120000000_create_station_submissions.sql`, and the frontend shape in `src/types/station.ts`.
 
 ## Mobile app (Capacitor)
 

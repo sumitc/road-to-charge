@@ -43,6 +43,14 @@ export const CONNECTOR_FILTER_OPTIONS: ConnectorFilterOption[] = [
   },
 ];
 
+const VALUE_TO_RAW_TYPE: Record<string, string> = {
+  ccs: 'CCS',
+  chademo: 'CHAdeMO',
+  bharatDc: 'Bharat DC',
+  type2: 'Type 2',
+  bharatAc: 'Bharat AC',
+};
+
 const speedByMatch: Array<{ match: string[]; speed: ConnectorSpeed }> = [
   { match: ['ccs', 'supercharger', 'ultra'], speed: 'super-fast' },
   { match: ['chademo', 'bharat dc', 'dc001', 'gb/t dc', 'dc fast'], speed: 'fast' },
@@ -71,6 +79,19 @@ export function connectorSpeed(connector: string): ConnectorSpeed | undefined {
 export function connectorBadgeLabel(connector: string): string {
   const speed = connectorSpeed(connector);
   return speed ? `${SPEED_LABEL[speed]} · ${connector}` : connector;
+}
+
+/** Canonical connector standard stored in the database for a filter value. */
+export function connectorRawType(value: string): string {
+  return VALUE_TO_RAW_TYPE[value] ?? value;
+}
+
+/** Infer selected connector values from free text, e.g. OCR output. */
+export function inferConnectorTypesFromText(text: string): string[] {
+  const value = text.toLowerCase();
+  return CONNECTOR_FILTER_OPTIONS
+    .filter(option => includesAny(value, option.match))
+    .map(option => option.value);
 }
 
 /**

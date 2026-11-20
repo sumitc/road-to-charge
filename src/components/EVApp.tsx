@@ -5,6 +5,7 @@ import { MapPin, Search, Star, Zap, RefreshCw, Database, Route } from 'lucide-re
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ChargingStationsSync } from './ChargingStationsSync';
+import { ContributionButton } from './ContributionButton';
 import TripPlanner from './TripPlanner';
 import { LocationService } from '@/services/locationService';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
@@ -167,6 +168,8 @@ export const EVApp = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ContributionButton location={location} />
     </div>
   );
 };
