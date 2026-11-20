@@ -98,6 +98,8 @@ Google enrichment is continuous and incremental:
 - `GET /api/enrich-place-photos?limit=100` can be called manually with `Authorization: Bearer $SYNC_SECRET` (or `$CRON_SECRET`) to process a batch immediately.
 - Photos are served through `/api/place-photo?ref=...&width=...`, which keeps `GOOGLE_MAPS_API_KEY` on the server and sets long-lived CDN cache headers.
 
+`server/lib/place-enrichment.ts` strips catalog bookkeeping from names (`City=`, `District=`, …), maps abbreviations to Google's brand names (`IOCL` → `IndianOil`, `BPCL` → `Bharat Petroleum`, `HPCL` → `Hindustan Petroleum`), and tries a fuel-pump fallback query when the cleaned name does not resolve. A very close branded match is accepted even when Google has no catalog-style name, because those fuel-station listings hold the photos riders see on Google Maps.
+
 The detail page also has a floating **Feedback** button. Reports (`working`, `not_working`, `wrong_location`, `other`) are stored in `public.station_feedback` and shown as community confidence counts and recent notes. Live "in use" and "recently used" sections are intentionally placeholders for future network integrations.
 
 Schema: `supabase/migrations/20261120010000_add_station_place_photos_and_feedback.sql`.
