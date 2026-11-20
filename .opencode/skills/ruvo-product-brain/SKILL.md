@@ -113,7 +113,9 @@ cd /Users/sumitc/projects/road-to-charge
 npm run build
 git add -A && git commit -m "..." && git push origin main
 vercel --prod --yes
-git grep -nE 'AIza|re_YFQa' -- . ':!package-lock.json'   # must be clean
+# Patterns split here so the scan does not match its own documentation.
+SECRET_RE=$(printf 'AI%s|re_%s' 'za' 'YFQa')
+git grep -nE "$SECRET_RE" -- . ':!package-lock.json'   # must be clean
 ```
 
 Manual enrichment batch:
