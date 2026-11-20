@@ -175,9 +175,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-2">
-              <MapPin className="w-5 h-5 shrink-0 text-primary" />
+              {showSearchResults && <MapPin className="w-5 h-5 shrink-0 text-primary" />}
               <span className="min-w-0 break-words text-sm text-muted-foreground">
-                {showSearchResults ? `Search results for "${searchQuery}"` : `Nearby stations within ${radius} km`}
+                {showSearchResults ? `Search results for "${searchQuery}"` : 'Nearby stations within'}
               </span>
             </div>
 
@@ -201,17 +201,20 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                 </>
               ) : (
                 <>
-                  <select
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value))}
-                    aria-label="Search radius in kilometres"
-                    className="min-h-[44px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28"
-                  >
-                    <option value={5}>5 km</option>
-                    <option value={10}>10 km</option>
-                    <option value={25}>25 km</option>
-                    <option value={50}>50 km</option>
-                  </select>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <MapPin className="w-4 h-4 shrink-0 text-primary" />
+                    <select
+                      value={radius}
+                      onChange={(e) => setRadius(Number(e.target.value))}
+                      aria-label="Search radius in kilometres"
+                      className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28 sm:flex-none"
+                    >
+                      <option value={5}>5 km</option>
+                      <option value={10}>10 km</option>
+                      <option value={25}>25 km</option>
+                      <option value={50}>50 km</option>
+                    </select>
+                  </div>
                   <ConnectorFilter
                     selected={connectorFilters}
                     onChange={setConnectorFilters}
