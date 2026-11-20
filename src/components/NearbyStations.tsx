@@ -36,7 +36,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   // Cached by location + radius, so detail→back never refetches the list.
   const nearbyQuery = useNearbyStations(location, radius);
   const nearbyStations = nearbyQuery.data ?? [];
-  const isLoading = nearbyQuery.isFetching;
+  // Only block the list on a first load; keep cached rows visible during a
+  // background refresh so detail→back feels instant.
+  const isLoading = nearbyQuery.isPending;
 
   const stations = showSearchResults ? searchResults : nearbyStations;
   const visibleStations = stations.filter(station =>
@@ -226,7 +228,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       </Card>
 
       {/* Loading state — kept slim so results stay visible on mobile. */}
-      {(isLoading || isSearching) && (
+      {(nearbyQuery.isFetching || isSearching) && (
         <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin text-primary" />
           {isSearching ? 'Searching stations…' : 'Finding nearby stations…'}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -6,11 +6,13 @@ import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
-import TripPlanner from './TripPlanner';
 import { LocationService } from '@/services/locationService';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
+
+// Only loaded when the Trips tab is opened.
+const TripPlanner = lazy(() => import('./TripPlanner'));
 
 export const EVApp = () => {
   const queryClient = useQueryClient();
@@ -144,7 +146,9 @@ export const EVApp = () => {
           </TabsContent>
 
           <TabsContent value="trip" className="space-y-4">
-            <TripPlanner />
+            <Suspense fallback={null}>
+              <TripPlanner />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="favourites" className="space-y-4">
