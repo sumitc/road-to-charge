@@ -71,7 +71,7 @@ Submissions are stored in `public.station_submissions` with status `pending`. Th
 
 Required Vercel environment variables:
 
-- `BLOB_READ_WRITE_TOKEN` — Vercel Blob, for temporary photos
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob, for temporary photos (the `ruvo-submissions` public store is created and linked via `vercel blob create-store ruvo-submissions --access public --yes`)
 - `RESEND_API_KEY` and `RESEND_FROM` — review/decision emails
 - `REVIEW_SECRET` — HMAC signing for the email decision links
 - `GOOGLE_MAPS_API_KEY` — Places API (New) verification

@@ -33,3 +33,4 @@ dist-ssr
 .sync-secret.tmp
 .env.vercel
 supabase/.temp/
+.env*.local
