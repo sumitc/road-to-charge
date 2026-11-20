@@ -173,10 +173,6 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               )}
             </Button>
           </div>
-          <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-            Enter an area, city, or both. Commas or spaces both work.
-          </p>
-          
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-2">
               <MapPin className="w-5 h-5 shrink-0 text-primary" />
