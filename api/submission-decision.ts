@@ -4,8 +4,8 @@ import {
   sendDecisionEmail,
   verifyReviewToken,
   type ReviewFindings,
-} from './lib/submission-review.js';
-import { createSubmissionDb } from './lib/submission-db.js';
+} from '../server/lib/submission-review.js';
+import { createSubmissionDb } from '../server/lib/submission-db.js';
 
 export const config = { runtime: 'nodejs' };
 

@@ -22,13 +22,13 @@ Node.js 24.x is used by Vercel. `.env` files are local-only and ignored by Git.
 - `api/submissions.ts` — community "Add station" submissions, photo upload, and review trigger
 - `api/submission-decision.ts` — signed Approve/Reject links from the review email
 - `api/review-submission.ts` — secret-protected retry for the automated review
-- `api/lib/submission-review.ts` — Google Places/OSM checks, Resend email, publishing, photo cleanup
+- `server/lib/submission-review.ts` — Google Places/OSM checks, Resend email, publishing, photo cleanup
 - `api/enrich-place-photos.ts` — batch Google Places enrichment for new/changed stations
 - `api/place-photo.ts` — CDN-cached proxy for Google Places photos (keeps the API key server-side)
 - `api/station-feedback.ts` — community working/not-working/wrong-location reports
-- `api/lib/place-enrichment.ts` — place matching, photo references, and rating/details cache
+- `server/lib/place-enrichment.ts` — place matching, photo references, and rating/details cache
 - `src/pages/StationDetail.tsx` — photo gallery, visit details, maps/app links, feedback FAB
-- `api/lib/station-db.ts` — shared Postgres access helpers
+- `server/lib/station-db.ts` — shared Postgres access helpers
 - `supabase/migrations/` — database schema for `public.ev_charging_stations`
 
 The Supabase REST/PostgREST layer is not used; all reads and writes go through the direct Postgres connection (`POSTGRES_URL`).

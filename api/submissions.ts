@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { put } from '@vercel/blob';
-import { createSubmissionDb, type SubmissionRow } from './lib/submission-db.js';
-import { runReview } from './lib/submission-review.js';
+import { createSubmissionDb, type SubmissionRow } from '../server/lib/submission-db.js';
+import { runReview } from '../server/lib/submission-review.js';
 
 export const config = { runtime: 'nodejs' };
 

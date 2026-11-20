@@ -1,4 +1,4 @@
-import { runPhotoEnrichment } from './lib/place-enrichment.js';
+import { runPhotoEnrichment } from '../server/lib/place-enrichment.js';
 
 export const config = { runtime: 'nodejs' };
 

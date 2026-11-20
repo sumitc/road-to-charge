@@ -1,4 +1,4 @@
-import { runReview } from './lib/submission-review.js';
+import { runReview } from '../server/lib/submission-review.js';
 
 export const config = { runtime: 'nodejs' };
 
