@@ -7,7 +7,7 @@
  * (29,184 stations, one request) and upserts all of it in one pass.
  *
  * Usage:
- *   node scripts/import-full-bee-snapshot.mjs /tmp/ruvo-bee-stations.json
+ *   node scripts/import-full-bee-snapshot.mjs /tmp/ampo-bee-stations.json
  */
 import fs from 'node:fs';
 import postgres from 'postgres';
@@ -102,7 +102,7 @@ function mapRow(row) {
 }
 
 loadEnv();
-const input = process.argv[2] || '/tmp/ruvo-bee-stations.json';
+const input = process.argv[2] || '/tmp/ampo-bee-stations.json';
 const rows = JSON.parse(fs.readFileSync(input, 'utf8'));
 if (!Array.isArray(rows) || rows.length === 0) throw new Error('No rows in snapshot');
 console.log(`Loaded ${rows.length} BEE stations from ${input}`);

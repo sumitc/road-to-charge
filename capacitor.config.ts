@@ -1,12 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.ruvo.evcharging',
-  appName: 'Ruvo',
+  appId: 'com.ampo.evcharging',
+  appName: 'Ampo',
   webDir: 'dist',
   server: {
     // Point the native wrapper at the live app so relative /api calls resolve.
-    url: 'https://road-to-charge-v2.vercel.app',
+    url: 'https://ampo.vercel.app',
     cleartext: true
   },
   plugins: {

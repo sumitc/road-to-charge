@@ -200,7 +200,7 @@ export const ContributionButton: React.FC<ContributionButtonProps> = ({ location
       <SheetTrigger asChild>
         <Button
           aria-label="Add a charging station"
-          style={{ bottom: 'calc(1rem + var(--ruvo-banner-height, 0px))' }}
+          style={{ bottom: 'calc(1rem + var(--ampo-banner-height, 0px))' }}
           className="fixed right-4 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-emerald-500 text-primary-foreground shadow-electric transition-transform hover:scale-105"
         >
           <Plus className="h-6 w-6" />

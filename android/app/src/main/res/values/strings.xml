@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Ruvo</string>
-    <string name="title_activity_main">Ruvo</string>
-    <string name="package_name">com.ruvo.evcharging</string>
-    <string name="custom_url_scheme">com.ruvo.evcharging</string>
+    <string name="app_name">Ampo</string>
+    <string name="title_activity_main">Ampo</string>
+    <string name="package_name">com.ampo.evcharging</string>
+    <string name="custom_url_scheme">com.ampo.evcharging</string>
     <!-- Google's public test App ID. Replace with your own AdMob App ID for production. -->
     <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
 </resources>

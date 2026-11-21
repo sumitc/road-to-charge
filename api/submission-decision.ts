@@ -60,7 +60,7 @@ export async function GET(req: Request): Promise<Response> {
 
     return page(
       verified.decision === 'approve' ? 'Published' : 'Rejected',
-      `${submission.station_name} was ${verified.decision === 'approve' ? 'published to Ruvo' : 'rejected'}. Photos were removed.`
+      `${submission.station_name} was ${verified.decision === 'approve' ? 'published to Ampo' : 'rejected'}. Photos were removed.`
     );
   } catch (error) {
     console.error('Decision failed:', error);

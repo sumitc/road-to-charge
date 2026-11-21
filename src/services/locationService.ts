@@ -5,7 +5,7 @@ interface CachedLocation {
   timestamp: number;
 }
 
-const CACHE_KEY = 'ruvo_last_location';
+const CACHE_KEY = 'ampo_last_location';
 const DELHI_FALLBACK: UserLocation = { lat: 28.6139, lng: 77.2090 };
 
 export interface ResolvedLocation {

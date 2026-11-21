@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { EVApp } from '@/components/EVApp';
 
-const SCROLL_KEY = 'ruvo-list-scroll';
+const SCROLL_KEY = 'ampo-list-scroll';
 
 const Index = () => {
   useEffect(() => {

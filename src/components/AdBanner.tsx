@@ -43,17 +43,17 @@ export const AdBanner = () => {
     let cancelled = false;
     const listeners: Array<{ remove: () => Promise<void> }> = [];
     document.documentElement.style.setProperty(
-      '--ruvo-banner-height',
+      '--ampo-banner-height',
       'calc(58px + env(safe-area-inset-bottom, 0px))',
     );
 
     (async () => {
       try {
         const loaded = await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
-          console.info('[RuvoAd] banner loaded');
+          console.info('[AmpoAd] banner loaded');
         });
         const failed = await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (error) => {
-          console.warn('[RuvoAd] banner failed to load', error);
+          console.warn('[AmpoAd] banner failed to load', error);
         });
         listeners.push(loaded, failed);
 
@@ -67,19 +67,19 @@ export const AdBanner = () => {
           margin: 0,
           isTesting: IS_TEST_BANNER,
         });
-        console.info('[RuvoAd] showBanner requested', {
+        console.info('[AmpoAd] showBanner requested', {
           test: IS_TEST_BANNER,
           canRequestAds,
         });
       } catch (error) {
-        console.warn('[RuvoAd] AdMob banner unavailable', error);
+        console.warn('[AmpoAd] AdMob banner unavailable', error);
       }
     })();
 
     return () => {
       cancelled = true;
       for (const listener of listeners) void listener.remove().catch(() => undefined);
-      document.documentElement.style.removeProperty('--ruvo-banner-height');
+      document.documentElement.style.removeProperty('--ampo-banner-height');
       void AdMob.hideBanner().catch(() => undefined);
     };
   }, []);

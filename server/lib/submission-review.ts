@@ -111,7 +111,7 @@ async function checkOsm(submission: SubmissionRow) {
     const response = await fetch(
       `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
       {
-        headers: { 'User-Agent': 'Ruvo/1.0 (+https://road-to-charge-v2.vercel.app)' },
+        headers: { 'User-Agent': 'Ampo/1.0 (+https://ampo.vercel.app)' },
         signal: AbortSignal.timeout(20000),
       }
     );
@@ -235,7 +235,7 @@ function detailsHtml(submission: SubmissionRow, findings: ReviewFindings): strin
     : '<li>No candidates</li>';
 
   const secret = process.env.REVIEW_SECRET;
-  const baseUrl = process.env.APP_URL || 'https://road-to-charge-v2.vercel.app';
+  const baseUrl = process.env.APP_URL || 'https://ampo.vercel.app';
   const approveUrl = secret
     ? `${baseUrl}/api/submission-decision?token=${encodeURIComponent(createReviewToken(submission.id, 'approve', secret))}&decision=approve`
     : '';
@@ -244,7 +244,7 @@ function detailsHtml(submission: SubmissionRow, findings: ReviewFindings): strin
     : '';
 
   return `
-    <h2>New Ruvo station submission</h2>
+    <h2>New Ampo station submission</h2>
     <p><strong>Automated check:</strong> ${escape(findings.summary)}</p>
     <p><strong>Recommendation:</strong> ${escape(findings.recommendation)}</p>
     <table cellpadding="6" cellspacing="0" border="1">
@@ -266,7 +266,7 @@ export async function sendReviewEmail(submission: SubmissionRow, findings: Revie
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { sent: false, error: 'RESEND_API_KEY not configured' };
 
-  const from = process.env.RESEND_FROM || 'Ruvo <onboarding@resend.dev>';
+  const from = process.env.RESEND_FROM || 'Ampo <onboarding@resend.dev>';
   const to = process.env.REVIEW_EMAIL || 'develop.sumit@gmail.com';
 
   try {
@@ -279,7 +279,7 @@ export async function sendReviewEmail(submission: SubmissionRow, findings: Revie
       body: JSON.stringify({
         from,
         to: [to],
-        subject: `Ruvo station review: ${submission.station_name}`,
+        subject: `Ampo station review: ${submission.station_name}`,
         html: detailsHtml(submission, findings),
       }),
       signal: AbortSignal.timeout(20000),
@@ -308,9 +308,9 @@ export async function sendDecisionEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM || 'Ruvo <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM || 'Ampo <onboarding@resend.dev>',
         to: [process.env.REVIEW_EMAIL || 'develop.sumit@gmail.com'],
-        subject: `Ruvo submission ${decision}: ${submission.station_name}`,
+        subject: `Ampo submission ${decision}: ${submission.station_name}`,
         html: `<p>Submission <strong>${submission.station_name}</strong> was ${decision}.</p>`,
       }),
       signal: AbortSignal.timeout(20000),

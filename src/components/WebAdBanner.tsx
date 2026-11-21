@@ -21,7 +21,7 @@ export const WebAdBanner = () => {
     if (!ENABLED) return;
 
     document.documentElement.style.setProperty(
-      '--ruvo-banner-height',
+      '--ampo-banner-height',
       'calc(100px + env(safe-area-inset-bottom, 0px))',
     );
 
@@ -33,14 +33,14 @@ export const WebAdBanner = () => {
       try {
         (window.adsbygoogle ??= []).push({});
       } catch (error) {
-        console.warn('[RuvoAd] AdSense push failed', error);
+        console.warn('[AmpoAd] AdSense push failed', error);
       }
     };
     document.head.appendChild(script);
 
     return () => {
       script.remove();
-      document.documentElement.style.removeProperty('--ruvo-banner-height');
+      document.documentElement.style.removeProperty('--ampo-banner-height');
     };
   }, []);
 

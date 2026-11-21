@@ -11,7 +11,7 @@
  */
 import { chromium } from 'playwright-core';
 
-const BASE_URL = process.env.BASE_URL ?? 'https://road-to-charge-v2.vercel.app';
+const BASE_URL = process.env.BASE_URL ?? 'https://ampo.vercel.app';
 const CHROME_PATH = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const browser = await chromium.launch({
@@ -176,7 +176,7 @@ try {
 
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
     const brand = await page.locator('header h1').innerText();
-    check(`${width}px: Ruvo is branded in the header`, brand.includes('Ruvo'), brand.replace(/\n/g, ' '));
+    check(`${width}px: Ampo is branded in the header`, brand.includes('Ampo'), brand.replace(/\n/g, ' '));
 
     const footer = page.locator('footer').first();
     const footerText = await footer.innerText();
@@ -259,7 +259,7 @@ try {
       const cs = getComputedStyle(el);
       return { fontSize: cs.fontSize, fontWeight: cs.fontWeight, fontFamily: cs.fontFamily };
     });
-    check(`${width}px: detail header uses the Ruvo wordmark`, detailBrand.includes('Ruvo'), detailBrand.replace(/\n/g, ' '));
+    check(`${width}px: detail header uses the Ampo wordmark`, detailBrand.includes('Ampo'), detailBrand.replace(/\n/g, ' '));
     check(`${width}px: detail/list title styling matches`,
       JSON.stringify(listBrandStyle) === JSON.stringify(detailBrandStyle),
       `${JSON.stringify(listBrandStyle)} vs ${JSON.stringify(detailBrandStyle)}`);
@@ -345,7 +345,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
   const locationPage = await context.newPage();
   await locationPage.addInitScript(cache => {
-    localStorage.setItem('ruvo_last_location', JSON.stringify(cache));
+    localStorage.setItem('ampo_last_location', JSON.stringify(cache));
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: {
@@ -358,7 +358,7 @@ try {
   await locationPage.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await locationPage.waitForTimeout(4000); // stale cache triggers a background GPS refetch
   const readCache = p => p.evaluate(() => {
-    try { return JSON.parse(localStorage.getItem('ruvo_last_location') ?? 'null'); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('ampo_last_location') ?? 'null'); } catch { return null; }
   });
   let cachedLocation = await readCache(locationPage);
   check('failed GPS keeps the real cached location',
@@ -397,7 +397,7 @@ try {
   const orderPage = await orderContext.newPage();
   await orderPage.addInitScript(() => {
     const here = { lat: 17.4485, lng: 78.3908 };
-    localStorage.setItem('ruvo_last_location', JSON.stringify({ location: here, timestamp: Date.now() }));
+    localStorage.setItem('ampo_last_location', JSON.stringify({ location: here, timestamp: Date.now() }));
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: {

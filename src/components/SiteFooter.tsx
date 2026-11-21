@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
-/** Compact, shared footer for every Ruvo screen and sheet. */
+/** Compact, shared footer for every Ampo screen and sheet. */
 export const SiteFooter: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -68,7 +68,7 @@ export const SiteFooter: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Send feedback</DialogTitle>
             <DialogDescription>
-              No login needed — your note is emailed straight to the Ruvo team.
+              No login needed — your note is emailed straight to the Ampo team.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -89,9 +89,9 @@ export const SiteFooter: React.FC = () => {
               maxLength={200}
             />
             <div className="absolute -left-[9999px]" aria-hidden="true">
-              <label htmlFor="ruvo-feedback-website">Leave this blank</label>
+              <label htmlFor="ampo-feedback-website">Leave this blank</label>
               <input
-                id="ruvo-feedback-website"
+                id="ampo-feedback-website"
                 tabIndex={-1}
                 autoComplete="off"
                 value={website}

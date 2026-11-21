@@ -2,7 +2,7 @@
 
 A Vite + React + TypeScript storefront for discovering EV charging stations across India. Deployed on Vercel with a Supabase Postgres database.
 
-**Production:** https://road-to-charge-v2.vercel.app
+**Production:** https://ampo.vercel.app
 
 ## Local development
 
@@ -77,7 +77,7 @@ Submissions are stored in `public.station_submissions` with status `pending`. Th
 
 Required Vercel environment variables:
 
-- `BLOB_READ_WRITE_TOKEN` — Vercel Blob, for temporary photos (the `ruvo-submissions` public store is created and linked via `vercel blob create-store ruvo-submissions --access public --yes`)
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob, for temporary photos (the public store is linked via this env var; no brand-specific store name is required)
 - `RESEND_API_KEY` and `RESEND_FROM` — review/decision emails
 - `REVIEW_SECRET` — HMAC signing for the email decision links
 - `GOOGLE_MAPS_API_KEY` — Places API (New) verification
@@ -106,10 +106,10 @@ Schema: `supabase/migrations/20261120010000_add_station_place_photos_and_feedbac
 
 ## Mobile app (Capacitor)
 
-`capacitor.config.ts` uses app ID `com.ruvo.evcharging`, app name `Ruvo`, and loads
-`https://road-to-charge-v2.vercel.app` so the wrapper uses the same live API as the
+`capacitor.config.ts` uses app ID `com.ampo.evcharging`, app name `Ampo`, and loads
+`https://ampo.vercel.app` so the wrapper uses the same live API as the
 website. The Android native project is checked in at `android/` (including the admob
-plugin, permissions, and Ruvo launcher/splash assets). iOS is not checked in; create it
+plugin, permissions, and Ampo launcher/splash assets). iOS is not checked in; create it
 with `npx cap add ios` if needed.
 
 ### Build a debug APK
@@ -144,13 +144,13 @@ in Vercel, rebuild, redeploy, and rebuild the APK. UMP consent is requested befo
 the banner; it is a no-op until a GDPR message is configured in AdMob. A CSS variable
 reserves the banner height so floating buttons and the last list row remain visible.
 
-The Ruvo bolt app icon (turquoise→emerald to match the UI theme) lives in `public/`:
+The Ampo bolt app icon (turquoise→emerald to match the UI theme) lives in `public/`:
 
-- `ruvo-favicon-16.png`, `ruvo-favicon-32.png`, `ruvo-favicon-48.png` — browser tab icons (versioned URLs bust old cached favicons)
+- `ampo-favicon-16.png`, `ampo-favicon-32.png`, `ampo-favicon-48.png` — browser tab icons (versioned URLs bust old cached favicons)
 - `favicon.ico` — legacy fallback
 - `apple-touch-icon.png` — iOS home screen (180×180)
-- `ruvo-icon-192.png`, `ruvo-icon-512.png` — PWA manifest icons
-- `ruvo-icon-1024.png` — master image for native launcher icons
+- `ampo-icon-192.png`, `ampo-icon-512.png` — PWA manifest icons
+- `ampo-icon-1024.png` — master image for native launcher icons
 
-Android launcher/splash assets were generated from `public/ruvo-icon-1024.png` into
+Android launcher/splash assets were generated from `public/ampo-icon-1024.png` into
 `android/app/src/main/res/`. Use the same master image for Xcode's `AppIcon` set.

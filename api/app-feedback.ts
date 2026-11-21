@@ -47,12 +47,12 @@ export async function POST(req: Request): Promise<Response> {
     if (!apiKey) throw new Error('RESEND_API_KEY is not configured');
 
     const html = `
-      <h2>Ruvo app feedback</h2>
+      <h2>Ampo app feedback</h2>
       <p><strong>Page:</strong> ${escapeHtml(page || 'Not specified')}</p>
       <p><strong>Reply-to:</strong> ${escapeHtml(email || 'Not provided')}</p>
       <p><strong>Message:</strong></p>
       <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-      <p style="color:#64748b;font-size:12px">Sent anonymously from the Ruvo footer. No account login required.</p>
+      <p style="color:#64748b;font-size:12px">Sent anonymously from the Ampo footer. No account login required.</p>
     `;
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -61,9 +61,9 @@ export async function POST(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM || 'Ruvo <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM || 'Ampo <onboarding@resend.dev>',
         to: [process.env.REVIEW_EMAIL || 'develop.sumit@gmail.com'],
-        subject: 'Ruvo app feedback',
+        subject: 'Ampo app feedback',
         html,
         reply_to: email || undefined,
       }),

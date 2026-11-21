@@ -122,7 +122,7 @@ const StationDetail: React.FC = () => {
               <h1 className="text-lg font-semibold">Station not found</h1>
               <p className="text-sm text-muted-foreground">It may have been removed by a catalog refresh.</p>
             </div>
-            <Button onClick={() => navigate('/')} className="w-full">Back to Ruvo</Button>
+            <Button onClick={() => navigate('/')} className="w-full">Back to Ampo</Button>
           </CardContent>
         </Card>
       </div>
@@ -205,7 +205,7 @@ const StationDetail: React.FC = () => {
 
       <main
         className="mx-auto max-w-3xl space-y-4 p-4"
-        style={{ paddingBottom: 'calc(6rem + var(--ruvo-banner-height, 0px))' }}
+        style={{ paddingBottom: 'calc(6rem + var(--ampo-banner-height, 0px))' }}
       >
         <Card className="overflow-hidden rounded-3xl border-border/70 shadow-sm">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/15 to-emerald-500/15 sm:aspect-[16/9]">
@@ -442,7 +442,7 @@ const StationDetail: React.FC = () => {
 
       <Button
         onClick={() => setFeedbackOpen(true)}
-        style={{ bottom: 'calc(1rem + var(--ruvo-banner-height, 0px))' }}
+        style={{ bottom: 'calc(1rem + var(--ampo-banner-height, 0px))' }}
         className="fixed right-4 z-40 h-14 rounded-full bg-gradient-to-br from-primary to-emerald-500 px-5 shadow-electric"
       >
         <MessageSquarePlus className="h-5 w-5" />

@@ -1,21 +1,21 @@
 ---
-name: Ruvo Product Brain
-description: Persistent product knowledge for the Ruvo EV charging finder (road-to-charge) — brand rules, Vercel/Supabase infra, data model, Google Places photo enrichment, UX flows, Capacitor APK + AdMob, performance decisions, verification commands, and known quirks. Read this before exploring or editing; update it after every substantive change or when explicitly asked.
+name: Ampo Product Brain
+description: Persistent product knowledge for the Ampo EV charging finder (road-to-charge) — brand rules, Vercel/Supabase infra, data model, Google Places photo enrichment, UX flows, Capacitor APK + AdMob, performance decisions, verification commands, and known quirks. Read this before exploring or editing; update it after every substantive change or when explicitly asked.
 ---
 
-# Ruvo Product Brain — living project memory
+# Ampo Product Brain — living project memory
 
 **Source of truth:** this skill is a living summary. Code + `README.md` win if they disagree — then fix this file. Update it at the end of every substantive change (schema, API, UI behavior, infra, bugs fixed, verification results). It is registered globally via `~/.config/opencode/opencode.json` and also lives in the repo so it travels with the code.
 
 Repo: `/Users/sumitc/projects/road-to-charge` (public GitHub: `sumitc/road-to-charge`)
-Production: `https://road-to-charge-v2.vercel.app`
+Production: `https://ampo.vercel.app`
 Vercel project: `road-to-charge-v2`, id `prj_Dv37B44pqmZruQkGkMLUJdDpT8XY`
 Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 
 ## Vision / non-negotiables
 
-- Product is **Ruvo**, an EV-charging station finder for Indian cities. Brand stays **Ruvo** everywhere.
-- Native app id is **`com.ruvo.evcharging`**. Favicon/icon is the **Ruvo bolt** (turquoise→emerald). Never use Lovable assets or branding.
+- Product is **Ampo**, an EV-charging station finder for Indian cities. Brand stays **Ampo** everywhere.
+- Native app id is **`com.ampo.evcharging`**. Favicon/icon is the **Ampo bolt** (turquoise→emerald). Never use Lovable assets or branding.
 - Mobile-first: reduce vertical chrome so results appear sooner. Speed-first connector filter stays beside distance/radius on mobile. No redundant Refresh button.
 - List view is photo-first: image, location title, connector badges, hooks to Maps/charging app, Details.
 - Detail view: bigger/multiple Google photos, richer place details, Maps/app links, future in-use/recent-visit hooks, floating feedback FAB (working / not working / other).
@@ -37,7 +37,7 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 - **R10** Matcher strips catalog metadata (`City=`, `District=`, `State=`), maps provider aliases (`IOCL`→`IndianOil`, `BPCL`→`Bharat Petroleum`, `HPCL`→`Hindustan Petroleum`), adds a fuel-pump fallback query, accepts very close branded matches, and prefers listings with photos on distance ties.
 - **R11** Full BEE snapshot imported from the upstream project's static `backend/data/stations.json` via `scripts/import-full-bee-snapshot.mjs`; catalog is now **29,215 rows** (29,184 BEE + 31 Google Places gap-fill rows). The old 14 hard-coded demonstration rows (including fake "PlugShare" entries) were deleted. PlugShare's API is commercial-only, so it is not a data source; its extra Kokapet coverage is approximated with live Google Places catalog rows.
 - **R12** Android native project is checked in at `android/`. Debug APK is built with JDK 21 + Android SDK 35. Permissions: INTERNET, coarse/fine location, CAMERA, image storage (camera optional).
-- **R13** AdMob bottom banner uses `@capacitor-community/admob@7.2.0` with Google's public test IDs: App ID in `android/app/src/main/res/values/strings.xml`, banner unit ID in `src/components/AdBanner.tsx` overridable with `VITE_ADMOB_BANNER_AD_ID`. UMP now gates on `consent.canRequestAds`, sets `isTesting: true` for test IDs, and logs load/failure events as `[RuvoAd]`. Native-only; no-op in browser. Browser ads use `src/components/WebAdBanner.tsx` with AdSense; it is a no-op unless both `VITE_ADSENSE_CLIENT_ID` and `VITE_ADSENSE_SLOT_ID` are set in Vercel.
+- **R13** AdMob bottom banner uses `@capacitor-community/admob@7.2.0` with Google's public test IDs: App ID in `android/app/src/main/res/values/strings.xml`, banner unit ID in `src/components/AdBanner.tsx` overridable with `VITE_ADMOB_BANNER_AD_ID`. UMP now gates on `consent.canRequestAds`, sets `isTesting: true` for test IDs, and logs load/failure events as `[AmpoAd]`. Native-only; no-op in browser. Browser ads use `src/components/WebAdBanner.tsx` with AdSense; it is a no-op unless both `VITE_ADSENSE_CLIENT_ID` and `VITE_ADSENSE_SLOT_ID` are set in Vercel.
 - **R14** List→detail→back lag is fixed with React Query caching (location + station lists + detail + feedback), a compact/proximity-sorted distance API with CDN cache headers, instant cached geolocation, local favourite state, and scroll restoration. See "Performance state (done)" below.
 - **R15** Route-level code splitting: `StationDetail` and `TripPlanner` are `React.lazy` chunks. The default list view must stay the small entry chunk; do not statically import detail/trips back into the entry.
 - **R16** Daily catalog sync now only uses real sources: BEE API pages, OpenStreetMap Overpass, and Google Places catalog. All hard-coded provider "samples" (Tata/Ather/Jio-bp/PlugShare/ChargeZone/ABB/BrightBlu/Statiq/NITI) were removed from the fetch list because they were fabricated.
@@ -46,13 +46,14 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 - **R19** Trip Planner: route responses drop unused `steps=true`; station/route proximity uses a spatial grid instead of O(n·m); Trips chunk is warmed on hover/focus with a skeleton fallback, and Leaflet `TripMap` is a separate lazy chunk. Station list has no wrapping Card border on mobile; detail prefetch is wired like the nearby list.
 - **R20** `place_details` must be written with `sql.json(details)`, never `JSON.stringify(details)::jsonb` — the latter stored a JSON *string scalar*. Migration `20261120190000_fix_double_encoded_place_details.sql` unwrapped all 5,545 affected rows.
 - **R21** Distance shown on cards is progressively upgraded from straight-line to **road distance** via a post-render OSRM table request (`useDrivingDistances`, 80 stations/call, cached 10 min). Directions links now pin `origin=` to the same location. This adds no load-blocking request.
-- **R22** Header brand is **Ruvo** with "EV station finder" on the same line (no extra subtitle row). Mobile search layout uses a stable two-line status/controls structure so long queries never reflow the filter row. Add new experience regressions to `tests/experience-smoke.mjs` (`npm run test:experience`).
-- **R23** Every screen header (list AND station detail, future screens too) MUST use the shared `src/components/BrandTitle.tsx` component for the "Ruvo + descriptor" wordmark. Never hand-roll a different title style (the detail page previously used a two-line uppercase `Ruvo` + `Station details` stack). `tests/experience-smoke.mjs` asserts font size/weight/family match between list and detail headers — keep this passing for future builds.
+- **R22** Header brand is **Ampo** with "EV station finder" on the same line (no extra subtitle row). Mobile search layout uses a stable two-line status/controls structure so long queries never reflow the filter row. Add new experience regressions to `tests/experience-smoke.mjs` (`npm run test:experience`).
+- **R23** Every screen header (list AND station detail, future screens too) MUST use the shared `src/components/BrandTitle.tsx` component for the "Ampo + descriptor" wordmark. Never hand-roll a different title style (the detail page previously used a two-line uppercase `Ampo` + `Station details` stack). `tests/experience-smoke.mjs` asserts font size/weight/family match between list and detail headers — keep this passing for future builds.
+- **R29** Full rebrand **Ruvo → Ampo** (user request, Nov 21 2026): visible UI (`BrandTitle`, footer, emails, error toasts), page title/meta/OG tags, PWA manifest, Capacitor app name/id, Android `applicationId`/namespace/Java package/`strings.xml`, localStorage keys (`ampo_last_location`, `ampo-list-scroll`), CSS var (`--ampo-banner-height`), ad log prefix (`[AmpoAd]`), public asset filenames (`ampo-icon-*`, `ampo-favicon-*`), docs, and this skill (renamed `ampo-product-brain`). The bolt artwork is unchanged — only filenames/brand text changed. The native wrapper and all default URLs now point to `https://ampo.vercel.app`; the Vercel project/repo keep their legacy `road-to-charge-v2` names. This is a new Android app identity: existing `com.ruvo.evcharging` installs will not receive updates. If `RESEND_FROM` is set in Vercel, flip its display name from Ruvo to Ampo too.
 - **R28** List/detail feedback polish: `providerLabel()` hides the literal provider "Google Places" on the 31 catalog gap-fill rows (the site/brand is already in the station name; `source_name` stays in the DB for provenance). `LiveStatus` shows **"Live"** with a radiating green ping dot for `operational` instead of a plain "Available" label, in both list and detail. The card's secondary action is now **"Review"** and deep-links to `/station/:id#reviews`; `StationDetail` marks the community card `id="reviews"` and retries scrolling until it exists (detail may still be loading when the hash lands). After a station-feedback submit, the 60 s CDN-cached GET is bypassed once via `EVStationService.getFeedback(id, true)` (`&_=Date.now()` + `cache: 'no-store'`), React Query data is updated, the page anchors back to `#reviews`, and the newest matching report is tagged **"Your report"** while older rows say "Community". Regressions cover provider text, radiating dots, Review deep-link, submit anchor, and source tagging in `tests/experience-smoke.mjs`.
 - **R27** Feedback is **login-free**: `SiteFooter` renders an in-app dialog (button labelled "Help us Improve!", deliberately not "Feedback" to avoid colliding with the detail page's station-feedback FAB) that POSTs to `/api/app-feedback` → Resend email to `REVIEW_EMAIL`/`develop.sumit@gmail.com` with `reply_to` set. No auth, no GitHub issue (GitHub needs login); honeypot `website` field + 3–4000 char validation. Footer is rendered on list, detail, **and inside both popups** (add-station sheet, station-feedback sheet). Overlay checks in `tests/experience-smoke.mjs` run on a fresh page because opening the footer dialog scrolls the long list and Radix temporarily sets `aria-hidden` on the app root — mixing them into layout checks corrupts measurements.
 - **R26** Detail header shares the list header's exact gradient theme (`bg-gradient-hero text-primary-foreground shadow-electric`, same padding/safe-area) — ghost icon buttons must use `text-primary-foreground` so they stay visible. The "Visit & community updates" heading stacks title then subtitle on mobile (`flex-col sm:flex-row`). Shared `SiteFooter` shows "© 2026 Fibuladreams Pvt Ltd. All rights reserved." plus the "Help us Improve!" feedback control; it is rendered on list, detail, and both popups. Regressions cover header theme parity, stacked heading, and footer.
 - **R25** The nearby list is sorted by whatever distance is **displayed**: straight-line first, then re-sorted by OSRM road distance once `useDrivingDistances` succeeds (otherwise a 2.1 km card appears above a 1.9 km card). `useDrivingDistances` keys its cache on a sorted ID list (order-insensitive) and is called with the unfiltered nearby list, so re-sorting or toggling connectors never triggers a second routing call. `tests/experience-smoke.mjs` asserts displayed distances are non-decreasing. Trip Planner keeps route-proximity ordering (different concept) but still shows road distances.
-- **R24** `LocationService.getCurrentLocation()` returns `ResolvedLocation { location, isFallback }`. The Delhi fallback (28.6139, 77.2090) is display-only for a first-time visitor: it is **never** written to `localStorage` and **never** replaces a real cached fix when GPS is denied/timed out. `EVApp.handleLocationUpdate` only sets the in-memory `user-location` query cache (searching another city must not overwrite the saved home location). Root cause fixed: a stale cached location triggered a background GPS refetch; on failure the fallback was saved as `ruvo_last_location`, so the list permanently switched to Delhi and refetched for it on every load. Regression checks live in `tests/experience-smoke.mjs`.
+- **R24** `LocationService.getCurrentLocation()` returns `ResolvedLocation { location, isFallback }`. The Delhi fallback (28.6139, 77.2090) is display-only for a first-time visitor: it is **never** written to `localStorage` and **never** replaces a real cached fix when GPS is denied/timed out. `EVApp.handleLocationUpdate` only sets the in-memory `user-location` query cache (searching another city must not overwrite the saved home location). Root cause fixed: a stale cached location triggered a background GPS refetch; on failure the fallback was saved as `ampo_last_location`, so the list permanently switched to Delhi and refetched for it on every load. Regression checks live in `tests/experience-smoke.mjs`.
 - Full photo backfill completed: **1,157 of 1,797** already-enriched no-photo rows repaired (0 failures); DB is 29,215 rows / 4,905 with photos / 1,197 landmark-sourced / 5,545 enriched.
 
 ## Architecture map
@@ -60,7 +61,7 @@ Supabase ref: `wcextqwiceknlgcvrnxn` (Hobby/free tier)
 Frontend (Vite + React 18 + TypeScript + Tailwind + shadcn/ui, **not Next.js**):
 - `src/App.tsx` — QueryClientProvider, TooltipProvider, toasts, BrowserRouter, routes `/`, `/station/:id`, `*`; renders `<AdBanner />` and `<WebAdBanner />` globally.
 - `src/pages/Index.tsx` — renders `EVApp`; now also handles scroll restoration for list→detail→back.
-- `src/components/BrandTitle.tsx` — shared one-line "Ruvo + descriptor" header wordmark used by list and detail screens (see R23).
+- `src/components/BrandTitle.tsx` — shared one-line "Ampo + descriptor" header wordmark used by list and detail screens (see R23).
 - `src/components/SiteFooter.tsx` — shared copyright + login-free "Help us Improve!" feedback dialog on list, detail, and both popups (see R27). `api/app-feedback.ts` emails submissions via Resend.
 - `api/` now has 10 functions (Hobby limit 12): `stations`, `place-photo`, `station-feedback`, `submissions`, `submission-decision`, `review-submission`, `sync-ev-stations`, `sync-trigger`, `enrich-place-photos`, `app-feedback`.
 - `src/components/EVApp.tsx` — header, tabs (Stations / Trips / Saved), location, sync button, `ContributionButton`; warms the Trips chunk on hover/focus and shows a skeleton fallback.
@@ -72,7 +73,7 @@ Frontend (Vite + React 18 + TypeScript + Tailwind + shadcn/ui, **not Next.js**):
 - `src/components/LiveStatus.tsx` — "Live"/"Maintenance"/"Offline" pill with a radiating green dot for `operational` (see R28).
 - `src/pages/StationDetail.tsx` — gallery, details, Maps/app links, `id="reviews"` community card, feedback sheet + FAB. Uses `useStationDetail`/`useStationFeedback`.
 - `src/components/ContributionButton.tsx` — community submission sheet (camera/gallery, OCR, verification, review email).
-- `src/components/AdBanner.tsx` — native AdMob banner, sets `--ruvo-banner-height` CSS var so FABs/list bottom stay clear.
+- `src/components/AdBanner.tsx` — native AdMob banner, sets `--ampo-banner-height` CSS var so FABs/list bottom stay clear.
 - `src/components/WebAdBanner.tsx` — browser-only AdSense banner; no-op without both Vite AdSense env vars.
 - `src/hooks/useStationQueries.ts` — React Query keys and hooks for location, nearby, search, detail, feedback, plus `usePrefetchStation()` used by station cards.
 - `src/services/` — `evStationService.ts` (API mapping), `locationService.ts` (cached geolocation + `ResolvedLocation` fallback contract, see R24), `favouritesService.ts`, `appIconService.ts`, `chargingStationsSync.ts`.
@@ -98,11 +99,11 @@ Data / infra:
 - `supabase/migrations/20261120010000_add_station_place_photos_and_feedback.sql` — photo columns, `station_feedback`, reset trigger.
 - `vercel.json` — two crons: `0 3 * * *` full sync (`?mode=full&maxPagesPerState=2`), `0 4 * * *` enrichment (`?limit=100`); SPA rewrite for `/station/:id`.
 - `capacitor.config.ts` — app id/name, `webDir: dist`, remote server URL, splash config.
-- `android/` — checked-in Capacitor Android project with Ruvo icons/splash, permissions, AdMob metadata.
-- `public/ruvo-icon-1024.png` — master for browser/PWA/native icons.
+- `android/` — checked-in Capacitor Android project with Ampo icons/splash, permissions, AdMob metadata.
+- `public/ampo-icon-1024.png` — master for browser/PWA/native icons.
 - Gitignored local artifacts: `.env.vercel`, `.sync-secret.tmp`, `*.apk`, `android/local.properties`, generated web assets.
 
-Environment (names only, never values): `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `SYNC_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM` (optional; default `Ruvo <onboarding@resend.dev>` works), `BLOB_READ_WRITE_TOKEN`, `REVIEW_SECRET`, `VITE_ADMOB_BANNER_AD_ID` (optional), `VITE_ADSENSE_CLIENT_ID` + `VITE_ADSENSE_SLOT_ID` (optional, both required for web ads). Preview env is not fully configured; test against production or local.
+Environment (names only, never values): `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `SYNC_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM` (optional; default `Ampo <onboarding@resend.dev>` works), `BLOB_READ_WRITE_TOKEN`, `REVIEW_SECRET`, `VITE_ADMOB_BANNER_AD_ID` (optional), `VITE_ADSENSE_CLIENT_ID` + `VITE_ADSENSE_SLOT_ID` (optional, both required for web ads). Preview env is not fully configured; test against production or local.
 
 ## UX flows to preserve
 
@@ -152,18 +153,18 @@ git grep -nE "$SECRET_RE" -- . ':!package-lock.json'   # must be clean
 
 Manual enrichment batch:
 ```bash
-curl -X GET 'https://road-to-charge-v2.vercel.app/api/enrich-place-photos?limit=200' \
+curl -X GET 'https://ampo.vercel.app/api/enrich-place-photos?limit=200' \
   -H "Authorization: Bearer $(cat .sync-secret.tmp | tr -d '\n')"
 ```
 
 Full catalog import / targeted gap-fill:
 ```bash
 curl -sSL 'https://raw.githubusercontent.com/shrinivas-sn/ev-charging-stations-api/main/backend/data/stations.json' \
-  -o /tmp/ruvo-bee-stations.json
-node --experimental-strip-types scripts/import-full-bee-snapshot.mjs /tmp/ruvo-bee-stations.json
+  -o /tmp/ampo-bee-stations.json
+node --experimental-strip-types scripts/import-full-bee-snapshot.mjs /tmp/ampo-bee-stations.json
 # After a sync adds Google Places catalog rows:
 node --experimental-strip-types scripts/enrich-google-catalog.mjs
-curl -sS 'https://road-to-charge-v2.vercel.app/api/stations?mode=search&q=Kokapet' | head -c 500
+curl -sS 'https://ampo.vercel.app/api/stations?mode=search&q=Kokapet' | head -c 500
 ```
 
 Photo repair / backfill:
@@ -182,10 +183,10 @@ NODE
 
 List API smoke test (replace coords):
 ```bash
-curl --http1.1 -sS 'https://road-to-charge-v2.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
+curl --http1.1 -sS 'https://ampo.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
 # Expect ~30 KB / 36 rows near Hitech City, X-Vercel-Cache: HIT on the 2nd call.
 curl --http1.1 -sS -o /dev/null -D - -w '%{time_total}\n' \
-  'https://road-to-charge-v2.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
+  'https://ampo.vercel.app/api/stations?mode=distance&lat=17.48&lng=78.40&radius=10'
 ```
 
 APK rebuild (SDK path in this machine was temp; set your own `ANDROID_HOME`):
@@ -209,7 +210,7 @@ DB stats pattern: read `.env.vercel`, connect with `postgres` using `POSTGRES_UR
 - Feedback FK type mismatch (`text` vs `uuid`) and `FUNCTION_INVOCATION_TIMEOUT` were fixed; don't reintroduce them.
 - Google matcher must strip `City=…, District=…, State=…` from station names; raw text queries returned irrelevant results. Provider aliases matter.
 - `/api/stations` and `/api/place-photo` caching is intentional; stale browser cache was ruled out as the missing-photo cause (the data was genuinely un-enriched).
-- A poisoned `ruvo_last_location` from before R24 self-heals on the next successful GPS fix (the stale timestamp keeps triggering a background refetch, and real fixes now overwrite storage). Do not "fix" this by hard-coding a clear of Delhi coordinates — a user may genuinely live in Delhi.
+- A poisoned `ampo_last_location` from before R24 self-heals on the next successful GPS fix (the stale timestamp keeps triggering a background refetch, and real fixes now overwrite storage). Do not "fix" this by hard-coding a clear of Delhi coordinates — a user may genuinely live in Delhi.
 - Google Places does not label photo *content*. "Not a screenshot/video" is approximated by resolution + landscape aspect ratio ranking; never claim images were visually verified. Landmark photos are only borrowed within 75 m and are always disclosed in the UI.
 - `/api/station-feedback` GET is sequential to avoid deadlocks; POST uses the uuid FK.
 - Entry bundle is ~418 KB (133 KB gzip) after code splitting; detail/trips are separate lazy chunks. Still above Vite's 500 kB-style warning threshold historically, but no longer a single monolith.
@@ -219,7 +220,7 @@ DB stats pattern: read `.env.vercel`, connect with `postgres` using `POSTGRES_UR
 - Full BEE snapshot is 29,184 rows / ~21 MB from `https://raw.githubusercontent.com/shrinivas-sn/ev-charging-stations-api/main/backend/data/stations.json`. Do not enrich all 29k rows with Google Places at once (cost); enrich targeted localities with `scripts/enrich-google-catalog.mjs`. After the approved backfill: **4,905 / 29,215 rows have photos**, 1,197 use disclosed nearby-landmark photos. Only 5,545 rows have ever been enriched; ~24k BEE rows remain un-enriched by design.
 - Google `places:searchNearby` rejects `rankBy` and the `ev_charging_station` included type; use `gas_station`/`convenience_store`/`car_repair`/`restaurant`/`cafe` and sort client-side. `postgres.js` exposes `sql.json()`, not `sql.jsonb()`.
 - Secrets: Google key was pasted in chat historically but never committed. Restrict/rotate when convenient. Keep `git grep` clean.
-- `road-to-charge-v2.vercel.app` (and the `-developsumit-…` default alias) currently redirect anonymous visitors to `vercel.com/sso-api` even after `vercel alias set` succeeds — a Vercel team SSO/alias protection setting, not a bad deployment. `https://ampo.vercel.app` points at the same production deployment and is publicly reachable, so use it as the browser/verification base (`BASE_URL=https://ampo.vercel.app npm run test:experience`). Re-check the v2 alias after any Vercel team auth change.
+- The legacy `road-to-charge-v2.vercel.app` alias still redirects anonymous visitors to `vercel.com/sso-api` (Vercel team SSO setting), but `https://ampo.vercel.app` points at the same production deployment and is publicly reachable. Use `ampo.vercel.app` as the canonical URL for browser checks (`BASE_URL=https://ampo.vercel.app npm run test:experience`) and for the native wrapper. The Vercel project itself remains `road-to-charge-v2`.
 
 ## Working rules
 

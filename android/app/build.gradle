@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.ruvo.evcharging"
+    namespace "com.ampo.evcharging"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.ruvo.evcharging"
+        applicationId "com.ampo.evcharging"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

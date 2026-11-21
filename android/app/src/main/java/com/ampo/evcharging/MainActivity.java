@@ -1,4 +1,4 @@
-package com.ruvo.evcharging;
+package com.ampo.evcharging;
 
 import com.getcapacitor.BridgeActivity;
 
