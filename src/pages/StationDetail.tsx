@@ -363,14 +363,16 @@ const StationDetail: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card id="reviews" className="scroll-mt-20 rounded-2xl border-border/70">
+        <Card id="reviews" aria-label="Reviews" className="scroll-mt-20 rounded-2xl border-border/70">
           <CardContent className="space-y-4 p-5">
             {/* Stack on mobile: title on one line, subtitle directly below it. */}
             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <MessageSquarePlus className="h-4 w-4 shrink-0 text-primary" /> Visit &amp; community updates
+                <MessageSquarePlus className="h-4 w-4 shrink-0 text-primary" /> Reviews &amp; community updates
               </h2>
-              <span className="text-[11px] text-muted-foreground">Community powered</span>
+              <span className="text-[11px] text-muted-foreground">
+                {feedback?.total ?? 0} reports · Community powered
+              </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center">
@@ -396,15 +398,22 @@ const StationDetail: React.FC = () => {
               <p className="mt-1">
                 <span className="font-medium text-foreground">Live in-use status:</span> coming soon from charging networks.
               </p>
+            </div>
+
+            <div className="rounded-xl border p-3">
+              <h3 className="text-xs font-semibold text-foreground">Recent reviews</h3>
               {feedback?.recent?.length ? (
-                <ul className="mt-2 space-y-1 border-t pt-2">
-                  {feedback.recent.slice(0, 3).map((item, index) => {
+                <ul className="mt-2 space-y-2">
+                  {feedback.recent.slice(0, 5).map((item, index) => {
                     const mine = index === myReportIndex;
                     return (
-                      <li key={index} className="flex items-start gap-1.5">
-                        <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
+                      <li key={index} className="flex items-start gap-1.5 text-xs">
+                        <ChevronRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                         <span>
-                          {item.kind.replace(/_/g, ' ')} · {relativeDate(item.createdAt)}
+                          <span className="font-medium text-foreground">
+                            {item.kind.replace(/_/g, ' ')}
+                          </span>{' '}
+                          · {relativeDate(item.createdAt)}
                           {item.note ? ` — “${item.note}”` : ''}
                           <span className={cn(
                             'ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
@@ -417,7 +426,11 @@ const StationDetail: React.FC = () => {
                     );
                   })}
                 </ul>
-              ) : null}
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No reviews yet. Use the Feedback button to add the first one.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

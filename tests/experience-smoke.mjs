@@ -154,6 +154,26 @@ async function checkOverlays(width) {
 
   await closeOverlay(page);
   await page.close();
+
+  // Bottom sheets can leave an overlay intercepting pointer events, so verify
+  // the home link from a fresh detail page instead of the sheet session above.
+  const homePage = await browser.newPage({
+    viewport: { width, height: 844 },
+    isMobile: width < 500,
+    deviceScaleFactor: 1,
+  });
+  await homePage.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const homeCards = homePage.locator('button[aria-label^="View details for"]');
+  await homeCards.first().waitFor({ timeout: 25000 });
+  await homeCards.first().click();
+  await homePage.waitForURL(/\/station\//, { timeout: 20000 });
+  const homeLink = homePage.locator('header h1 a[aria-label="Ampo home"]').first();
+  await homeLink.waitFor({ state: 'visible', timeout: 5000 });
+  await homeLink.click();
+  await homePage.waitForFunction(() => window.location.pathname === '/', null, { timeout: 10000 }).catch(() => {});
+  check(`${width}px: Ampo title navigates to the root page`,
+    new URL(homePage.url()).pathname === '/', homePage.url());
+  await homePage.close();
 }
 
 try {
@@ -274,7 +294,7 @@ try {
 
     const updates = await page.evaluate(() => {
       const title = [...document.querySelectorAll('h2')]
-        .find(el => el.textContent?.includes('Visit & community updates'));
+        .find(el => el.textContent?.includes('Reviews & community updates'));
       const subtitle = title?.parentElement?.querySelector('span');
       const rect = el => el ? {
         y: Math.round(el.getBoundingClientRect().y),
@@ -282,11 +302,15 @@ try {
       } : null;
       return { title: rect(title), subtitle: rect(subtitle) };
     });
-    check(`${width}px: community updates subtitle sits below the title`,
+    check(`${width}px: reviews subtitle sits below the title`,
       Boolean(updates.title && updates.subtitle && updates.subtitle.y >= updates.title.y + updates.title.h - 1),
       JSON.stringify(updates));
-    check(`${width}px: community updates title stays on one line`,
+    check(`${width}px: reviews title stays on one line`,
       Boolean(updates.title && updates.title.h <= 24), String(updates.title?.h));
+    const reviewsText = await page.locator('#reviews').innerText();
+    check(`${width}px: detail page shows explicit review details`,
+      /Reviews/.test(reviewsText) && /Recent reviews|No reviews yet/.test(reviewsText),
+      reviewsText.replace(/\n/g, ' ').slice(0, 120));
 
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });

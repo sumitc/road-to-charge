@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface BrandTitleProps {
@@ -16,7 +17,13 @@ export const BrandTitle: React.FC<BrandTitleProps> = ({ subtitle, className }) =
     'flex min-w-0 items-baseline gap-1.5 whitespace-nowrap text-base font-bold sm:text-xl',
     className,
   )}>
-    <span className="shrink-0">Ampo</span>
+    <Link
+      to="/"
+      aria-label="Ampo home"
+      className="shrink-0 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      Ampo
+    </Link>
     <span className="min-w-0 truncate text-[11px] font-medium opacity-90 sm:text-sm">
       {subtitle}
     </span>
