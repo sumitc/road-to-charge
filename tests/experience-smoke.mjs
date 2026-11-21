@@ -311,6 +311,11 @@ try {
     check(`${width}px: detail page shows explicit review details`,
       /Reviews/.test(reviewsText) && /Recent reviews|No reviews yet/.test(reviewsText),
       reviewsText.replace(/\n/g, ' ').slice(0, 120));
+    const reviewRows = await page.locator('#reviews li').count();
+    const reviewDetailLines = await page.locator('#reviews li p').count();
+    check(`${width}px: every review shows its written details`,
+      reviewRows === 0 || reviewDetailLines === reviewRows,
+      `${reviewDetailLines}/${reviewRows}`);
 
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });

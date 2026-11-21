@@ -5,7 +5,6 @@ import {
   Building2,
   Camera,
   CheckCircle2,
-  ChevronRight,
   Clock,
   ExternalLink,
   Info,
@@ -52,6 +51,13 @@ const FEEDBACK_OPTIONS = [
   { kind: 'wrong_location', label: 'Wrong location', icon: MapPin, tone: 'border-amber-300 bg-amber-50 text-amber-700' },
   { kind: 'other', label: 'Something else', icon: Info, tone: 'border-slate-300 bg-slate-50 text-slate-700' },
 ] as const;
+
+const REVIEW_META: Record<string, { label: string; tone: string }> = {
+  working: { label: 'Working', tone: 'bg-emerald-50 text-emerald-700' },
+  not_working: { label: 'Not working', tone: 'bg-rose-50 text-rose-700' },
+  wrong_location: { label: 'Wrong location', tone: 'bg-amber-50 text-amber-700' },
+  other: { label: 'Something else', tone: 'bg-slate-50 text-slate-700' },
+};
 
 function relativeDate(value?: string | null): string {
   if (!value) return 'not reported yet';
@@ -134,6 +140,7 @@ const StationDetail: React.FC = () => {
   const details = station.placeDetails;
   const photoSourceLabelText = photoSourceLabel(details?.photoSource);
   const isFavourite = FavouritesService.isFavourite(station.id);
+  const reviewCount = feedback?.total ?? 0;
   // Only the newest matching row is "yours" when the same note was submitted
   // more than once; older identical rows remain community reports.
   const myReportIndex = myReport
@@ -371,7 +378,7 @@ const StationDetail: React.FC = () => {
                 <MessageSquarePlus className="h-4 w-4 shrink-0 text-primary" /> Reviews &amp; community updates
               </h2>
               <span className="text-[11px] text-muted-foreground">
-                {feedback?.total ?? 0} reports · Community powered
+                {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'} · Community powered
               </span>
             </div>
 
@@ -406,22 +413,29 @@ const StationDetail: React.FC = () => {
                 <ul className="mt-2 space-y-2">
                   {feedback.recent.slice(0, 5).map((item, index) => {
                     const mine = index === myReportIndex;
+                    const meta = REVIEW_META[item.kind] ?? {
+                      label: item.kind.replace(/_/g, ' '),
+                      tone: 'bg-muted text-muted-foreground',
+                    };
                     return (
-                      <li key={index} className="flex items-start gap-1.5 text-xs">
-                        <ChevronRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                        <span>
-                          <span className="font-medium text-foreground">
-                            {item.kind.replace(/_/g, ' ')}
-                          </span>{' '}
-                          · {relativeDate(item.createdAt)}
-                          {item.note ? ` — “${item.note}”` : ''}
+                      <li key={index} className="rounded-lg border bg-muted/20 p-2.5 text-xs">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={cn('rounded-full px-2 py-0.5 font-medium', meta.tone)}>
+                            {meta.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {relativeDate(item.createdAt)}
+                          </span>
                           <span className={cn(
-                            'ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                            'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
                             mine ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                           )}>
                             {mine ? 'Your report' : 'Community'}
                           </span>
-                        </span>
+                        </div>
+                        <p className="mt-1.5 pl-1 leading-relaxed text-foreground">
+                          {item.note ? `“${item.note}”` : 'No written details were added with this report.'}
+                        </p>
                       </li>
                     );
                   })}
