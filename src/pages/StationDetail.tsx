@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -34,20 +34,17 @@ import {
 } from '@/components/ui/sheet';
 import { BrandTitle } from '@/components/BrandTitle';
 import { SiteFooter } from '@/components/SiteFooter';
+import { LiveStatus } from '@/components/LiveStatus';
+import { providerLabel } from '@/lib/provider';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { EVStationService } from '@/services/evStationService';
-import { useStationDetail, useStationFeedback, useUserLocation } from '@/hooks/useStationQueries';
+import { stationKeys, useStationDetail, useStationFeedback, useUserLocation } from '@/hooks/useStationQueries';
+import { useQueryClient } from '@tanstack/react-query';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-const STATUS_LABEL: Record<string, string> = {
-  operational: 'Available',
-  maintenance: 'Maintenance',
-  'out-of-service': 'Offline',
-};
 
 const FEEDBACK_OPTIONS = [
   { kind: 'working', label: 'Working', icon: CheckCircle2, tone: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
@@ -72,17 +69,40 @@ const StationDetail: React.FC = () => {
   // Both queries are cached, so revisiting a station (or going back to the
   // list) shows instantly instead of re-fetching station + feedback.
   const { data: station, isLoading } = useStationDetail(id);
-  const { data: feedback, refetch: refetchFeedback } = useStationFeedback(id);
+  const { data: feedback } = useStationFeedback(id);
   const { data: userLocation } = useUserLocation();
+  const queryClient = useQueryClient();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackKind, setFeedbackKind] = useState<string>('working');
   const [feedbackNote, setFeedbackNote] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  // Mark the report just added this session so it can be distinguished from
+  // other community reports in the review section.
+  const [myReport, setMyReport] = useState<string | null>(null);
 
-  const loadFeedback = async () => {
-    await refetchFeedback();
+  const scrollToReviews = () => {
+    document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Deep links like /station/:id#reviews (from the list "Review" button) land
+  // directly on the community review section once the cached detail renders.
+  useEffect(() => {
+    if (window.location.hash !== '#reviews') return;
+    // The detail can still be loading when the hash lands, so retry until the
+    // review card actually exists instead of scrolling once at 120 ms.
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      const el = document.getElementById('reviews');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.clearInterval(timer);
+      } else if (++attempts > 30) {
+        window.clearInterval(timer);
+      }
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -114,7 +134,11 @@ const StationDetail: React.FC = () => {
   const details = station.placeDetails;
   const photoSourceLabelText = photoSourceLabel(details?.photoSource);
   const isFavourite = FavouritesService.isFavourite(station.id);
-  const status = (station.status ?? '').toLowerCase();
+  // Only the newest matching row is "yours" when the same note was submitted
+  // more than once; older identical rows remain community reports.
+  const myReportIndex = myReport
+    ? feedback?.recent?.findIndex(item => `${item.kind}|${(item.note ?? '').trim()}` === myReport) ?? -1
+    : -1;
 
   const toggleFavourite = () => {
     if (isFavourite) FavouritesService.removeFavourite(station.id);
@@ -134,9 +158,14 @@ const StationDetail: React.FC = () => {
       toast({ title: 'Could not save feedback', variant: 'destructive' });
       return;
     }
+    const key = `${feedbackKind}|${feedbackNote.trim()}`;
     setFeedbackNote('');
     setFeedbackOpen(false);
-    await loadFeedback();
+    // The GET is CDN-cached for 60s, so bypass it once to show the new report.
+    const fresh = await EVStationService.getFeedback(id, true);
+    if (fresh) queryClient.setQueryData(stationKeys.feedback(id), fresh);
+    setMyReport(key);
+    scrollToReviews();
     toast({ title: 'Thanks — feedback recorded' });
   };
 
@@ -251,16 +280,12 @@ const StationDetail: React.FC = () => {
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" /> {station.provider}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    status === 'operational' ? 'bg-emerald-500' : status === 'maintenance' ? 'bg-amber-500' : 'bg-rose-500'
-                  )} />
-                  {STATUS_LABEL[status] ?? station.status}
-                </span>
+                {providerLabel(station.provider) && (
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-3.5 w-3.5" /> {providerLabel(station.provider)}
+                  </span>
+                )}
+                <LiveStatus status={station.status} />
                 {typeof details?.rating === 'number' && (
                   <span className="flex items-center gap-1 font-medium text-amber-600">
                     <Star className="h-3.5 w-3.5 fill-current" />
@@ -338,7 +363,7 @@ const StationDetail: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-border/70">
+        <Card id="reviews" className="scroll-mt-20 rounded-2xl border-border/70">
           <CardContent className="space-y-4 p-5">
             {/* Stack on mobile: title on one line, subtitle directly below it. */}
             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
@@ -373,15 +398,24 @@ const StationDetail: React.FC = () => {
               </p>
               {feedback?.recent?.length ? (
                 <ul className="mt-2 space-y-1 border-t pt-2">
-                  {feedback.recent.slice(0, 3).map((item, index) => (
-                    <li key={index} className="flex items-start gap-1.5">
-                      <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
-                      <span>
-                        {item.kind.replace(/_/g, ' ')} · {relativeDate(item.createdAt)}
-                        {item.note ? ` — “${item.note}”` : ''}
-                      </span>
-                    </li>
-                  ))}
+                  {feedback.recent.slice(0, 3).map((item, index) => {
+                    const mine = index === myReportIndex;
+                    return (
+                      <li key={index} className="flex items-start gap-1.5">
+                        <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span>
+                          {item.kind.replace(/_/g, ' ')} · {relativeDate(item.createdAt)}
+                          {item.note ? ` — “${item.note}”` : ''}
+                          <span className={cn(
+                            'ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                            mine ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          )}>
+                            {mine ? 'Your report' : 'Community'}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : null}
             </div>

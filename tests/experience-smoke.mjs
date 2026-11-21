@@ -77,6 +77,15 @@ async function checkOverlays(width) {
   });
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.getByLabel('Search for charging stations by area or city').waitFor({ timeout: 20000 });
+  const cards = page.locator('button[aria-label^="View details for"]');
+  await cards.first().waitFor({ timeout: 25000 });
+
+  const cardText = await cards.evaluateAll(els => els.slice(0, 20).map(el => el.innerText));
+  check(`${width}px: list cards do not repeat "Google Places" as provider`,
+    cardText.length > 0 && cardText.every(text => !/Google Places/.test(text)),
+    `${cardText.length} cards`);
+  const liveDots = await page.locator('span[title="Available — live status"] .animate-ping').count();
+  check(`${width}px: available stations show a radiating live dot`, liveDots > 0, `${liveDots} dots`);
 
   const improveButton = page.locator('footer').first().getByRole('button', { name: /Help us Improve/ });
   check(`${width}px: footer reads "Help us Improve!" instead of repeating Feedback`,
@@ -98,17 +107,52 @@ async function checkOverlays(width) {
     /2026.*Fibuladreams Pvt Ltd\./.test(await addSheet.innerText()));
   await closeOverlay(page);
 
+  // "Review" from a list card must land on the detail page's review section.
+  const firstCard = cards.first().locator('..');
+  await firstCard.getByRole('button', { name: /Review/ }).click();
+  await page.locator('#reviews').waitFor({ timeout: 20000 });
+  await page.waitForFunction(() => {
+    const r = document.getElementById('reviews')?.getBoundingClientRect();
+    return Boolean(r && r.top < window.innerHeight && r.bottom > 0);
+  }, null, { timeout: 6000 }).catch(() => {});
+  check(`${width}px: Review opens the detail page at the review section`,
+    new URL(page.url()).hash === '#reviews'
+      && await page.locator('#reviews').evaluate(el => {
+        const r = el.getBoundingClientRect();
+        return r.top < window.innerHeight && r.bottom > 0;
+      }),
+    page.url().split('/').pop());
+
   // Detail page feedback sheet (target the FAB; the footer button now differs).
-  const cards = page.locator('button[aria-label^="View details for"]');
-  await cards.first().waitFor({ timeout: 25000 });
-  await cards.first().click();
   await page.locator('button.fixed.right-4').click();
   const stationFeedbackSheet = page.getByRole('dialog');
   await stationFeedbackSheet.waitFor({ state: 'visible', timeout: 5000 });
   check(`${width}px: station feedback popup includes the footer`,
     /2026.*Fibuladreams Pvt Ltd\./.test(await stationFeedbackSheet.innerText()));
-  await closeOverlay(page);
 
+  // A submitted report must scroll back to the same review section and be
+  // visibly attributed to the user (other rows are community reports). Done
+  // in the same sheet session — Escape does not reliably close bottom sheets.
+  if (width === 390) {
+    await stationFeedbackSheet.getByRole('button', { name: 'Working', exact: true }).click();
+    await stationFeedbackSheet.locator('textarea').fill('Experience smoke test — live status check');
+    await stationFeedbackSheet.getByRole('button', { name: 'Submit feedback' }).click();
+    await page.waitForFunction(() => {
+      const r = document.getElementById('reviews')?.getBoundingClientRect();
+      return Boolean(r && r.top < window.innerHeight && r.bottom > 0);
+    }, null, { timeout: 8000 }).catch(() => {});
+    check('submitting feedback anchors back to the review section',
+      await page.locator('#reviews').evaluate(el => {
+        const r = el.getBoundingClientRect();
+        return r.top < window.innerHeight && r.bottom > 0;
+      }));
+    await page.locator('#reviews').getByText('Your report').first()
+      .waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    check('submitted feedback is source-marked as Your report',
+      (await page.locator('#reviews').getByText('Your report').count()) > 0);
+  }
+
+  await closeOverlay(page);
   await page.close();
 }
 

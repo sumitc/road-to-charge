@@ -15,6 +15,8 @@ import { ChargingStation } from '@/types/station';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
+import { providerLabel } from '@/lib/provider';
+import { LiveStatus } from './LiveStatus';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { AppIconService } from '@/services/appIconService';
@@ -30,18 +32,6 @@ interface StationCardProps {
   /** Road distance fetched after render; falls back to straight-line distance. */
   drivingDistanceKm?: number;
 }
-
-const STATUS_TONE: Record<string, string> = {
-  operational: 'bg-emerald-500',
-  maintenance: 'bg-amber-500',
-  'out-of-service': 'bg-rose-500',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  operational: 'Available',
-  maintenance: 'Maintenance',
-  'out-of-service': 'Offline',
-};
 
 const SPEED_TONE: Record<string, string> = {
   'super-fast': 'border-violet-200 bg-violet-50 text-violet-700',
@@ -93,7 +83,6 @@ const StationCardComponent: React.FC<StationCardProps> = ({
   const connectors = station.connectorTypes ?? [];
   const visibleConnectors = connectors.slice(0, 3);
   const extraConnectors = connectors.length - visibleConnectors.length;
-  const status = (station.status ?? '').toLowerCase();
   const photoRef = station.photoRefs?.[0];
   const rating = station.placeDetails?.rating;
   const photoSource = photoSourceLabel(station.placeDetails?.photoSource);
@@ -184,11 +173,10 @@ const StationCardComponent: React.FC<StationCardProps> = ({
             )}
 
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-              <span className="truncate">{station.provider}</span>
-              <span className="flex items-center gap-1">
-                <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_TONE[status] ?? 'bg-slate-400')} />
-                {STATUS_LABEL[status] ?? station.status}
-              </span>
+              {providerLabel(station.provider) && (
+                <span className="truncate">{providerLabel(station.provider)}</span>
+              )}
+              <LiveStatus status={station.status} />
               {typeof rating === 'number' && (
                 <span className="flex items-center gap-0.5 font-medium text-amber-600">
                   <Star className="h-3 w-3 fill-current" /> {rating.toFixed(1)}
@@ -227,10 +215,10 @@ const StationCardComponent: React.FC<StationCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(`/station/${station.id}`)}
+            onClick={() => navigate(`/station/${station.id}#reviews`)}
             className="h-10 rounded-xl"
           >
-            Details
+            Review
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button

@@ -225,10 +225,13 @@ export class EVStationService {
     }
   }
 
-  /** Community reports for a station. */
-  static async getFeedback(stationId: string): Promise<StationFeedback | null> {
+  /** Community reports for a station. `bust` skips the CDN copy after a new report. */
+  static async getFeedback(stationId: string, bust = false): Promise<StationFeedback | null> {
     try {
-      const response = await fetch(`/api/station-feedback?stationId=${encodeURIComponent(stationId)}`);
+      const suffix = bust ? `&_=${Date.now()}` : '';
+      const response = await fetch(`/api/station-feedback?stationId=${encodeURIComponent(stationId)}${suffix}`, {
+        cache: bust ? 'no-store' : 'default',
+      });
       if (!response.ok) return null;
       return await response.json() as StationFeedback;
     } catch (error) {
