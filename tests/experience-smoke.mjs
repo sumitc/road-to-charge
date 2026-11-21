@@ -205,6 +205,11 @@ try {
       footerText.replace(/\n/g, ' '));
     check(`${width}px: footer feedback control is an in-app button (no GitHub login)`,
       (await footer.getByRole('button', { name: /Help us Improve/ }).count()) === 1);
+    const githubLink = footer.getByRole('link', { name: /Star on GitHub/ });
+    check(`${width}px: footer links to the open-source repo`,
+      (await githubLink.count()) === 1 &&
+      (await githubLink.first().getAttribute('href')) === 'https://github.com/sumitc/road-to-charge',
+      await githubLink.first().getAttribute('href'));
 
     const input = page.getByLabel('Search for charging stations by area or city');
     await input.waitFor({ state: 'visible', timeout: 20000 });
@@ -311,11 +316,25 @@ try {
     check(`${width}px: detail page shows explicit review details`,
       /Reviews/.test(reviewsText) && /Recent reviews|No reviews yet/.test(reviewsText),
       reviewsText.replace(/\n/g, ' ').slice(0, 120));
-    const reviewRows = await page.locator('#reviews li').count();
-    const reviewDetailLines = await page.locator('#reviews li p').count();
+    const communityReviews = page.locator('[data-testid="community-reviews"]');
+    const reviewRows = await communityReviews.locator('li').count();
+    const reviewDetailLines = await communityReviews.locator('li p').count();
     check(`${width}px: every review shows its written details`,
       reviewRows === 0 || reviewDetailLines === reviewRows,
       `${reviewDetailLines}/${reviewRows}`);
+
+    // Google reviews are fetched separately so the premium Places SKU is only
+    // paid for on detail pages. Verify the block resolves and is attributed.
+    const googleBlock = page.locator('[aria-label="Google Maps reviews"]');
+    await googleBlock.waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[aria-label="Google Maps reviews"]');
+      return el && !/Loading Google reviews/.test(el.textContent || '');
+    }, null, { timeout: 30000 }).catch(() => {});
+    const googleText = await googleBlock.innerText();
+    check(`${width}px: Google reviews are shown with attribution`,
+      /Reviews from Google Maps/.test(googleText) && /Google Maps/.test(googleText),
+      googleText.replace(/\n/g, ' ').slice(0, 120));
 
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });

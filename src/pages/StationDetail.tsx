@@ -44,6 +44,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import type { GoogleReview } from '@/types/station';
 
 const FEEDBACK_OPTIONS = [
   { kind: 'working', label: 'Working', icon: CheckCircle2, tone: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
@@ -58,6 +59,25 @@ const REVIEW_META: Record<string, { label: string; tone: string }> = {
   wrong_location: { label: 'Wrong location', tone: 'bg-amber-50 text-amber-700' },
   other: { label: 'Something else', tone: 'bg-slate-50 text-slate-700' },
 };
+
+interface GoogleReviewsResponse {
+  reviews?: GoogleReview[];
+  googleMapsUri?: string;
+}
+
+const StarRating: React.FC<{ value?: number }> = ({ value }) => (
+  <span aria-label={`${value ?? 0} out of 5 stars`} className="inline-flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map(star => (
+      <Star
+        key={star}
+        className={cn(
+          'h-3 w-3',
+          star <= Math.round(value ?? 0) ? 'fill-current text-amber-500' : 'text-muted-foreground/40'
+        )}
+      />
+    ))}
+  </span>
+);
 
 function relativeDate(value?: string | null): string {
   if (!value) return 'not reported yet';
@@ -86,6 +106,35 @@ const StationDetail: React.FC = () => {
   // Mark the report just added this session so it can be distinguished from
   // other community reports in the review section.
   const [myReport, setMyReport] = useState<string | null>(null);
+  // Google reviews load separately from the station payload: the Places
+  // `reviews` field is a premium SKU, so it is only requested on detail pages
+  // and cached at the CDN for a day.
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleMapsUri, setGoogleMapsUri] = useState<string>();
+
+  useEffect(() => {
+    if (!id) return;
+    const controller = new AbortController();
+    setGoogleLoading(true);
+    fetch(`/api/station-reviews?stationId=${encodeURIComponent(id)}`, { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Google reviews unavailable');
+        return response.json() as Promise<GoogleReviewsResponse>;
+      })
+      .then(data => {
+        if (controller.signal.aborted) return;
+        setGoogleReviews(Array.isArray(data.reviews) ? data.reviews : []);
+        setGoogleMapsUri(data.googleMapsUri);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setGoogleReviews([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setGoogleLoading(false);
+      });
+    return () => controller.abort();
+  }, [id]);
 
   const scrollToReviews = () => {
     document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -410,7 +459,7 @@ const StationDetail: React.FC = () => {
             <div className="rounded-xl border p-3">
               <h3 className="text-xs font-semibold text-foreground">Recent reviews</h3>
               {feedback?.recent?.length ? (
-                <ul className="mt-2 space-y-2">
+                <ul className="mt-2 space-y-2" data-testid="community-reviews">
                   {feedback.recent.slice(0, 5).map((item, index) => {
                     const mine = index === myReportIndex;
                     const meta = REVIEW_META[item.kind] ?? {
@@ -444,6 +493,72 @@ const StationDetail: React.FC = () => {
                 <p className="mt-2 text-xs text-muted-foreground">
                   No reviews yet. Use the Feedback button to add the first one.
                 </p>
+              )}
+            </div>
+
+            <div className="rounded-xl border p-3" aria-label="Google Maps reviews">
+              <div className="flex flex-wrap items-center justify-between gap-1">
+                <h3 className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#4285F4] text-[9px] font-bold text-white">G</span>
+                  Reviews from Google Maps
+                </h3>
+                <a
+                  href={googleMapsUri ?? details?.googleMapsUri ?? `https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium text-primary hover:underline"
+                >
+                  See all on Google Maps
+                </a>
+              </div>
+              <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                Ratings and reviews are from Google Maps and may be out of date.
+              </p>
+              {googleLoading ? (
+                <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading Google reviews…
+                </p>
+              ) : googleReviews.length ? (
+                <ul className="mt-3 space-y-2" data-testid="google-reviews">
+                  {googleReviews.map((review, index) => (
+                    <li key={review.googleMapsUri ?? index} className="rounded-lg border bg-muted/20 p-2.5 text-xs">
+                      <div className="flex items-start gap-2">
+                        {review.authorPhotoUri && (
+                          <img
+                            src={review.authorPhotoUri}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                            className="h-7 w-7 shrink-0 rounded-full object-cover"
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium text-foreground">{review.authorName}</span>
+                            <StarRating value={review.rating} />
+                            {review.relativeTime && (
+                              <span className="text-[11px] text-muted-foreground">{review.relativeTime}</span>
+                            )}
+                          </div>
+                          <p className="mt-1 leading-relaxed text-foreground">
+                            {review.text ? `“${review.text}”` : 'No written review was added on Google Maps.'}
+                          </p>
+                          {review.googleMapsUri && (
+                            <a
+                              href={review.googleMapsUri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-block text-[11px] font-medium text-primary hover:underline"
+                            >
+                              Read on Google Maps
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">No Google reviews found for this place.</p>
               )}
             </div>
           </CardContent>

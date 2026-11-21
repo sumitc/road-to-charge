@@ -18,6 +18,19 @@ export interface ConnectorDetail {
   lastUpdate?: string;
 }
 
+/** A public review fetched from Google Maps and shown with attribution. */
+export interface GoogleReview {
+  authorName: string;
+  authorUri?: string;
+  authorPhotoUri?: string;
+  rating?: number;
+  text?: string;
+  relativeTime?: string;
+  publishTime?: string;
+  /** Direct link to this review on Google Maps. */
+  googleMapsUri?: string;
+}
+
 /** Google Places details cached server-side for a station. */
 export interface PlaceDetails {
   displayName?: string;
@@ -32,6 +45,8 @@ export interface PlaceDetails {
   checkedAt?: string;
   candidates?: Array<{ name: string; distanceKm: number }>;
   photoQuality?: 'good' | 'mixed' | 'poor';
+  reviews?: GoogleReview[];
+  reviewsFetchedAt?: string;
   photoSource?: {
     name: string;
     kind: string;

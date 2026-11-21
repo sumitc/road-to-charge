@@ -24,6 +24,8 @@ export interface PlaceDetails {
   checkedAt?: string;
   candidates?: Array<{ name: string; distanceKm: number }>;
   photoQuality?: 'good' | 'mixed' | 'poor';
+  reviews?: GoogleReview[];
+  reviewsFetchedAt?: string;
   photoSource?: {
     name: string;
     kind: string;
@@ -41,6 +43,36 @@ export interface EnrichmentResult {
   error?: string;
 }
 
+/** Public Google Maps review, normalised for display in the app. */
+export interface GoogleReview {
+  authorName: string;
+  authorUri?: string;
+  authorPhotoUri?: string;
+  rating?: number;
+  text?: string;
+  relativeTime?: string;
+  publishTime?: string;
+  googleMapsUri?: string;
+}
+
+export interface ReviewLookup {
+  placeId?: string;
+  googleMapsUri?: string;
+  rating?: number;
+  userRatingCount?: number;
+  reviews: GoogleReview[];
+}
+
+interface GoogleReviewPayload {
+  name?: string;
+  rating?: number;
+  text?: { text?: string };
+  relativePublishTimeDescription?: string;
+  publishTime?: string;
+  googleMapsUri?: string;
+  authorAttribution?: { displayName?: string; uri?: string; photoUri?: string };
+}
+
 interface GooglePlace {
   id?: string;
   displayName?: { text?: string };
@@ -53,6 +85,7 @@ interface GooglePlace {
   businessStatus?: string;
   websiteUri?: string;
   googleMapsUri?: string;
+  reviews?: GoogleReviewPayload[];
 }
 
 interface Candidate {
@@ -644,4 +677,106 @@ export async function runPhotoEnrichment(
   } finally {
     await db.close();
   }
+}
+
+/**
+ * Fetch public Google Maps reviews for one station, on demand.
+ *
+ * Reviews are deliberately NOT added to the nightly photo-enrichment field
+ * mask — that runs for tens of thousands of rows and `places.reviews` is a
+ * premium Places SKU. This path is cached at the CDN for a day and only runs
+ * when somebody actually opens a station.
+ *
+ * Stations without a saved `google_place_id` get a cheap basics-only text
+ * search first; the 1 km guard stops a similarly named business in another
+ * part of the city from lending its reviews.
+ */
+export async function fetchGoogleReviews(
+  station: {
+    station_name: string;
+    address?: string | null;
+    latitude: number;
+    longitude: number;
+    google_place_id?: string | null;
+  },
+  apiKey: string
+): Promise<ReviewLookup> {
+  let placeId = station.google_place_id ?? undefined;
+
+  if (!placeId) {
+    const textQuery = `${station.station_name} ${station.address ?? ''}`.trim().slice(0, 180);
+    const search = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
+      },
+      body: JSON.stringify({
+        textQuery,
+        locationBias: {
+          circle: {
+            center: { latitude: station.latitude, longitude: station.longitude },
+            radius: 3000,
+          },
+        },
+        maxResultCount: 5,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!search.ok) throw new Error(`Google Places search ${search.status}`);
+    const data = await search.json() as { places?: GooglePlace[] };
+    const nearest = (data.places ?? [])
+      .map(place => ({
+        id: place.id,
+        distanceKm: haversineKm(
+          station.latitude,
+          station.longitude,
+          place.location?.latitude ?? 0,
+          place.location?.longitude ?? 0
+        ),
+      }))
+      .filter(candidate => candidate.id && candidate.distanceKm <= 1)
+      .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+    placeId = nearest?.id;
+  }
+
+  if (!placeId) return { reviews: [] };
+
+  const response = await fetch(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
+    {
+      headers: {
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'id,displayName,googleMapsUri,rating,userRatingCount,reviews',
+      },
+      signal: AbortSignal.timeout(15000),
+    }
+  );
+  if (!response.ok) throw new Error(`Google Places details ${response.status}`);
+  const place = await response.json() as GooglePlace;
+
+  // Google returns at most five reviews. Keep the ones with something to read,
+  // and always include the author + direct review link for attribution.
+  const reviews = (place.reviews ?? [])
+    .map(review => ({
+      authorName: review.authorAttribution?.displayName ?? 'Google Maps user',
+      authorUri: review.authorAttribution?.uri,
+      authorPhotoUri: review.authorAttribution?.photoUri,
+      rating: review.rating,
+      text: review.text?.text?.trim(),
+      relativeTime: review.relativePublishTimeDescription,
+      publishTime: review.publishTime,
+      googleMapsUri: review.googleMapsUri,
+    }))
+    .filter(review => Boolean(review.text) || typeof review.rating === 'number')
+    .slice(0, 5);
+
+  return {
+    placeId,
+    googleMapsUri: place.googleMapsUri,
+    rating: place.rating,
+    userRatingCount: place.userRatingCount,
+    reviews,
+  };
 }
