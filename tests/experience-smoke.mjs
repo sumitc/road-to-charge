@@ -426,6 +426,20 @@ try {
     Math.abs((cachedLocation?.location?.lat ?? 0) - 17.4485) < 0.001,
     JSON.stringify(cachedLocation?.location ?? null));
 
+  // A search moves the active map centre to the searched area. "Show Nearby"
+  // must return to the user's real location and reload that area's list.
+  await locationPage.getByRole('button', { name: 'Show Nearby' }).click();
+  await locationPage.waitForTimeout(2500);
+  const restoredNames = await locationPage.locator('button[aria-label^="View details for"]')
+    .evaluateAll(els => els.slice(0, 5).map(el => el.getAttribute('aria-label') ?? ''));
+  check('Show Nearby restores the home-area station list',
+    restoredNames.length > 0 && JSON.stringify(restoredNames) === JSON.stringify(nearbyNames),
+    `before=${nearbyNames.slice(0, 2).join(' | ')} after=${restoredNames.slice(0, 2).join(' | ')}`);
+  check('Show Nearby clears the shared query from the URL',
+    !locationPage.url().includes('q='), locationPage.url());
+  check('Show Nearby clears the search input',
+    (await locationPage.getByLabel('Search for charging stations by area or city').inputValue()) === '');
+
   // First-time visitor (no cache) with failing GPS: the fallback is fine to
   // display, but must not be written to storage and reused on every reload.
   const firstVisitContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
