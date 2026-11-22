@@ -16,20 +16,93 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
     <link rel="manifest" href="/manifest.webmanifest?v=4" />
     <title>Ampo - EV Charging Stations Finder</title>
-    <meta name="description" content="Ampo - an ev charging stations finder app" />
+    <meta
+      name="description"
+      content="Find EV charging stations near you with Ampo. Compare live availability, read real driver reviews, and get directions to chargers across India."
+    />
     <meta name="author" content="Ampo" />
+    <link rel="canonical" href="https://ampo.vercel.app/" />
 
-    <meta property="og:title" content="Ampo - EV Charging Stations Finder" />
-    <meta property="og:description" content="Ampo - an ev charging stations finder app" />
+    <meta property="og:site_name" content="Ampo" />
+    <meta property="og:locale" content="en_IN" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://ampo.vercel.app/ampo-icon-512.png?v=4" />
+    <meta property="og:url" content="https://ampo.vercel.app/" />
+    <meta property="og:title" content="Ampo - Find EV Charging Stations Near You" />
+    <meta
+      property="og:description"
+      content="Discover and compare EV charging stations nearby. Live availability, real driver reviews and directions — all in one place."
+    />
+    <meta property="og:image" content="https://ampo.vercel.app/og-image.png?v=1" />
+    <meta property="og:image:secure_url" content="https://ampo.vercel.app/og-image.png?v=1" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ampo - Find EV charging near you" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://ampo.vercel.app/ampo-icon-512.png?v=4" />
+    <meta name="twitter:url" content="https://ampo.vercel.app/" />
+    <meta name="twitter:title" content="Ampo - Find EV Charging Stations Near You" />
+    <meta
+      name="twitter:description"
+      content="Discover and compare EV charging stations nearby. Live availability, real driver reviews and directions — all in one place."
+    />
+    <meta name="twitter:image" content="https://ampo.vercel.app/og-image.png?v=1" />
+    <meta name="twitter:image:alt" content="Ampo - Find EV charging near you" />
+
+    <style>
+      /* Crawler-visible shell. React replaces #root on mount; this only exists
+         for clients that do not execute JavaScript. */
+      .prerender-shell { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #0f172a; max-width: 760px; margin: 0 auto; padding: 24px 20px 48px; }
+      .prerender-header { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; }
+      .prerender-brand { font-size: 26px; font-weight: 800; color: #0284c7; letter-spacing: -0.5px; }
+      .prerender-tagline { font-size: 14px; color: #64748b; }
+      .prerender-main h1 { font-size: 30px; line-height: 1.2; margin: 28px 0 16px; }
+      .prerender-main p { font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 14px; }
+      .prerender-main ul { font-size: 15px; line-height: 1.7; color: #475569; padding-left: 20px; }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static landing content for crawlers and link-preview bots that never
+           run JavaScript. createRoot() replaces it on first render. -->
+      <div class="prerender-shell">
+        <header class="prerender-header">
+          <span class="prerender-brand">Ampo</span>
+          <span class="prerender-tagline">EV Charging Stations Finder</span>
+        </header>
+        <main class="prerender-main">
+          <h1>Find EV charging stations near you</h1>
+          <p>
+            Ampo helps you discover, compare and navigate to EV charging
+            stations across India. See live availability, read real driver
+            reviews and Google Maps ratings, and get turn-by-turn directions
+            to the nearest charger.
+          </p>
+          <p>
+            Search by area or city — such as Koramangala, Bangalore or
+            Nallagandla, Hyderabad — to see every charger nearby. Share a
+            search with friends using a simple link and help the community by
+            adding a station or leaving a review.
+          </p>
+          <ul>
+            <li>Up-to-date EV charger locations from Google Places and open data</li>
+            <li>Connector types, availability and restricted-access notes</li>
+            <li>Community reviews and direct Google Maps directions</li>
+          </ul>
+        </main>
+      </div>
+    </div>
+    <noscript>
+      <div style="max-width: 720px; margin: 40px auto; font-family: sans-serif; color: #0f172a;">
+        <h1>Ampo - EV Charging Stations Finder</h1>
+        <p>
+          Find EV charging stations near you with Ampo. Compare live
+          availability, read real driver reviews and get directions to chargers
+          across India. Please enable JavaScript to use the interactive map.
+        </p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
