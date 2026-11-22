@@ -8,6 +8,7 @@ import { SiteFooter } from './SiteFooter';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
+import { GoogleRefreshNotice } from './GoogleRefreshNotice';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
@@ -173,6 +174,7 @@ export const EVApp = () => {
       </main>
 
       <ContributionButton location={location} />
+      <GoogleRefreshNotice />
     </div>
   );
 };

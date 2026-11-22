@@ -15,7 +15,7 @@ import { ChargingStation } from '@/types/station';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
-import { providerLabel } from '@/lib/provider';
+import { accessTag, providerLabel } from '@/lib/provider';
 import { LiveStatus } from './LiveStatus';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -175,6 +175,11 @@ const StationCardComponent: React.FC<StationCardProps> = ({
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
               {providerLabel(station.provider) && (
                 <span className="truncate">{providerLabel(station.provider)}</span>
+              )}
+              {accessTag(station) && (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700">
+                  {accessTag(station)}
+                </span>
               )}
               <LiveStatus status={station.status} />
               {typeof rating === 'number' && (

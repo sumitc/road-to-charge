@@ -1,10 +1,18 @@
 import postgres, { type Fragment } from 'postgres';
+import { waitUntil } from '@vercel/functions';
+import {
+  claimGoogleAreaRefresh,
+  getGoogleRefreshStatus,
+  runGoogleAreaBackfill,
+  type GoogleRefreshInfo,
+} from '../server/lib/googleAreaBackfill.js';
 
 export const config = { runtime: 'nodejs' };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  'Access-Control-Expose-Headers': 'X-Ampo-Google-Refresh',
 };
 
 export async function OPTIONS(): Promise<Response> {
@@ -18,6 +26,25 @@ export async function GET(req: Request): Promise<Response> {
     const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require', prepare: false });
     const params = new URL(req.url, 'http://localhost').searchParams;
     const mode = params.get('mode') ?? 'all';
+
+    if (mode === 'refresh-status') {
+      const cell = params.get('cell') ?? '';
+      await sql.end({ timeout: 5 });
+      if (!/^-?\d+,-?\d+$/.test(cell)) {
+        return new Response(JSON.stringify({ error: 'Valid cell is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const info = await getGoogleRefreshStatus(cell);
+      return new Response(JSON.stringify(info ?? { cell, status: 'cached' }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
 
     if (mode === 'stats') {
       const rows = await sql<{ provider: string; count: number }[]>`
@@ -63,6 +90,7 @@ export async function GET(req: Request): Promise<Response> {
 
     const conditions: Fragment[] = [];
     let searchTokens: string[] = [];
+    let resolvedGeo: { lat: number; lng: number } | null = null;
     let order = sql`last_updated DESC`;
     let limit = 500;
 
@@ -101,6 +129,8 @@ export async function GET(req: Request): Promise<Response> {
           bombay: ['bombay', 'mumbai'],
           chennai: ['chennai', 'madras'],
           madras: ['madras', 'chennai'],
+          nallagandla: ['nallagandla', 'nalagandla'],
+          nalagandla: ['nalagandla', 'nallagandla'],
           kolkata: ['kolkata', 'calcutta'],
           calcutta: ['calcutta', 'kolkata'],
         };
@@ -162,6 +192,7 @@ export async function GET(req: Request): Promise<Response> {
           id, station_name, provider, address, city, state, district,
           latitude, longitude, availability_status, connector_types,
           max_power_kw, max_kw_by_standard, charging_current, ownership,
+          access, source_name,
           station_type, maps_link, location_quality,
           photo_references[1:1] AS photo_references,
           CASE WHEN place_details IS NULL THEN NULL
@@ -195,6 +226,7 @@ export async function GET(req: Request): Promise<Response> {
           const lat = Number(geo?.lat);
           const lng = Number(geo?.lon);
           if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            resolvedGeo = { lat, lng };
             const radius = 10;
             const latRange = radius / 111.0;
             const lngRange = radius / (111.0 * Math.cos((lat * Math.PI) / 180));
@@ -212,12 +244,58 @@ export async function GET(req: Request): Promise<Response> {
       }
     }
 
+    // Demand-driven Google gap fill. The response is never blocked on the
+    // network call; the cell claim makes repeat searches idempotent for 7 days.
+    let refreshInfo: GoogleRefreshInfo | undefined;
+    try {
+      let area: { lat: number; lng: number; radiusKm: number } | null = null;
+      if (mode === 'distance') {
+        const lat = Number(params.get('lat'));
+        const lng = Number(params.get('lng'));
+        const radiusKm = Number(params.get('radius') ?? 10);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(radiusKm)) {
+          area = { lat, lng, radiusKm };
+        }
+      } else if (mode === 'search') {
+        if (rows.length > 0) {
+          const mapped = rows as unknown as Array<{ latitude: string | number; longitude: string | number }>;
+          const lat = mapped.reduce((sum, row) => sum + Number(row.latitude), 0) / mapped.length;
+          const lng = mapped.reduce((sum, row) => sum + Number(row.longitude), 0) / mapped.length;
+          if (Number.isFinite(lat) && Number.isFinite(lng)) area = { lat, lng, radiusKm: 10 };
+        } else if (resolvedGeo) {
+          area = { ...resolvedGeo, radiusKm: 10 };
+        }
+      }
+
+      if (area) {
+        const claim = await claimGoogleAreaRefresh(sql, area.lat, area.lng, area.radiusKm);
+        if (claim) {
+          refreshInfo = { cell: claim.cell, status: claim.claimed ? 'pending' : 'cached' };
+          if (claim.claimed) {
+            const task = runGoogleAreaBackfill({ ...claim, ...area });
+            try {
+              waitUntil(task);
+            } catch {
+              // Outside a Vercel runtime waitUntil is a no-op; keep the task
+              // alive rather than dropping a legitimately claimed refresh.
+              task.catch((error) => console.error('Google area backfill failed:', error));
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Could not schedule Google area refresh:', error);
+    }
+
     await sql.end({ timeout: 5 });
 
     const headers: Record<string, string> = {
       ...corsHeaders,
       'Content-Type': 'application/json',
     };
+    if (refreshInfo) {
+      headers['X-Ampo-Google-Refresh'] = encodeURIComponent(JSON.stringify(refreshInfo));
+    }
     if (mode === 'distance' || mode === 'bounds' || mode === 'id') {
       // Catalog data changes daily; cached responses make detail views instant.
       // Vercel Functions only honour the CDN header for edge caching.

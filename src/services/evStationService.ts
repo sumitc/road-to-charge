@@ -1,4 +1,5 @@
 import type { Tables } from '@/integrations/supabase/types';
+import type { GoogleRefreshInfo } from '@/lib/googleArea';
 import type {
   ChargingCurrent,
   ChargingStation,
@@ -34,6 +35,20 @@ const fetchStations = async (params: Record<string, string | number | undefined>
   }
   const response = await fetch(`/api/stations?${search.toString()}`);
   if (!response.ok) throw new Error(`Stations API failed: ${response.status}`);
+
+  // The API reports when a query claimed a Google gap-fill cell. Broadcast it
+  // so the refresh notice can follow the job to completion without blocking
+  // the station list.
+  const refreshHeader = response.headers.get('X-Ampo-Google-Refresh');
+  if (refreshHeader && typeof window !== 'undefined') {
+    try {
+      const info = JSON.parse(decodeURIComponent(refreshHeader)) as GoogleRefreshInfo;
+      window.dispatchEvent(new CustomEvent('ampo-google-refresh', { detail: info }));
+    } catch {
+      // A malformed header must never break station loading.
+    }
+  }
+
   const rows = await response.json();
   return Array.isArray(rows) ? rows as StationRow[] : [];
 };
@@ -208,6 +223,18 @@ export class EVStationService {
     } catch (error) {
       console.error('Error getting station stats:', error);
       return {};
+    }
+  }
+
+  /** Latest state of a query-triggered Google gap-fill job. */
+  static async getGoogleRefreshStatus(cell: string): Promise<GoogleRefreshInfo | null> {
+    try {
+      const response = await fetch(`/api/stations?mode=refresh-status&cell=${encodeURIComponent(cell)}`);
+      if (!response.ok) return null;
+      return await response.json() as GoogleRefreshInfo;
+    } catch (error) {
+      console.error('Error reading Google refresh status:', error);
+      return null;
     }
   }
 

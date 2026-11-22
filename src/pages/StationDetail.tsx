@@ -34,7 +34,7 @@ import {
 import { BrandTitle } from '@/components/BrandTitle';
 import { SiteFooter } from '@/components/SiteFooter';
 import { LiveStatus } from '@/components/LiveStatus';
-import { providerLabel } from '@/lib/provider';
+import { accessTag, providerLabel } from '@/lib/provider';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
@@ -341,6 +341,11 @@ const StationDetail: React.FC = () => {
                     <Building2 className="h-3.5 w-3.5" /> {providerLabel(station.provider)}
                   </span>
                 )}
+                {accessTag(station) && (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                    {accessTag(station)}
+                  </span>
+                )}
                 <LiveStatus status={station.status} />
                 {typeof details?.rating === 'number' && (
                   <span className="flex items-center gap-1 font-medium text-amber-600">
@@ -571,6 +576,11 @@ const StationDetail: React.FC = () => {
             </h2>
             <p>Source: {station.sourceName || 'Catalog sync'}</p>
             <p>Coordinates: {station.lat.toFixed(6)}, {station.lng.toFixed(6)}</p>
+            {accessTag(station) && (
+              <p className="font-medium text-amber-700">
+                Access may be limited to residents or members — please confirm before visiting.
+              </p>
+            )}
             {station.locationQuality === 'suspect' && (
               <p className="font-medium text-amber-600">Location flagged — please confirm on Google Maps.</p>
             )}
