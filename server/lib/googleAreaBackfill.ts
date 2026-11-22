@@ -33,6 +33,7 @@ export interface GoogleBackfillParams {
 const CELL_SIZE = 0.05; // ~5 km at Indian latitudes
 const CACHE_TTL_DAYS = 7;
 const STALE_PENDING_MINUTES = 10;
+const RETRY_FAILED_MINUTES = 5;
 const MAX_RADIUS_KM = 10;
 
 /** Keep this identical to src/lib/googleArea.ts. */
@@ -95,11 +96,17 @@ export async function claimGoogleAreaRefresh(
       center_lng = EXCLUDED.center_lng,
       radius_km = EXCLUDED.radius_km,
       status = 'pending',
+      found_count = 0,
+      new_count = 0,
+      enriched_count = 0,
       last_checked_at = now(),
       updated_at = now()
     WHERE (
-      public.google_area_cache.status <> 'pending'
+      public.google_area_cache.status IN ('done', 'empty')
       AND public.google_area_cache.last_checked_at < now() - make_interval(days => ${CACHE_TTL_DAYS})
+    ) OR (
+      public.google_area_cache.status = 'failed'
+      AND public.google_area_cache.last_checked_at < now() - make_interval(mins => ${RETRY_FAILED_MINUTES})
     ) OR (
       public.google_area_cache.status = 'pending'
       AND public.google_area_cache.updated_at < now() - make_interval(mins => ${STALE_PENDING_MINUTES})
@@ -191,7 +198,7 @@ async function finish(
   };
 }
 
-/** Background job: one Google circle fetch + conservative upsert. */
+/** Background job: one Google text search around the cell + conservative upsert. */
 export async function runGoogleAreaBackfill(params: GoogleBackfillParams): Promise<GoogleRefreshInfo> {
   const startedAt = Date.now();
   const sql = openDb();
@@ -202,7 +209,10 @@ export async function runGoogleAreaBackfill(params: GoogleBackfillParams): Promi
     if (!apiKey) throw new Error('GOOGLE_MAPS_API_KEY missing');
 
     const radiusMeters = Math.round(clampRadius(params.radiusKm) * 1000);
-    const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    // `searchNearby` rejects `ev_charging_station` as an included type, while
+    // `searchText` with a location bias is the supported way to find chargers
+    // around arbitrary coordinates (and is already used by the catalog sync).
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -218,9 +228,9 @@ export async function runGoogleAreaBackfill(params: GoogleBackfillParams): Promi
         ].join(','),
       },
       body: JSON.stringify({
-        includedTypes: ['ev_charging_station'],
+        textQuery: 'EV charging station',
         maxResultCount: 20,
-        locationRestriction: {
+        locationBias: {
           circle: {
             center: { latitude: params.lat, longitude: params.lng },
             radius: radiusMeters,
@@ -230,7 +240,10 @@ export async function runGoogleAreaBackfill(params: GoogleBackfillParams): Promi
       signal: AbortSignal.timeout(20_000),
     });
 
-    if (!response.ok) throw new Error(`Google Places searchNearby returned ${response.status}`);
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 300);
+      throw new Error(`Google Places searchText returned ${response.status}: ${detail}`);
+    }
     const payload = (await response.json()) as {
       places?: Array<{
         id?: string;
