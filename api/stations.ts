@@ -23,10 +23,21 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   chennai: ['chennai', 'madras'],
   madras: ['madras', 'chennai'],
   nallagandla: ['nallagandla', 'nalagandla'],
-  nalagandla: ['nalagandla', 'nallagandla'],
+  // First variant is the canonical spelling used for geocoding.
+  nalagandla: ['nallagandla', 'nalagandla'],
   kolkata: ['kolkata', 'calcutta'],
   calcutta: ['calcutta', 'kolkata'],
 };
+
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
 
 export async function OPTIONS(): Promise<Response> {
   return new Response(null, { headers: corsHeaders });
@@ -237,6 +248,20 @@ export async function GET(req: Request): Promise<Response> {
       try {
         let geo = await geocode(canonicalQuery);
         if (!geo && canonicalQuery.toLowerCase() !== rawQuery.toLowerCase()) geo = await geocode(rawQuery);
+        if (geo) {
+          // Nominatim can resolve a bare locality to a same-named village in
+          // another district. If literal matches already cluster elsewhere,
+          // trust them and skip the bogus geocode.
+          const textRows = rows as unknown as Array<{ latitude: string | number; longitude: string | number }>;
+          const located = textRows.filter((row) =>
+            Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude))
+          );
+          if (located.length > 0) {
+            const centroidLat = located.reduce((sum, row) => sum + Number(row.latitude), 0) / located.length;
+            const centroidLng = located.reduce((sum, row) => sum + Number(row.longitude), 0) / located.length;
+            if (distanceKm(geo.lat, geo.lng, centroidLat, centroidLng) > 50) geo = null;
+          }
+        }
         if (geo) {
           resolvedGeo = geo;
           const radiusKm = 5;
