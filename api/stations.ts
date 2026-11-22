@@ -1,8 +1,9 @@
-import postgres, { type Fragment } from 'postgres';
+import postgres, { type Fragment, type Sql } from 'postgres';
 import { waitUntil } from '@vercel/functions';
 import {
   claimGoogleAreaRefresh,
   getGoogleRefreshStatus,
+  googleAreaCell,
   runGoogleAreaBackfill,
   type GoogleRefreshInfo,
 } from '../server/lib/googleAreaBackfill.js';
@@ -29,14 +30,32 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   calcutta: ['calcutta', 'kolkata'],
 };
 
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRad(bLat - aLat);
-  const dLng = toRad(bLng - aLng);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+// A searched area is considered covered once it has a handful of rows tied to
+// a live provider (Google place id, or a provider feed source). The bulk static
+// catalog alone does not count as provider coverage.
+const MIN_PROVIDER_STATIONS = 5;
+
+async function countProviderStations(
+  sql: Sql,
+  lat: number,
+  lng: number,
+  radiusKm: number
+): Promise<number> {
+  const latRange = radiusKm / 111.0;
+  const lngRange = radiusKm / (111.0 * Math.cos((lat * Math.PI) / 180));
+  const rows = await sql<{ count: number }[]>`
+    SELECT count(*)::int AS count
+    FROM public.ev_charging_stations
+    WHERE latitude BETWEEN ${lat - latRange} AND ${lat + latRange}
+      AND longitude BETWEEN ${lng - lngRange} AND ${lng + lngRange}
+      AND (
+        google_place_id IS NOT NULL
+        OR source_name ILIKE '%Google%'
+        OR source_name ILIKE '%OpenStreetMap%'
+        OR source_name ILIKE '%OCPI%'
+      )
+  `;
+  return rows[0]?.count ?? 0;
 }
 
 export async function OPTIONS(): Promise<Response> {
@@ -223,10 +242,9 @@ export async function GET(req: Request): Promise<Response> {
       LIMIT ${limit}
     `;
 
-    // Text matching alone is too literal for locality queries: "Nallagandla
-    // Hyderabad" only matches rows that happen to store the city name. Resolve
-    // the place and UNION its nearby stations with the text matches so a
-    // locality search returns the chargers actually in that area.
+    // Resolve a location query to an area on the map first, exactly like a
+    // current-location search. Text matching remains the fallback only when
+    // the geocoder has no answer for the supplied keywords.
     if (mode === 'search' && searchTokens.length > 0) {
       const rawQuery = params.get('q')?.trim() ?? '';
       const canonicalQuery = searchTokens
@@ -249,46 +267,27 @@ export async function GET(req: Request): Promise<Response> {
         let geo = await geocode(canonicalQuery);
         if (!geo && canonicalQuery.toLowerCase() !== rawQuery.toLowerCase()) geo = await geocode(rawQuery);
         if (geo) {
-          // Nominatim can resolve a bare locality to a same-named village in
-          // another district. If literal matches already cluster elsewhere,
-          // trust them and skip the bogus geocode.
-          const textRows = rows as unknown as Array<{ latitude: string | number; longitude: string | number }>;
-          const located = textRows.filter((row) =>
-            Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude))
-          );
-          if (located.length > 0) {
-            const centroidLat = located.reduce((sum, row) => sum + Number(row.latitude), 0) / located.length;
-            const centroidLng = located.reduce((sum, row) => sum + Number(row.longitude), 0) / located.length;
-            if (distanceKm(geo.lat, geo.lng, centroidLat, centroidLng) > 50) geo = null;
-          }
-        }
-        if (geo) {
           resolvedGeo = geo;
-          const radiusKm = 5;
+          const radiusKm = 10;
           const latRange = radiusKm / 111.0;
           const lngRange = radiusKm / (111.0 * Math.cos((geo.lat * Math.PI) / 180));
-          const nearbyRows = await sql`
+          rows = await sql`
             SELECT * FROM public.ev_charging_stations
             WHERE latitude BETWEEN ${geo.lat - latRange} AND ${geo.lat + latRange}
               AND longitude BETWEEN ${geo.lng - lngRange} AND ${geo.lng + lngRange}
             ORDER BY (abs(latitude::float8 - ${geo.lat}) + abs(longitude::float8 - ${geo.lng})) ASC
-            LIMIT 50
-          `;
-          const textRows = rows;
-          const merged = new Map<string, typeof textRows[number]>();
-          for (const row of nearbyRows) merged.set(String(row.id), row as typeof textRows[number]);
-          for (const row of textRows) {
-            if (!merged.has(String(row.id))) merged.set(String(row.id), row as typeof textRows[number]);
-          }
-          rows = Array.from(merged.values()).slice(0, 50) as unknown as typeof rows;
+            LIMIT 100
+          ` as unknown as typeof rows;
         }
       } catch (error) {
         console.error('Geocoding fallback failed:', error);
       }
     }
 
-    // Demand-driven Google gap fill. The response is never blocked on the
-    // network call; the cell claim makes repeat searches idempotent for 7 days.
+    // Demand-driven Google gap fill. Before scheduling anything, check whether
+    // this area already has enough provider-backed rows in the DB. The response
+    // is never blocked on the network call; the cell claim keeps repeat
+    // searches idempotent for 7 days.
     let refreshInfo: GoogleRefreshInfo | undefined;
     try {
       let area: { lat: number; lng: number; radiusKm: number } | null = null;
@@ -311,17 +310,25 @@ export async function GET(req: Request): Promise<Response> {
       }
 
       if (area) {
-        const claim = await claimGoogleAreaRefresh(sql, area.lat, area.lng, area.radiusKm);
-        if (claim) {
-          refreshInfo = { cell: claim.cell, status: claim.claimed ? 'pending' : 'cached' };
-          if (claim.claimed) {
-            const task = runGoogleAreaBackfill({ ...claim, ...area });
-            try {
-              waitUntil(task);
-            } catch {
-              // Outside a Vercel runtime waitUntil is a no-op; keep the task
-              // alive rather than dropping a legitimately claimed refresh.
-              task.catch((error) => console.error('Google area backfill failed:', error));
+        const cell = googleAreaCell(area.lat, area.lng);
+        const providerRows = await countProviderStations(sql, area.lat, area.lng, area.radiusKm);
+        if (providerRows >= MIN_PROVIDER_STATIONS) {
+          console.log(
+            `[AmpoGoogleRefresh] cell=${cell} providerRows=${providerRows} coverage sufficient; skipped`
+          );
+        } else {
+          const claim = await claimGoogleAreaRefresh(sql, area.lat, area.lng, area.radiusKm);
+          if (claim) {
+            refreshInfo = { cell: claim.cell, status: claim.claimed ? 'pending' : 'cached' };
+            if (claim.claimed) {
+              const task = runGoogleAreaBackfill({ ...claim, ...area });
+              try {
+                waitUntil(task);
+              } catch {
+                // Outside a Vercel runtime waitUntil is a no-op; keep the task
+                // alive rather than dropping a legitimately claimed refresh.
+                task.catch((error) => console.error('Google area backfill failed:', error));
+              }
             }
           }
         }
