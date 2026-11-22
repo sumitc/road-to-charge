@@ -35,6 +35,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
+  // Searching moves the active map centre to the searched area. Remember the
+  // user's real location first so "Show Nearby" can return to it.
+  const originalLocation = useRef<{ lat: number; lng: number } | null>(null);
+  const locationRef = useRef(location);
+  useEffect(() => { locationRef.current = location; }, [location]);
   // Guard so a submit that writes ?q= does not re-run the search from the URL
   // effect, while real back/forward navigation still does.
   const appliedQuery = useRef('');
@@ -59,8 +64,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       });
       setSearchResults(results);
 
-      // Move the nearby map centre to the searched area (cached for Show Nearby).
+      // Move the nearby map centre to the searched area so distances on the
+      // result cards are relative to it. Keep the user's real location stored
+      // so "Show Nearby" can switch straight back to it.
       if (results.length > 0) {
+        if (!originalLocation.current && locationRef.current) {
+          originalLocation.current = locationRef.current;
+        }
         const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
         const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
         onLocationUpdate({ lat: avgLat, lng: avgLng });
@@ -170,6 +180,14 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     setShowSearchResults(false);
     setSearchQuery('');
     setSearchResults([]);
+
+    // Return to the user's real location and make sure the nearby list is
+    // refetched for it instead of reusing the searched area's cached rows.
+    const home = originalLocation.current;
+    if (home) {
+      onLocationUpdate(home);
+      queryClient.invalidateQueries({ queryKey: stationKeys.nearby(home, radius) });
+    }
   };
 
   if (isLoadingLocation) {
