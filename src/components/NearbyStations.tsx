@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,14 +26,18 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   onLocationUpdate,
 }) => {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [radius, setRadius] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q')?.trim() ?? '');
   const [isSearching, setIsSearching] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(Boolean(searchParams.get('q')?.trim()));
   const [searchResults, setSearchResults] = useState<ChargingStation[]>([]);
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
+  // Guard so a submit that writes ?q= does not re-run the search from the URL
+  // effect, while real back/forward navigation still does.
+  const appliedQuery = useRef('');
   const prefetchStation = usePrefetchStation();
   const { toast } = useToast();
 
@@ -41,6 +46,56 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     prefetched.current.add(station.id);
     prefetchStation(station);
   };
+
+  const runSearch = useCallback(async (query: string) => {
+    setIsSearching(true);
+    setShowSearchResults(true);
+
+    try {
+      const results = await queryClient.fetchQuery({
+        queryKey: stationKeys.search(query),
+        queryFn: () => EVStationService.searchStationsByLocation(query),
+        staleTime: 10 * 60 * 1000,
+      });
+      setSearchResults(results);
+
+      // Move the nearby map centre to the searched area (cached for Show Nearby).
+      if (results.length > 0) {
+        const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
+        const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
+        onLocationUpdate({ lat: avgLat, lng: avgLng });
+      }
+
+      toast({
+        title: 'Search completed',
+        description: `Found ${results.length} stations for "${query}"`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Search failed',
+        description: 'Could not search for stations. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  }, [queryClient, onLocationUpdate, toast]);
+
+  // A shared link (?q=...) should restore the exact search, including on a
+  // fresh load. Back/forward navigation updates the query without a reload.
+  useEffect(() => {
+    const urlQuery = searchParams.get('q')?.trim() ?? '';
+    if (urlQuery === appliedQuery.current) return;
+    appliedQuery.current = urlQuery;
+    if (urlQuery) {
+      setSearchQuery(urlQuery);
+      void runSearch(urlQuery);
+    } else {
+      setSearchQuery('');
+      setShowSearchResults(false);
+      setSearchResults([]);
+    }
+  }, [searchParams, runSearch]);
 
   // Cached by location + radius, so detail→back never refetches the list.
   const nearbyQuery = useNearbyStations(location, radius);
@@ -80,47 +135,23 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   }, [showSearchResults, location, nearbyQuery.isFetching, nearbyStations.length, radius, queryClient]);
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+    const normalizedQuery = searchQuery.trim();
+    if (!normalizedQuery) {
       toast({
-        title: "Please enter a location",
+        title: 'Please enter a location',
         description: "Try an area and city, like 'Koramangala, Bangalore'",
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
 
-    setIsSearching(true);
-    setShowSearchResults(true);
-
-    try {
-      const normalizedQuery = searchQuery.trim();
-      const results = await queryClient.fetchQuery({
-        queryKey: stationKeys.search(normalizedQuery),
-        queryFn: () => EVStationService.searchStationsByLocation(normalizedQuery),
-        staleTime: 10 * 60 * 1000,
-      });
-      setSearchResults(results);
-
-      // Move the nearby map centre to the searched area (cached for Show Nearby).
-      if (results.length > 0) {
-        const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
-        const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
-        onLocationUpdate({ lat: avgLat, lng: avgLng });
-      }
-
-      toast({
-        title: "Search completed",
-        description: `Found ${results.length} stations for "${normalizedQuery}"`,
-      });
-    } catch (error) {
-      toast({
-        title: "Search failed",
-        description: "Could not search for stations. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearching(false);
-    }
+    appliedQuery.current = normalizedQuery;
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set('q', normalizedQuery);
+      return next;
+    });
+    await runSearch(normalizedQuery);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -130,6 +161,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   };
 
   const handleShowNearby = () => {
+    appliedQuery.current = '';
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete('q');
+      return next;
+    });
     setShowSearchResults(false);
     setSearchQuery('');
     setSearchResults([]);

@@ -15,6 +15,19 @@ const corsHeaders = {
   'Access-Control-Expose-Headers': 'X-Ampo-Google-Refresh',
 };
 
+const SEARCH_ALIASES: Record<string, string[]> = {
+  bangalore: ['bangalore', 'bengaluru'],
+  bengaluru: ['bengaluru', 'bangalore'],
+  mumbai: ['mumbai', 'bombay'],
+  bombay: ['bombay', 'mumbai'],
+  chennai: ['chennai', 'madras'],
+  madras: ['madras', 'chennai'],
+  nallagandla: ['nallagandla', 'nalagandla'],
+  nalagandla: ['nalagandla', 'nallagandla'],
+  kolkata: ['kolkata', 'calcutta'],
+  calcutta: ['calcutta', 'kolkata'],
+};
+
 export async function OPTIONS(): Promise<Response> {
   return new Response(null, { headers: corsHeaders });
 }
@@ -122,22 +135,10 @@ export async function GET(req: Request): Promise<Response> {
     } else if (mode === 'search') {
       const q = params.get('q')?.trim();
       if (q) {
-        const aliases: Record<string, string[]> = {
-          bangalore: ['bangalore', 'bengaluru'],
-          bengaluru: ['bengaluru', 'bangalore'],
-          mumbai: ['mumbai', 'bombay'],
-          bombay: ['bombay', 'mumbai'],
-          chennai: ['chennai', 'madras'],
-          madras: ['madras', 'chennai'],
-          nallagandla: ['nallagandla', 'nalagandla'],
-          nalagandla: ['nalagandla', 'nallagandla'],
-          kolkata: ['kolkata', 'calcutta'],
-          calcutta: ['calcutta', 'kolkata'],
-        };
         const tokens = q.toLowerCase().split(/[\s,]+/).filter(Boolean).slice(0, 6);
         searchTokens = tokens;
         for (const token of tokens) {
-          const variants = aliases[token] ?? [token];
+          const variants = SEARCH_ALIASES[token] ?? [token];
           const conditionFor = (variant: string) => {
             const like = `%${variant}%`;
             return sql`(station_name ILIKE ${like} OR address ILIKE ${like} OR provider ILIKE ${like} OR city ILIKE ${like} OR state ILIKE ${like})`;
@@ -211,33 +212,50 @@ export async function GET(req: Request): Promise<Response> {
       LIMIT ${limit}
     `;
 
-    // If a place query barely matches text, resolve the place to coordinates
-    // and return nearby stations. This handles areas like Koramangala that
-    // are not labelled as a city in the source catalog.
-    if (mode === 'search' && rows.length < 3 && searchTokens.length > 0) {
-      try {
-        const q = params.get('q') ?? '';
-        const geoResponse = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+    // Text matching alone is too literal for locality queries: "Nallagandla
+    // Hyderabad" only matches rows that happen to store the city name. Resolve
+    // the place and UNION its nearby stations with the text matches so a
+    // locality search returns the chargers actually in that area.
+    if (mode === 'search' && searchTokens.length > 0) {
+      const rawQuery = params.get('q')?.trim() ?? '';
+      const canonicalQuery = searchTokens
+        .map((token) => SEARCH_ALIASES[token]?.[0] ?? token)
+        .join(' ');
+      const geocode = async (value: string) => {
+        if (!value) return null;
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(value)}`,
           { headers: { 'User-Agent': 'road-to-charge/1.0' }, signal: AbortSignal.timeout(5000) }
         );
-        if (geoResponse.ok) {
-          const geo = (await geoResponse.json())?.[0];
-          const lat = Number(geo?.lat);
-          const lng = Number(geo?.lon);
-          if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            resolvedGeo = { lat, lng };
-            const radius = 10;
-            const latRange = radius / 111.0;
-            const lngRange = radius / (111.0 * Math.cos((lat * Math.PI) / 180));
-            rows = await sql`
-              SELECT * FROM public.ev_charging_stations
-              WHERE latitude BETWEEN ${lat - latRange} AND ${lat + latRange}
-                AND longitude BETWEEN ${lng - lngRange} AND ${lng + lngRange}
-              ORDER BY (abs(latitude::float8 - ${lat}) + abs(longitude::float8 - ${lng})) ASC
-              LIMIT 50
-            `;
+        if (!response.ok) return null;
+        const geo = (await response.json())?.[0];
+        const lat = Number(geo?.lat);
+        const lng = Number(geo?.lon);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+      };
+
+      try {
+        let geo = await geocode(canonicalQuery);
+        if (!geo && canonicalQuery.toLowerCase() !== rawQuery.toLowerCase()) geo = await geocode(rawQuery);
+        if (geo) {
+          resolvedGeo = geo;
+          const radiusKm = 5;
+          const latRange = radiusKm / 111.0;
+          const lngRange = radiusKm / (111.0 * Math.cos((geo.lat * Math.PI) / 180));
+          const nearbyRows = await sql`
+            SELECT * FROM public.ev_charging_stations
+            WHERE latitude BETWEEN ${geo.lat - latRange} AND ${geo.lat + latRange}
+              AND longitude BETWEEN ${geo.lng - lngRange} AND ${geo.lng + lngRange}
+            ORDER BY (abs(latitude::float8 - ${geo.lat}) + abs(longitude::float8 - ${geo.lng})) ASC
+            LIMIT 50
+          `;
+          const textRows = rows;
+          const merged = new Map<string, typeof textRows[number]>();
+          for (const row of nearbyRows) merged.set(String(row.id), row as typeof textRows[number]);
+          for (const row of textRows) {
+            if (!merged.has(String(row.id))) merged.set(String(row.id), row as typeof textRows[number]);
           }
+          rows = Array.from(merged.values()).slice(0, 50) as unknown as typeof rows;
         }
       } catch (error) {
         console.error('Geocoding fallback failed:', error);
@@ -257,13 +275,13 @@ export async function GET(req: Request): Promise<Response> {
           area = { lat, lng, radiusKm };
         }
       } else if (mode === 'search') {
-        if (rows.length > 0) {
+        if (resolvedGeo) {
+          area = { ...resolvedGeo, radiusKm: 10 };
+        } else if (rows.length > 0) {
           const mapped = rows as unknown as Array<{ latitude: string | number; longitude: string | number }>;
           const lat = mapped.reduce((sum, row) => sum + Number(row.latitude), 0) / mapped.length;
           const lng = mapped.reduce((sum, row) => sum + Number(row.longitude), 0) / mapped.length;
           if (Number.isFinite(lat) && Number.isFinite(lng)) area = { lat, lng, radiusKm: 10 };
-        } else if (resolvedGeo) {
-          area = { ...resolvedGeo, radiusKm: 10 };
         }
       }
 
