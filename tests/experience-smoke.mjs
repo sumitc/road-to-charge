@@ -381,11 +381,55 @@ async function checkHeaderHomeAffordances() {
   await page.close();
 }
 
+// A handful of BEE rows still carry broken font-glyph text. The UI must show a
+// readable provider-based label instead of the mojibake. Mock the nearby API so
+// this check does not depend on which rows a future catalog refresh contains.
+async function checkGarbledNameFallback() {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(ok) {
+          ok({ coords: { latitude: 17.42, longitude: 78.34 } });
+        },
+      },
+    });
+  });
+  const garbled = 'K\u0102\u016C\u01C1\u017D\u017D\u011A\u0003Z\u011E\u015D\u0069\u011A\u0146\u011E\u0108\u011E';
+  const row = {
+    id: '00000000-0000-4000-8000-000000000001',
+    station_name: garbled,
+    address: `${garbled}, Hyderabad, Telangana`,
+    provider: 'Joule',
+    city: 'Hyderabad',
+    state: 'Telangana',
+    latitude: '17.42',
+    longitude: '78.34',
+    availability_status: 'unknown',
+    connector_types: ['Type 2'],
+  };
+  await page.route('**/api/stations?mode=distance*', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify([row]),
+  }));
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const card = page.locator('button[aria-label^="View details for"]').first();
+  await card.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+  const text = await card.innerText().catch(() => '');
+  check('garbled station name falls back to a readable label',
+    /charging station/i.test(text) && !/[\u0100-\u024F\u0370-\u03FF]/.test(text),
+    text.replace(/\n/g, ' ').slice(0, 140));
+  await page.close();
+}
+
 try {
   await checkPlacePicker();
   await checkSearchCentre();
   await checkShowNearbyUsesCurrentLocation();
   await checkHeaderHomeAffordances();
+  await checkGarbledNameFallback();
   for (const width of [320, 390]) {
     const page = await browser.newPage({
       viewport: { width, height: 844 },

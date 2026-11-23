@@ -1,5 +1,6 @@
 import type { Tables } from '@/integrations/supabase/types';
 import type { GoogleRefreshInfo } from '@/lib/googleArea';
+import { displayStationAddress, displayStationName } from '@/lib/provider';
 import type {
   ChargingCurrent,
   ChargingStation,
@@ -84,11 +85,19 @@ export class EVStationService {
         ? (station.max_kw_by_standard as unknown as Record<string, number>)
         : undefined;
 
+    const displaySource = {
+      name: station.station_name,
+      address: station.address,
+      provider: station.provider,
+      city: station.city,
+      state: station.state,
+    };
+
     return {
       id: station.id,
-      name: station.station_name,
+      name: displayStationName(displaySource),
       provider: station.provider,
-      address: station.address,
+      address: displayStationAddress(displaySource),
       lat: toNumber(station.latitude) ?? 0,
       lng: toNumber(station.longitude) ?? 0,
       distance,
