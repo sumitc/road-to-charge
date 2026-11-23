@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EVStationService } from '@/services/evStationService';
 import { LocationService } from '@/services/locationService';
@@ -53,6 +53,40 @@ export function useUserLocation() {
     retry: false,
     refetchOnWindowFocus: false,
   });
+}
+
+/**
+ * Return to the device's CURRENT location and force nearby stations to reload.
+ * Shared by "Show Nearby", the Ampo wordmark and the logo icon so every home
+ * affordance behaves identically. A denied/timed-out GPS lookup falls back to
+ * the last real cached fix — never the Delhi display fallback.
+ */
+export function useGoToCurrentLocation() {
+  const queryClient = useQueryClient();
+  const [isLocating, setIsLocating] = useState(false);
+
+  const goToCurrentLocation = useCallback(async (): Promise<UserLocation> => {
+    setIsLocating(true);
+    try {
+      const resolved = await LocationService.getCurrentLocation();
+      const cached = LocationService.getCachedLocation()?.location;
+      const current = resolved.isFallback ? (cached ?? resolved.location) : resolved.location;
+      if (!resolved.isFallback) LocationService.saveLocation(current);
+      queryClient.setQueryData(['user-location'], current);
+      // Force a fresh fetch instead of trusting a cache entry from the
+      // searched area. Only the active query needs it — 'all' would refetch
+      // every location ever cached during past searches.
+      await queryClient.invalidateQueries({
+        queryKey: ['stations', 'nearby'],
+        refetchType: 'active',
+      });
+      return current;
+    } finally {
+      setIsLocating(false);
+    }
+  }, [queryClient]);
+
+  return { goToCurrentLocation, isLocating };
 }
 
 export function useNearbyStations(location: UserLocation | null, radius: number) {

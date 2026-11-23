@@ -328,10 +328,59 @@ async function checkShowNearbyUsesCurrentLocation() {
   await page.close();
 }
 
+// The Ampo wordmark and logo icon are home affordances: they must behave
+// exactly like "Show Nearby" — re-read GPS/clear search/reload nearby rows.
+async function checkHeaderHomeAffordances() {
+  const cached = { lat: 17.4485, lng: 78.3908 };
+  const current = { lat: 17.42, lng: 78.42 };
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await page.addInitScript(({ cached, current }) => {
+    localStorage.setItem('ampo_last_location', JSON.stringify({ location: cached, timestamp: Date.now() }));
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition(ok) { ok({ coords: { latitude: current.lat, longitude: current.lng } }); } },
+    });
+  }, { cached, current });
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const input = page.getByLabel('Search for charging stations by area or city');
+  await input.waitFor({ timeout: 20000 });
+
+  const search = async () => {
+    await input.fill('Kokapet');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await page.waitForTimeout(2500);
+  };
+  const expectCurrent = async (label) => {
+    const request = page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
+      && req.url().includes(`lat=${current.lat}`) && req.url().includes(`lng=${current.lng}`),
+    { timeout: 20000 }).catch(() => null);
+    await page.getByRole('link', { name: label }).click();
+    const matched = await request;
+    check(`header ${label} returns to the current location`, Boolean(matched),
+      `current=${current.lat},${current.lng} cached=${cached.lat},${cached.lng}`);
+    check(`header ${label} clears the searched query`,
+      !page.url().includes('q=') && !page.url().includes('place='), page.url());
+  };
+
+  await search();
+  await expectCurrent('Ampo home');
+
+  // The status line is text-only — no pin icon next to "Showing results…".
+  const status = page.getByText('Showing results near you', { exact: true });
+  await status.waitFor({ timeout: 10000 }).catch(() => {});
+  check('nearby status line has no icon',
+    !(await status.evaluate(el => Boolean(el.parentElement?.querySelector('svg')))));
+
+  await search();
+  await expectCurrent(/Ampo logo/);
+  await page.close();
+}
+
 try {
   await checkPlacePicker();
   await checkSearchCentre();
   await checkShowNearbyUsesCurrentLocation();
+  await checkHeaderHomeAffordances();
   for (const width of [320, 390]) {
     const page = await browser.newPage({
       viewport: { width, height: 844 },

@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
@@ -10,7 +11,7 @@ import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
 import { GoogleRefreshNotice } from './GoogleRefreshNotice';
 import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
-import { useUserLocation } from '@/hooks/useStationQueries';
+import { useGoToCurrentLocation, useUserLocation } from '@/hooks/useStationQueries';
 import { useToast } from '@/hooks/use-toast';
 
 // Only loaded when the Trips tab is opened (or warmed on hover/focus).
@@ -31,6 +32,7 @@ export const EVApp = () => {
   // Cached in React Query across routes and in localStorage across launches,
   // so returning from a detail page never re-runs geolocation.
   const { data: location, isLoading: isLoadingLocation } = useUserLocation();
+  const { goToCurrentLocation } = useGoToCurrentLocation();
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
@@ -39,6 +41,12 @@ export const EVApp = () => {
     // session. Never persist it as the user's home location — doing so made a
     // search for Delhi replace the real GPS location in localStorage forever.
     queryClient.setQueryData(['user-location'], next);
+  };
+
+  // The wordmark and logo icon are home affordances: behave exactly like
+  // "Show Nearby" — re-read the device location and reload nearby stations.
+  const handleHomeClick = () => {
+    void goToCurrentLocation();
   };
 
   const handleSync = async () => {
@@ -95,11 +103,16 @@ export const EVApp = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <div className="shrink-0 p-1.5 bg-primary-foreground/20 rounded-lg sm:p-2">
+              <Link
+                to="/"
+                onClick={handleHomeClick}
+                aria-label="Ampo logo — back to nearby"
+                className="shrink-0 rounded-lg bg-primary-foreground/20 p-1.5 sm:p-2"
+              >
                 <Zap className="w-4 h-4 sm:w-6 sm:h-6" />
-              </div>
+              </Link>
               <div className="min-w-0">
-                <BrandTitle subtitle="EV station finder" />
+                <BrandTitle subtitle="EV station finder" onClick={handleHomeClick} />
               </div>
             </div>
             <Button 

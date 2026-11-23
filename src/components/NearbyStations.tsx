@@ -9,8 +9,12 @@ import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
-import { LocationService } from '@/services/locationService';
-import { stationKeys, useNearbyStations, usePrefetchStation } from '@/hooks/useStationQueries';
+import {
+  stationKeys,
+  useGoToCurrentLocation,
+  useNearbyStations,
+  usePrefetchStation,
+} from '@/hooks/useStationQueries';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +45,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
-  const [isLocating, setIsLocating] = useState(false);
+  // Shared with the header wordmark/logo so every "home" affordance resolves
+  // the device location the same way.
+  const { goToCurrentLocation, isLocating } = useGoToCurrentLocation();
   // Guard so a submit that writes ?q= does not re-run the search from the URL
   // effect, while real back/forward navigation still does. Include the place
   // id so picking a different suggestion with the same label still searches.
@@ -134,6 +140,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       setSelectedPlaceId(urlPlace || null);
       void runSearch(urlQuery, urlPlace || undefined);
     } else {
+      // The URL losing ?q= (Show Nearby, header click, browser back) must also
+      // cancel an in-flight search, otherwise its late result re-applies the
+      // searched area after we have returned to the current location.
+      searchRun.current++;
+      setIsSearching(false);
       setSearchQuery('');
       setSelectedPlaceId(null);
       setShowSearchResults(false);
@@ -285,43 +296,22 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     // Cancel any in-flight search so it cannot re-apply the searched area.
     searchRun.current++;
     setIsSearching(false);
-    setIsLocating(true);
-    try {
-      // "Show Nearby" always means the device's CURRENT location — never a
-      // snapshot captured at mount and never the searched area. A denied GPS
-      // lookup falls back to the last real fix, never the Delhi display
-      // fallback (which would silently move the user to Delhi).
-      const resolved = await LocationService.getCurrentLocation();
-      const cached = LocationService.getCachedLocation()?.location;
-      const current = resolved.isFallback
-        ? (cached ?? resolved.location)
-        : resolved.location;
-      if (!resolved.isFallback) LocationService.saveLocation(current);
-      onLocationUpdate(current);
+    // Same shared helper the header uses: always the device's CURRENT location.
+    await goToCurrentLocation();
 
-      appliedQuery.current = '';
-      setSearchParams((previous) => {
-        const next = new URLSearchParams(previous);
-        next.delete('q');
-        next.delete('place');
-        return next;
-      });
-      setShowSearchResults(false);
-      setSearchQuery('');
-      setSearchResults([]);
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setSelectedPlaceId(null);
-
-      // Force a fresh nearby query for the current location instead of reusing
-      // cached rows from the searched area.
-      queryClient.invalidateQueries({
-        queryKey: stationKeys.nearby(current, radius),
-        refetchType: 'all',
-      });
-    } finally {
-      setIsLocating(false);
-    }
+    appliedQuery.current = '';
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete('q');
+      next.delete('place');
+      return next;
+    });
+    setShowSearchResults(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedPlaceId(null);
   };
 
   if (isLoadingLocation) {
@@ -429,8 +419,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               one control row. A long search query must never reflow the
               filter controls below it. */}
           <div className="space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
-            <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4 shrink-0 text-primary" />
+            <div className="flex min-w-0 items-center text-sm text-muted-foreground">
               {showSearchResults ? (
                 <span className="min-w-0 truncate" title={`Search results for "${searchQuery}"`}>
                   Search results for &ldquo;{searchQuery}&rdquo;

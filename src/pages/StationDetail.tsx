@@ -39,7 +39,13 @@ import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { EVStationService } from '@/services/evStationService';
-import { stationKeys, useStationDetail, useStationFeedback, useUserLocation } from '@/hooks/useStationQueries';
+import {
+  stationKeys,
+  useGoToCurrentLocation,
+  useStationDetail,
+  useStationFeedback,
+  useUserLocation,
+} from '@/hooks/useStationQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { FavouritesService } from '@/services/favouritesService';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +103,7 @@ const StationDetail: React.FC = () => {
   const { data: station, isLoading } = useStationDetail(id);
   const { data: feedback } = useStationFeedback(id);
   const { data: userLocation } = useUserLocation();
+  const { goToCurrentLocation } = useGoToCurrentLocation();
   const queryClient = useQueryClient();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -242,7 +249,10 @@ const StationDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0 flex-1">
-            <BrandTitle subtitle="Station details" />
+            <BrandTitle
+              subtitle="Station details"
+              onClick={() => { void goToCurrentLocation(); }}
+            />
           </div>
           <Button
             variant="ghost"
