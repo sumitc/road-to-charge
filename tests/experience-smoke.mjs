@@ -427,14 +427,24 @@ try {
     JSON.stringify(cachedLocation?.location ?? null));
 
   // A search moves the active map centre to the searched area. "Show Nearby"
-  // must return to the user's real location and reload that area's list.
+  // must re-query the user's real location. Compare the API request coords
+  // rather than card order, which changes when road distances arrive.
+  const nearbyRequests = [];
+  const trackNearby = req => {
+    if (req.url().includes('/api/stations?mode=distance')) nearbyRequests.push(req.url());
+  };
+  locationPage.on('request', trackNearby);
   await locationPage.getByRole('button', { name: 'Show Nearby' }).click();
   await locationPage.waitForTimeout(2500);
+  locationPage.off('request', trackNearby);
+  check('Show Nearby requeries the saved home location',
+    nearbyRequests.some(u => u.includes('lat=17.4485') && u.includes('lng=78.3908')),
+    nearbyRequests.slice(-2).join(' | '));
   const restoredNames = await locationPage.locator('button[aria-label^="View details for"]')
     .evaluateAll(els => els.slice(0, 5).map(el => el.getAttribute('aria-label') ?? ''));
-  check('Show Nearby restores the home-area station list',
-    restoredNames.length > 0 && JSON.stringify(restoredNames) === JSON.stringify(nearbyNames),
-    `before=${nearbyNames.slice(0, 2).join(' | ')} after=${restoredNames.slice(0, 2).join(' | ')}`);
+  check('Show Nearby shows home-area stations again',
+    restoredNames.length > 0 && !restoredNames.some(name => /Kokapet/i.test(name)),
+    restoredNames.slice(0, 2).join(' | '));
   check('Show Nearby clears the shared query from the URL',
     !locationPage.url().includes('q='), locationPage.url());
   check('Show Nearby clears the search input',
