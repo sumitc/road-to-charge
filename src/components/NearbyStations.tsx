@@ -32,7 +32,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [radius, setRadius] = useState(10);
+  // 5 km keeps the default list close to a map viewport instead of dumping
+  // every charger in a 10 km circle; riders can still widen it below.
+  const [radius, setRadius] = useState(5);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q')?.trim() ?? '');
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(Boolean(searchParams.get('q')?.trim()));
@@ -459,6 +461,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                       aria-label="Search radius in kilometres"
                       className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28 sm:flex-none"
                     >
+                      <option value={3}>3 km</option>
                       <option value={5}>5 km</option>
                       <option value={10}>10 km</option>
                       <option value={25}>25 km</option>

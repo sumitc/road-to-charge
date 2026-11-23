@@ -191,6 +191,15 @@ async function checkPlacePicker() {
   check('nearby mode states that results are near you',
     /Showing results near you/.test(statusText), statusText.replace(/\n/g, ' | '));
 
+  // Default footprint should resemble a map viewport, not a 10 km sweep, and
+  // a tighter 3 km option must be available for Google-Maps-like browsing.
+  const radiusSelect = page.getByLabel('Search radius in kilometres');
+  check('default search radius is 5 km',
+    (await radiusSelect.inputValue().catch(() => '')) === '5',
+    `value=${await radiusSelect.inputValue().catch(() => 'missing')}`);
+  check('3 km radius option is available',
+    await radiusSelect.locator('option[value="3"]').count() === 1);
+
   await input.fill('aparna sarovr');
   const listbox = page.getByRole('listbox', { name: 'Matching places' });
   await listbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});

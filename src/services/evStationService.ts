@@ -151,7 +151,7 @@ export class EVStationService {
    */
   static async getStationsWithDistance(
     userLocation: UserLocation,
-    radius: number = 10
+    radius: number = 5
   ): Promise<ChargingStation[]> {
     try {
       const stations = await fetchStations({
