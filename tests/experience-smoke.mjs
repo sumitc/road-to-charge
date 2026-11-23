@@ -232,8 +232,13 @@ async function checkPlacePicker() {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(1500);
   const corrected = await input.inputValue();
+  const correctedLower = corrected.toLowerCase();
+  // Google may localise this locality as "Nallagandla" or "Nalagandla";
+  // either way the typed all-lowercase query must become a chosen place.
   check('Enter auto-corrects a misspelled locality',
-    corrected !== 'nalagandla' && /nallagandla/i.test(corrected), corrected);
+    corrected !== 'nalagandla'
+    && (correctedLower.startsWith('nallagandla') || correctedLower.startsWith('nalagandla'))
+    && page.url().includes('place='), corrected);
   await page.close();
 }
 
