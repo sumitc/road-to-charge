@@ -275,15 +275,23 @@ async function checkSearchCentre() {
     }
   };
   page.on('request', track);
+  // The distance request follows the search response, which can take several
+  // seconds (Places + DB + coverage check). Wait for it instead of a fixed
+  // sleep so a slow prod response cannot produce a false negative.
+  const [lat, lng] = (placeCentre ?? '').split(',');
+  const centredRequest = placeCentre
+    ? page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
+      && req.url().includes(`lat=${lat}`) && req.url().includes(`lng=${lng}`),
+    { timeout: 20000 }).catch(() => null)
+    : Promise.resolve(null);
   await input.fill('nalagandla');
   await page.waitForTimeout(150);
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(2500);
+  const matched = await centredRequest;
   page.off('request', track);
 
   check('search distances use the resolved place as their origin',
-    Boolean(placeCentre) && origins.includes(placeCentre),
-    `place=${placeCentre} origins=${origins.slice(-3).join(' | ')}`);
+    Boolean(matched), `place=${placeCentre} origins=${origins.slice(-3).join(' | ')}`);
   await page.close();
 }
 
