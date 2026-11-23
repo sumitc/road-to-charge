@@ -186,7 +186,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     const home = originalLocation.current;
     if (home) {
       onLocationUpdate(home);
-      queryClient.invalidateQueries({ queryKey: stationKeys.nearby(home, radius) });
+      // The home query is inactive while search results are shown, so use
+      // refetchType 'all' to make sure it reloads rather than relying on a
+      // possibly-still-fresh cache entry.
+      queryClient.invalidateQueries({
+        queryKey: stationKeys.nearby(home, radius),
+        refetchType: 'all',
+      });
     }
   };
 
