@@ -44,7 +44,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   // user's real location first so "Show Nearby" can return to it.
   const originalLocation = useRef<{ lat: number; lng: number } | null>(null);
   const locationRef = useRef(location);
-  useEffect(() => { locationRef.current = location; }, [location]);
+  useEffect(() => {
+    locationRef.current = location;
+    // Remember the user's real location as soon as one is available — not
+    // after an awaited search. A slow/cancelled search or a stale GPS refetch
+    // must never let the searched area become the "home" we restore.
+    if (location && !originalLocation.current) originalLocation.current = location;
+  }, [location]);
   // Guard so a submit that writes ?q= does not re-run the search from the URL
   // effect, while real back/forward navigation still does. Include the place
   // id so picking a different suggestion with the same label still searches.
@@ -53,6 +59,9 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     `${q.trim().toLowerCase()}::${place ?? ''}`;
   const suggestionTimer = useRef<number | null>(null);
   const suggestionRequest = useRef(0);
+  // A search can still be in flight when the user hits "Show Nearby". Ignore
+  // its late result so it cannot re-apply the searched area after we return.
+  const searchRun = useRef(0);
   const prefetchStation = usePrefetchStation();
   const { toast } = useToast();
 
@@ -63,6 +72,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   };
 
   const runSearch = useCallback(async (query: string, placeId?: string) => {
+    const runId = ++searchRun.current;
     setIsSearching(true);
     setShowSearchResults(true);
     setShowSuggestions(false);
@@ -79,15 +89,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         }),
         staleTime: 10 * 60 * 1000,
       });
+      if (runId !== searchRun.current) return;
       setSearchResults(results);
 
       // Move the nearby map centre to the searched area so distances on the
       // result cards are relative to it. Keep the user's real location stored
       // so "Show Nearby" can switch straight back to it.
       if (results.length > 0) {
-        if (!originalLocation.current && locationRef.current) {
-          originalLocation.current = locationRef.current;
-        }
         const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
         const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
         onLocationUpdate({ lat: avgLat, lng: avgLng });
@@ -104,7 +112,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         variant: 'destructive',
       });
     } finally {
-      setIsSearching(false);
+      if (runId === searchRun.current) setIsSearching(false);
     }
   }, [queryClient, onLocationUpdate, toast]);
 
@@ -271,6 +279,8 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   }, []);
 
   const handleShowNearby = () => {
+    searchRun.current++;
+    setIsSearching(false);
     appliedQuery.current = '';
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
