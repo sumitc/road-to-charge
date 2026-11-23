@@ -531,7 +531,15 @@ try {
     await cards.first().click();
     await page.waitForURL(/\/station\//, { timeout: 20000 });
     const detailTitle = page.locator('header h1').first();
-    await detailTitle.waitFor({ state: 'visible', timeout: 20000 });
+    // Wait for the detail header's own content: the list h1 can still be
+    // attached briefly after the URL changes. A transient Radix overlay can
+    // also leave the tree aria-hidden, so do not require visibility here.
+    await page.waitForFunction(
+      () => document.querySelector('header h1')?.textContent?.includes('Station details'),
+      null,
+      { timeout: 20000 },
+    );
+    await detailTitle.waitFor({ state: 'attached', timeout: 20000 });
     const detailBrand = await detailTitle.innerText();
     const detailBrandStyle = await detailTitle.evaluate(el => {
       const cs = getComputedStyle(el);
