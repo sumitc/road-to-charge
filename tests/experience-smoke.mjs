@@ -388,7 +388,7 @@ async function checkShowNearbyUsesCurrentLocation() {
   const input = page.getByLabel('Search for charging stations by area or city');
   await input.waitFor({ timeout: 20000 });
   await input.fill('Kokapet');
-  await page.getByRole('button', { name: 'Search' }).click();
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
   await page.waitForTimeout(2500);
 
   const currentRequest = page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
@@ -427,7 +427,7 @@ async function checkHeaderHomeAffordances() {
 
   const search = async () => {
     await input.fill('Kokapet');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
     await page.waitForTimeout(2500);
   };
   const expectCurrent = async (label) => {
@@ -553,7 +553,7 @@ try {
       `before=${JSON.stringify(before.controls)} after=${JSON.stringify(afterTyping.controls)}`,
     );
 
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
     await page.waitForTimeout(1500);
     const afterSearch = await searchCardMetrics(page);
     check(
@@ -569,12 +569,23 @@ try {
       fabAfterSearch.present && fabAfterSearch.inViewport,
       JSON.stringify(fabAfterSearch.box));
 
+    // The previous search can still be resolving and would otherwise overwrite
+    // the freshly typed query when Google's canonical label arrives late.
+    await page.waitForFunction(() => {
+      const button = document.querySelector('button[aria-label="Search"]');
+      return Boolean(button && !button.disabled);
+    }, null, { timeout: 20000 });
+
     // Use a query that reliably returns rows for the downstream card checks.
     await input.fill('Kokapet');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
     const cards = page.locator('button[aria-label^="View details for"]');
-    await cards.first().waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await cards.first().waitFor({ state: 'visible', timeout: 45000 }).catch(() => {});
     check(`${width}px: search results render station cards`, (await cards.count()) > 0);
+    if ((await cards.count()) === 0) {
+      await page.close();
+      continue;
+    }
     if ((await cards.count()) > 0) {
       const distanceTitle = await page.locator('span[title$="distance"]').first().getAttribute('title');
       check(`${width}px: distance badge states its measurement type`,
@@ -760,7 +771,7 @@ try {
     nearbyNames.slice(0, 2).join(' | '));
 
   await locationPage.getByLabel('Search for charging stations by area or city').fill('Kokapet');
-  await locationPage.getByRole('button', { name: 'Search' }).click();
+  await locationPage.getByRole('button', { name: 'Search', exact: true }).click();
   await locationPage.waitForTimeout(2500);
   cachedLocation = await readCache(locationPage);
   check('searching another area does not overwrite the saved home location',
