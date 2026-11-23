@@ -323,6 +323,11 @@ async function checkShowNearbyUsesCurrentLocation() {
   const matched = await currentRequest;
   check('Show Nearby uses the device current location, not a cached snapshot',
     Boolean(matched), `current=${current.lat},${current.lng} cached=${cached.lat},${cached.lng}`);
+  // The fresh-location refetch is awaited before the UI clears the URL, so
+  // wait for the URL to settle instead of sampling it as soon as the request
+  // is issued.
+  await page.waitForURL(url => !url.search.includes('q=') && !url.search.includes('place='),
+    { timeout: 10000 }).catch(() => {});
   check('Show Nearby clears the searched query',
     !page.url().includes('q=') && !page.url().includes('place='), page.url());
   await page.close();
@@ -551,7 +556,10 @@ try {
       try {
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       } catch {
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+        // A slow reload can detach the first navigation target; fall back to a
+        // fresh navigation instead of retrying reload on a detached page.
+        if (page.isClosed()) break;
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
       }
       await page.waitForTimeout(900);
       states.push(await page.evaluate(() => ({
