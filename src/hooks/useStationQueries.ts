@@ -19,6 +19,10 @@ export const stationKeys = {
     ] as const,
   search: (query: string, placeId?: string) =>
     ['stations', 'search', query.trim().toLowerCase(), placeId ?? ''] as const,
+  // Exact Google place centre for a search, cached with it so detail→back
+  // cache hits still centre distances on the chosen place, not the row centroid.
+  searchCenter: (query: string, placeId?: string) =>
+    ['stations', 'search-center', query.trim().toLowerCase(), placeId ?? ''] as const,
   detail: (id: string) => ['station', id] as const,
   feedback: (id: string) => ['station-feedback', id] as const,
 };

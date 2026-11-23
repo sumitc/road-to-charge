@@ -367,11 +367,17 @@ export async function GET(req: Request): Promise<Response> {
     if (refreshInfo) {
       headers['X-Ampo-Google-Refresh'] = encodeURIComponent(JSON.stringify(refreshInfo));
     }
+    if (resolvedGeo) {
+      // The exact resolved place — used as the map centre and distance origin
+      // so results are ordered around the place the user actually chose, not
+      // around the centroid of whatever rows happen to be in the 10 km box.
+      headers['X-Ampo-Place-Center'] = `${resolvedGeo.lat},${resolvedGeo.lng}`;
+    }
     if (resolvedLabel) {
       // Lets the UI replace a typo with Google's canonical place name.
       headers['X-Ampo-Resolved-Place'] = encodeURIComponent(resolvedLabel);
       headers['Access-Control-Expose-Headers'] =
-        'X-Ampo-Google-Refresh, X-Ampo-Resolved-Place';
+        'X-Ampo-Google-Refresh, X-Ampo-Resolved-Place, X-Ampo-Place-Center';
     }
     if (mode === 'distance' || mode === 'bounds' || mode === 'id') {
       // Catalog data changes daily; cached responses make detail views instant.

@@ -78,9 +78,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     setShowSuggestions(false);
 
     try {
+      let fetchedCenter: { lat: number; lng: number } | undefined;
       const results = await queryClient.fetchQuery({
         queryKey: stationKeys.search(query, placeId),
-        queryFn: () => EVStationService.searchStationsByLocation(query, placeId, (label) => {
+        queryFn: () => EVStationService.searchStationsByLocation(query, placeId, (label, center) => {
+          if (center) fetchedCenter = center;
           // Auto-correct a typed misspelling using Google's canonical place
           // name. A user-chosen place already has the correct label.
           if (!placeId && label && label.toLowerCase() !== query.toLowerCase()) {
@@ -92,10 +94,20 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       if (runId !== searchRun.current) return;
       setSearchResults(results);
 
-      // Move the nearby map centre to the searched area so distances on the
-      // result cards are relative to it. Keep the user's real location stored
-      // so "Show Nearby" can switch straight back to it.
-      if (results.length > 0) {
+      // Centre distances on the exact resolved Google place, not the centroid
+      // of the returned rows — averaging skews toward whichever part of the
+      // 10 km box happens to hold more stations (e.g. Kondapur for Nallagandla)
+      // and puts far-away stations at the top of the list. Cache the centre so
+      // detail→back query-cache hits keep the same origin.
+      if (fetchedCenter) {
+        queryClient.setQueryData(stationKeys.searchCenter(query, placeId), fetchedCenter);
+      }
+      const center = fetchedCenter
+        ?? queryClient.getQueryData<{ lat: number; lng: number }>(stationKeys.searchCenter(query, placeId));
+      if (results.length > 0 && center) {
+        onLocationUpdate(center);
+      } else if (results.length > 0) {
+        // Google could not resolve this query: fall back to the row centroid.
         const avgLat = results.reduce((sum, station) => sum + station.lat, 0) / results.length;
         const avgLng = results.reduce((sum, station) => sum + station.lng, 0) / results.length;
         onLocationUpdate({ lat: avgLat, lng: avgLng });

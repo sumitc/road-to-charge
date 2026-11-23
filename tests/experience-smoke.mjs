@@ -242,8 +242,54 @@ async function checkPlacePicker() {
   await page.close();
 }
 
+// A search must centre distances on the exact Google place, not on the
+// centroid of the 100 returned rows (which drifts toward dense suburbs and
+// used to put far-away Kondapur stations at the top for "nalagandla").
+async function checkSearchCentre() {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await page.addInitScript(() => {
+    localStorage.setItem('ampo_last_location', JSON.stringify({
+      location: { lat: 17.4485, lng: 78.3908 }, timestamp: Date.now(),
+    }));
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition(ok) { ok({ coords: { latitude: 17.4485, longitude: 78.3908 } }); } },
+    });
+  });
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const input = page.getByLabel('Search for charging stations by area or city');
+  await input.waitFor({ timeout: 20000 });
+
+  const placeCentre = await page.evaluate(async () => {
+    const res = await fetch('/api/stations?mode=search&q=nalagandla');
+    await res.arrayBuffer();
+    return res.headers.get('X-Ampo-Place-Center');
+  });
+  check('search API exposes the exact Google place centre', Boolean(placeCentre), placeCentre ?? 'none');
+
+  const origins = [];
+  const track = req => {
+    if (req.url().includes('/api/stations?mode=distance')) {
+      const u = new URL(req.url());
+      origins.push(`${u.searchParams.get('lat')},${u.searchParams.get('lng')}`);
+    }
+  };
+  page.on('request', track);
+  await input.fill('nalagandla');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(2500);
+  page.off('request', track);
+
+  check('search distances use the resolved place as their origin',
+    Boolean(placeCentre) && origins.includes(placeCentre),
+    `place=${placeCentre} origins=${origins.slice(-3).join(' | ')}`);
+  await page.close();
+}
+
 try {
   await checkPlacePicker();
+  await checkSearchCentre();
   for (const width of [320, 390]) {
     const page = await browser.newPage({
       viewport: { width, height: 844 },

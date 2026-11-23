@@ -192,13 +192,14 @@ export class EVStationService {
 
   /**
    * Search for stations by a typed query or an exact Google place selection.
-   * `onResolved` receives Google's corrected place name so the UI can fix a
-   * misspelled query without hard-coding aliases.
+   * `onResolved` receives Google's corrected place name plus the exact place
+   * coordinates, so the UI can fix a misspelling and centre distances on the
+   * chosen place instead of on the centroid of the returned rows.
    */
   static async searchStationsByLocation(
     query: string,
     placeId?: string,
-    onResolved?: (label: string) => void
+    onResolved?: (label: string, center?: { lat: number; lng: number }) => void
   ): Promise<ChargingStation[]> {
     try {
       const normalized = query.trim().replace(/\s+/g, ' ');
@@ -207,8 +208,15 @@ export class EVStationService {
       const stations = await fetchStations(
         { mode: 'search', q: normalized, placeId },
         (headers) => {
+          if (!onResolved) return;
           const resolved = headers.get('X-Ampo-Resolved-Place');
-          if (resolved && onResolved) onResolved(decodeURIComponent(resolved));
+          if (!resolved) return;
+          const rawCenter = headers.get('X-Ampo-Place-Center') ?? '';
+          const [lat, lng] = rawCenter.split(',').map(Number);
+          const center = Number.isFinite(lat) && Number.isFinite(lng)
+            ? { lat, lng }
+            : undefined;
+          onResolved(decodeURIComponent(resolved), center);
         }
       );
 
