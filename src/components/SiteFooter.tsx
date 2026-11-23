@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { trackAmpo } from '@/lib/analytics';
 import { useToast } from '@/hooks/use-toast';
 
 /** Compact, shared footer for every Ampo screen and sheet. */
@@ -35,6 +36,10 @@ export const SiteFooter: React.FC = () => {
         body: JSON.stringify({ message, email, website, page: window.location.pathname }),
       });
       if (!response.ok) throw new Error('Feedback request failed');
+      trackAmpo('feedback_submit', {
+        kind: 'site',
+        page: window.location.pathname.slice(0, 80),
+      });
       setMessage('');
       setEmail('');
       setWebsite('');

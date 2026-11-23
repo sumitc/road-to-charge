@@ -20,11 +20,49 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 });
 
+// Capture Vercel Analytics events before the injected script can consume them.
+// Works in both dev (debug script drains the queue) and production (headless is
+// skipped entirely, leaving window.vaq intact).
+const rawNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => {
+  const page = await rawNewPage(...args);
+  await page.addInitScript(() => {
+    window.__ampoEvents = [];
+    let current;
+    Object.defineProperty(window, 'va', {
+      configurable: true,
+      get() { return current; },
+      set(fn) {
+        current = (...params) => {
+          if (params[0] === 'event' && params[1]?.name) {
+            window.__ampoEvents.push(params[1].name);
+          }
+          return typeof fn === 'function' ? fn(...params) : undefined;
+        };
+      },
+    });
+  });
+  return page;
+};
+
 let failures = 0;
 function check(name, condition, detail = '') {
   const ok = Boolean(condition);
   if (!ok) failures++;
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ` — ${detail}` : ''}`);
+}
+
+// Headless Chrome is skipped by the Vercel Insights script (navigator.webdriver),
+// so track() calls stay in window.vaq and can be asserted without network calls.
+async function ampoEventNames(page) {
+  return page.evaluate(() => {
+    const captured = window.__ampoEvents ?? [];
+    if (captured.length > 0) return captured;
+    return (window.vaq ?? [])
+      .filter(([kind]) => kind === 'event')
+      .map(([, payload]) => payload?.name)
+      .filter(Boolean);
+  });
 }
 
 async function fabMetrics(page, width, height) {
@@ -183,6 +221,7 @@ async function checkPlacePicker() {
     viewport: { width: 390, height: 844 },
     isMobile: true,
     deviceScaleFactor: 1,
+    permissions: ['clipboard-read', 'clipboard-write'],
   });
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   const input = page.getByLabel('Search for charging stations by area or city');
@@ -230,10 +269,29 @@ async function checkPlacePicker() {
     check('chosen place replaces the typed misspelling',
       !/sarovr/i.test(picked) && picked.length > 0, picked);
     check('chosen place renders station cards', (await cards.count()) > 0);
+
+    const pickerEvents = await ampoEventNames(page);
+    check('place picker queues place_selected and search_submit',
+      pickerEvents.includes('place_selected') && pickerEvents.includes('search_submit'),
+      pickerEvents.join(','));
+
+    const shareButton = page.getByRole('button', { name: 'Share this search' });
+    check('search results expose a share button', (await shareButton.count()) === 1);
+    if (await shareButton.count() === 1) {
+      await shareButton.click();
+      const copied = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+      check('share button copies the canonical search URL',
+        copied.includes('q=') && copied.includes('place='), copied);
+      check('share button queues search_shared',
+        (await ampoEventNames(page)).includes('search_shared'));
+    }
+
     await page.getByRole('button', { name: 'Show Nearby' }).click();
     await page.waitForTimeout(800);
     check('Show Nearby clears the chosen place from the URL',
       !page.url().includes('q=') && !page.url().includes('place='), page.url());
+    check('Show Nearby queues show_nearby',
+      (await ampoEventNames(page)).includes('show_nearby'));
   }
 
   await input.fill('nalagandla');
@@ -248,6 +306,14 @@ async function checkPlacePicker() {
     corrected !== 'nalagandla'
     && (correctedLower.startsWith('nallagandla') || correctedLower.startsWith('nalagandla'))
     && page.url().includes('place='), corrected);
+
+  const detailCard = page.locator('button[aria-label^="View details for"]').first();
+  if (await detailCard.count() > 0) {
+    await detailCard.click();
+    await page.waitForTimeout(300);
+    check('opening a station card queues detail_open',
+      (await ampoEventNames(page)).includes('detail_open'));
+  }
   await page.close();
 }
 
@@ -517,6 +583,8 @@ try {
 
       const popupPromise = page.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
       await page.getByRole('button', { name: 'Directions' }).first().click();
+      check(`${width}px: directions queue directions_click`,
+        (await ampoEventNames(page)).includes('directions_click'));
       const popup = await popupPromise;
       if (popup) {
         const url = popup.url();

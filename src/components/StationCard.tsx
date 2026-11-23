@@ -14,6 +14,7 @@ import {
 import { ChargingStation } from '@/types/station';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl } from '@/lib/appLinks';
+import { trackAmpo } from '@/lib/analytics';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { accessTag, providerLabel } from '@/lib/provider';
 import { LiveStatus } from './LiveStatus';
@@ -95,7 +96,10 @@ const StationCardComponent: React.FC<StationCardProps> = ({
       <CardContent className="p-2.5 sm:p-3">
         <button
           type="button"
-          onClick={() => navigate(`/station/${station.id}`)}
+          onClick={() => {
+            trackAmpo('detail_open', { station_id: station.id, source: 'card' });
+            navigate(`/station/${station.id}`);
+          }}
           onPointerEnter={onPrefetch}
           onTouchStart={onPrefetch}
           onFocus={onPrefetch}
@@ -197,7 +201,10 @@ const StationCardComponent: React.FC<StationCardProps> = ({
         <div className="mt-2 flex items-center gap-2 border-t pt-2 sm:mt-3 sm:pt-3">
           <Button
             size="sm"
-            onClick={() => window.open(directionsUrl(station, userLocation), '_blank')}
+            onClick={() => {
+              trackAmpo('directions_click', { station_id: station.id, source: 'card' });
+              window.open(directionsUrl(station, userLocation), '_blank');
+            }}
             className="h-10 flex-1 rounded-xl sm:flex-none"
           >
             <Map className="h-4 w-4" />

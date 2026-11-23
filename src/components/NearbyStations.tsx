@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, MapPin, AlertCircle, Search } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Search, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import {
 } from '@/hooks/useStationQueries';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
+import { trackAmpo } from '@/lib/analytics';
 import { useToast } from '@/hooks/use-toast';
 
 interface NearbyStationsProps {
@@ -223,12 +224,16 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const selectSuggestion = (suggestion: PlaceSuggestion) => {
     setShowSuggestions(false);
     setSuggestions([]);
-    void submitSearch(suggestion.label, suggestion.placeId);
+    void submitSearch(suggestion.label, suggestion.placeId, 'suggestion');
   };
 
   // If the user pressed Search/Enter without choosing a row, auto-correct to
   // Google's top place prediction (this also fixes simple misspellings).
-  const submitSearch = async (typedQuery: string, placeId?: string) => {
+  const submitSearch = async (
+    typedQuery: string,
+    placeId?: string,
+    source: 'suggestion' | 'input' = 'input',
+  ) => {
     // A debounced autocomplete request may still be in flight. Cancel it so a
     // late response cannot reopen the dropdown over the results/controls.
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
@@ -254,6 +259,21 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
         finalQuery = matches[0].label;
       }
     }
+
+    // Funnel events: a picked dropdown row is a deliberate place choice, while
+    // every submit (including Enter auto-correction) is a search attempt.
+    if (source === 'suggestion' && finalPlaceId) {
+      trackAmpo('place_selected', {
+        place_id: finalPlaceId,
+        label: finalQuery,
+        source: 'dropdown',
+      });
+    }
+    trackAmpo('search_submit', {
+      query: finalQuery,
+      place_id: finalPlaceId ?? null,
+      source,
+    });
 
     setSearchQuery(finalQuery);
     setSelectedPlaceId(finalPlaceId ?? null);
@@ -294,12 +314,35 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     suggestionRequest.current++;
   }, []);
 
+  // Area links are the real sharing loop ("where do you charge in Pune?").
+  // Copy just the canonical q/place pair, not any transient URL params.
+  const handleShareSearch = async () => {
+    const query = searchQuery.trim();
+    const shareUrl = new URL(window.location.href);
+    shareUrl.search = '';
+    if (query) shareUrl.searchParams.set('q', query);
+    if (selectedPlaceId) shareUrl.searchParams.set('place', selectedPlaceId);
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(shareUrl.toString());
+      trackAmpo('search_shared', {
+        query,
+        place_id: selectedPlaceId ?? null,
+        source: 'list',
+      });
+      toast({ title: 'Search link copied', description: 'Share it with fellow EV riders' });
+    } catch {
+      toast({ title: 'Could not copy link', variant: 'destructive' });
+    }
+  };
+
   const handleShowNearby = async () => {
     // Cancel any in-flight search so it cannot re-apply the searched area.
     searchRun.current++;
     setIsSearching(false);
     // Same shared helper the header uses: always the device's CURRENT location.
     await goToCurrentLocation();
+    trackAmpo('show_nearby', { radius_km: radius, source: 'button' });
 
     appliedQuery.current = '';
     setSearchParams((previous) => {
@@ -421,11 +464,22 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               one control row. A long search query must never reflow the
               filter controls below it. */}
           <div className="space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
-            <div className="flex min-w-0 items-center text-sm text-muted-foreground">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
               {showSearchResults ? (
-                <span className="min-w-0 truncate" title={`Search results for "${searchQuery}"`}>
-                  Search results for &ldquo;{searchQuery}&rdquo;
-                </span>
+                <>
+                  <span className="min-w-0 truncate" title={`Search results for "${searchQuery}"`}>
+                    Search results for &ldquo;{searchQuery}&rdquo;
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void handleShareSearch()}
+                    aria-label="Share this search"
+                    className="-my-1.5 h-8 w-8 shrink-0 p-0 text-muted-foreground"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </>
               ) : (
                 <span className="min-w-0 truncate">Showing results near you</span>
               )}

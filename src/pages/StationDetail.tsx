@@ -37,6 +37,7 @@ import { LiveStatus } from '@/components/LiveStatus';
 import { accessTag, providerLabel } from '@/lib/provider';
 import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
+import { trackAmpo } from '@/lib/analytics';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
 import { EVStationService } from '@/services/evStationService';
 import {
@@ -221,6 +222,11 @@ const StationDetail: React.FC = () => {
       toast({ title: 'Could not save feedback', variant: 'destructive' });
       return;
     }
+    trackAmpo('feedback_submit', {
+      kind: 'station',
+      station_id: station.id,
+      report_type: feedbackKind,
+    });
     const key = `${feedbackKind}|${feedbackNote.trim()}`;
     setFeedbackNote('');
     setFeedbackOpen(false);
@@ -412,7 +418,10 @@ const StationDetail: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 border-t pt-4 sm:grid-cols-4">
-              <Button onClick={() => window.open(directionsUrl(station, userLocation), '_blank')}>
+              <Button onClick={() => {
+                trackAmpo('directions_click', { station_id: station.id, source: 'detail' });
+                window.open(directionsUrl(station, userLocation), '_blank');
+              }}>
                 <Navigation className="h-4 w-4" /> Directions
               </Button>
               <Button variant="outline" onClick={() => window.open(mapsPlaceUrl(station), '_blank')}>

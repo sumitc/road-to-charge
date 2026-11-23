@@ -18,6 +18,7 @@ import {
   inferConnectorTypesFromText,
 } from '@/lib/connectorLabels';
 import { preparePhoto, type PreparedPhoto } from '@/lib/imageUpload';
+import { trackAmpo } from '@/lib/analytics';
 import { SiteFooter } from './SiteFooter';
 import { useToast } from '@/hooks/use-toast';
 
@@ -178,6 +179,11 @@ export const ContributionButton: React.FC<ContributionButtonProps> = ({ location
       if (!response.ok || !data.success) {
         throw new Error(data.error ?? 'Submission failed');
       }
+      trackAmpo('charger_submitted', {
+        provider: provider.trim().slice(0, 80),
+        connector_count: connectorValues.length,
+        has_photo: Boolean(stationPhoto || connectorPhoto),
+      });
       toast({
         title: 'Thanks — submitted for review',
         description: 'We check Google Maps/OpenStreetMap and email Sumit for approval before publishing.',
