@@ -176,7 +176,68 @@ async function checkOverlays(width) {
   await homePage.close();
 }
 
+// Google place picker: options must drop from the search input, spelling
+// mistakes must be corrected, and the chosen place must be shareable.
+async function checkPlacePicker() {
+  const page = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    deviceScaleFactor: 1,
+  });
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const input = page.getByLabel('Search for charging stations by area or city');
+  await input.waitFor({ timeout: 20000 });
+  const statusText = await input.evaluate(el => el.closest('.rounded-2xl')?.innerText ?? '');
+  check('nearby mode states that results are near you',
+    /Showing results near you/.test(statusText), statusText.replace(/\n/g, ' | '));
+
+  await input.fill('aparna sarovr');
+  const listbox = page.getByRole('listbox', { name: 'Matching places' });
+  await listbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  check('typing opens the Google place dropdown', await listbox.isVisible().catch(() => false));
+  if (await listbox.isVisible().catch(() => false)) {
+    const inputBox = await input.boundingBox();
+    const listBox = await listbox.boundingBox();
+    check('place dropdown drops from the input edge',
+      Boolean(inputBox && listBox)
+      && Math.abs(inputBox.x - listBox.x) <= 2
+      && Math.abs(inputBox.width - listBox.width) <= 2
+      && listBox.y >= inputBox.y + inputBox.height - 2
+      && listBox.y <= inputBox.y + inputBox.height + 10,
+      `input=${JSON.stringify(inputBox)} dropdown=${JSON.stringify(listBox)}`);
+  }
+  const options = listbox.getByRole('option');
+  const optionText = await options.allInnerTexts();
+  check('autocomplete corrects the misspelled place name',
+    optionText.some(text => /Aparna Sarovar/i.test(text)),
+    optionText.slice(0, 2).join(' | '));
+  if (optionText.length > 0) {
+    await options.first().click();
+    await page.waitForTimeout(1500);
+    check('chosen place is shareable in the URL',
+      page.url().includes('q=') && page.url().includes('place='), page.url());
+    const picked = await input.inputValue();
+    check('chosen place replaces the typed misspelling',
+      !/sarovr/i.test(picked) && picked.length > 0, picked);
+    check('chosen place renders station cards',
+      (await page.locator('button[aria-label^="View details for"]').count()) > 0);
+    await page.getByRole('button', { name: 'Show Nearby' }).click();
+    await page.waitForTimeout(800);
+    check('Show Nearby clears the chosen place from the URL',
+      !page.url().includes('q=') && !page.url().includes('place='), page.url());
+  }
+
+  await input.fill('nalagandla');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1500);
+  const corrected = await input.inputValue();
+  check('Enter auto-corrects a misspelled locality',
+    corrected !== 'nalagandla' && /nallagandla/i.test(corrected), corrected);
+  await page.close();
+}
+
 try {
+  await checkPlacePicker();
   for (const width of [320, 390]) {
     const page = await browser.newPage({
       viewport: { width, height: 844 },

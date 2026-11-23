@@ -17,7 +17,8 @@ export const stationKeys = {
       Number(location.lng.toFixed(4)),
       radius,
     ] as const,
-  search: (query: string) => ['stations', 'search', query.trim().toLowerCase()] as const,
+  search: (query: string, placeId?: string) =>
+    ['stations', 'search', query.trim().toLowerCase(), placeId ?? ''] as const,
   detail: (id: string) => ['station', id] as const,
   feedback: (id: string) => ['station-feedback', id] as const,
 };
@@ -61,10 +62,10 @@ export function useNearbyStations(location: UserLocation | null, radius: number)
   });
 }
 
-export function useStationSearch(query: string) {
+export function useStationSearch(query: string, placeId?: string) {
   return useQuery({
-    queryKey: stationKeys.search(query),
-    queryFn: () => EVStationService.searchStationsByLocation(query),
+    queryKey: stationKeys.search(query, placeId),
+    queryFn: () => EVStationService.searchStationsByLocation(query, placeId),
     enabled: Boolean(query.trim()),
     staleTime: TEN_MINUTES,
     gcTime: THIRTY_MINUTES,

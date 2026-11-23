@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
-import { EVStationService } from '@/services/evStationService';
+import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
 import { stationKeys, useNearbyStations, usePrefetchStation } from '@/hooks/useStationQueries';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
@@ -32,6 +32,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(Boolean(searchParams.get('q')?.trim()));
   const [searchResults, setSearchResults] = useState<ChargingStation[]>([]);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedSuggestion, setHighlightedSuggestion] = useState(0);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(searchParams.get('place'));
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
@@ -41,8 +46,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const locationRef = useRef(location);
   useEffect(() => { locationRef.current = location; }, [location]);
   // Guard so a submit that writes ?q= does not re-run the search from the URL
-  // effect, while real back/forward navigation still does.
+  // effect, while real back/forward navigation still does. Include the place
+  // id so picking a different suggestion with the same label still searches.
   const appliedQuery = useRef('');
+  const searchSignature = (q: string, place?: string | null) =>
+    `${q.trim().toLowerCase()}::${place ?? ''}`;
+  const suggestionTimer = useRef<number | null>(null);
+  const suggestionRequest = useRef(0);
   const prefetchStation = usePrefetchStation();
   const { toast } = useToast();
 
@@ -52,14 +62,21 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     prefetchStation(station);
   };
 
-  const runSearch = useCallback(async (query: string) => {
+  const runSearch = useCallback(async (query: string, placeId?: string) => {
     setIsSearching(true);
     setShowSearchResults(true);
+    setShowSuggestions(false);
 
     try {
       const results = await queryClient.fetchQuery({
-        queryKey: stationKeys.search(query),
-        queryFn: () => EVStationService.searchStationsByLocation(query),
+        queryKey: stationKeys.search(query, placeId),
+        queryFn: () => EVStationService.searchStationsByLocation(query, placeId, (label) => {
+          // Auto-correct a typed misspelling using Google's canonical place
+          // name. A user-chosen place already has the correct label.
+          if (!placeId && label && label.toLowerCase() !== query.toLowerCase()) {
+            setSearchQuery(label);
+          }
+        }),
         staleTime: 10 * 60 * 1000,
       });
       setSearchResults(results);
@@ -91,17 +108,23 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     }
   }, [queryClient, onLocationUpdate, toast]);
 
-  // A shared link (?q=...) should restore the exact search, including on a
-  // fresh load. Back/forward navigation updates the query without a reload.
+  // A shared link (?q=&place=) restores the exact search, including on a fresh
+  // load. Back/forward navigation updates the query without a reload.
   useEffect(() => {
     const urlQuery = searchParams.get('q')?.trim() ?? '';
-    if (urlQuery === appliedQuery.current) return;
-    appliedQuery.current = urlQuery;
-    if (urlQuery) {
+    const urlPlace = searchParams.get('place') ?? '';
+    const signature = searchSignature(urlQuery, urlPlace);
+    if (signature === appliedQuery.current) return;
+    appliedQuery.current = signature;
+    setSuggestions([]);
+    setShowSuggestions(false);
+    if (urlQuery || urlPlace) {
       setSearchQuery(urlQuery);
-      void runSearch(urlQuery);
+      setSelectedPlaceId(urlPlace || null);
+      void runSearch(urlQuery, urlPlace || undefined);
     } else {
       setSearchQuery('');
+      setSelectedPlaceId(null);
       setShowSearchResults(false);
       setSearchResults([]);
     }
@@ -144,9 +167,47 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       .catch(() => undefined);
   }, [showSearchResults, location, nearbyQuery.isFetching, nearbyStations.length, radius, queryClient]);
 
-  const handleSearch = async () => {
-    const normalizedQuery = searchQuery.trim();
-    if (!normalizedQuery) {
+  // Google autocomplete powers a Uber-style place picker. Requests are
+  // debounced and stale responses ignored so fast typing cannot reorder the
+  // dropdown.
+  const loadSuggestions = async (value: string) => {
+    const requestId = ++suggestionRequest.current;
+    setIsFetchingSuggestions(true);
+    const results = await EVStationService.suggestPlaces(value);
+    if (requestId !== suggestionRequest.current) return;
+    setIsFetchingSuggestions(false);
+    setSuggestions(results);
+    setHighlightedSuggestion(0);
+    setShowSuggestions(results.length > 0);
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchQuery(value);
+    setSelectedPlaceId(null);
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    if (value.trim().length < 2) {
+      suggestionRequest.current++;
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsFetchingSuggestions(false);
+      return;
+    }
+    suggestionTimer.current = window.setTimeout(() => void loadSuggestions(value), 250);
+  };
+
+  const selectSuggestion = (suggestion: PlaceSuggestion) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    void submitSearch(suggestion.label, suggestion.placeId);
+  };
+
+  // If the user pressed Search/Enter without choosing a row, auto-correct to
+  // Google's top place prediction (this also fixes simple misspellings).
+  const submitSearch = async (typedQuery: string, placeId?: string) => {
+    let finalQuery = typedQuery.trim().replace(/\s+/g, ' ');
+    let finalPlaceId = placeId;
+    if (!finalQuery && !finalPlaceId) {
       toast({
         title: 'Please enter a location',
         description: "Try an area and city, like 'Koramangala, Bangalore'",
@@ -155,31 +216,69 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       return;
     }
 
-    appliedQuery.current = normalizedQuery;
+    if (!finalPlaceId && finalQuery.length >= 2) {
+      const matches = suggestions.length > 0
+        ? suggestions
+        : await EVStationService.suggestPlaces(finalQuery);
+      if (matches.length > 0) {
+        finalPlaceId = matches[0].placeId;
+        finalQuery = matches[0].label;
+      }
+    }
+
+    setSearchQuery(finalQuery);
+    setSelectedPlaceId(finalPlaceId ?? null);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    appliedQuery.current = searchSignature(finalQuery, finalPlaceId);
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
-      next.set('q', normalizedQuery);
+      next.set('q', finalQuery);
+      if (finalPlaceId) next.set('place', finalPlaceId);
+      else next.delete('place');
       return next;
     });
-    await runSearch(normalizedQuery);
+    await runSearch(finalQuery, finalPlaceId);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' && suggestions.length > 0) {
+      event.preventDefault();
+      setShowSuggestions(true);
+      setHighlightedSuggestion(index => (index + 1) % suggestions.length);
+    } else if (event.key === 'ArrowUp' && suggestions.length > 0) {
+      event.preventDefault();
+      setShowSuggestions(true);
+      setHighlightedSuggestion(index => (index - 1 + suggestions.length) % suggestions.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const highlighted = showSuggestions ? suggestions[highlightedSuggestion] : undefined;
+      if (highlighted) selectSuggestion(highlighted);
+      else void submitSearch(searchQuery, selectedPlaceId ?? undefined);
+    } else if (event.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
+
+  useEffect(() => () => {
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
+  }, []);
 
   const handleShowNearby = () => {
     appliedQuery.current = '';
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
       next.delete('q');
+      next.delete('place');
       return next;
     });
     setShowSearchResults(false);
     setSearchQuery('');
     setSearchResults([]);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedPlaceId(null);
 
     // Return to the user's real location and make sure the nearby list is
     // refetched for it instead of reusing the searched area's cached rows.
@@ -228,19 +327,64 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   return (
     <div className="space-y-3">
       {/* Search Bar */}
-      <Card className="rounded-2xl">
+      <Card className="relative z-20 rounded-2xl">
         <CardContent className="p-3 sm:p-4">
           <div className="flex gap-2 mb-2.5">
-            <Input
-              placeholder="e.g. 'Koramangala, Bangalore' or 'Indiranagar Bangalore'"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="min-w-0 flex-1 min-h-[44px]"
-              aria-label="Search for charging stations by area or city"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                placeholder="Search area, city or place"
+                value={searchQuery}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+                className="min-w-0 min-h-[44px]"
+                aria-label="Search for charging stations by area or city"
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-controls="ampo-place-suggestions"
+                aria-autocomplete="list"
+              />
+              {showSuggestions && (
+                <ul
+                  id="ampo-place-suggestions"
+                  role="listbox"
+                  aria-label="Matching places"
+                  className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
+                >
+                  {isFetchingSuggestions && suggestions.length === 0 ? (
+                    <li role="presentation" className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Finding places…
+                    </li>
+                  ) : suggestions.map((suggestion, index) => (
+                    <li key={suggestion.placeId} role="presentation">
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={index === highlightedSuggestion}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setHighlightedSuggestion(index)}
+                        onClick={() => selectSuggestion(suggestion)}
+                        className={`flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                          index === highlightedSuggestion ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'
+                        }`}
+                      >
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{suggestion.primaryText}</span>
+                          {suggestion.secondaryText && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {suggestion.secondaryText}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <Button
-              onClick={handleSearch}
+              onClick={() => void submitSearch(searchQuery, selectedPlaceId ?? undefined)}
               disabled={isSearching}
               aria-label="Search"
               className="shrink-0 min-h-[44px] px-3 bg-gradient-primary hover:opacity-90"
@@ -257,16 +401,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               filter controls below it. */}
           <div className="space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
             <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-              {showSearchResults && <MapPin className="w-4 h-4 shrink-0 text-primary" />}
+              <MapPin className="w-4 h-4 shrink-0 text-primary" />
               {showSearchResults ? (
                 <span className="min-w-0 truncate" title={`Search results for "${searchQuery}"`}>
                   Search results for &ldquo;{searchQuery}&rdquo;
                 </span>
               ) : (
-                <>
-                  <span className="sm:hidden">Within</span>
-                  <span className="hidden sm:inline">Nearby stations within</span>
-                </>
+                <span className="min-w-0 truncate">Showing results near you</span>
               )}
             </div>
 

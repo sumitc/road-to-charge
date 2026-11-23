@@ -27,14 +27,25 @@ export interface StationFilters {
   stationType?: StationType;
 }
 
+export interface PlaceSuggestion {
+  placeId: string;
+  label: string;
+  primaryText: string;
+  secondaryText: string;
+}
+
 /** Read stations through our direct-SQL API (Supabase REST is unavailable on this plan). */
-const fetchStations = async (params: Record<string, string | number | undefined>): Promise<StationRow[]> => {
+const fetchStations = async (
+  params: Record<string, string | number | undefined>,
+  onHeaders?: (headers: Headers) => void
+): Promise<StationRow[]> => {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
   }
   const response = await fetch(`/api/stations?${search.toString()}`);
   if (!response.ok) throw new Error(`Stations API failed: ${response.status}`);
+  onHeaders?.(response.headers);
 
   // The API reports when a query claimed a Google gap-fill cell. Broadcast it
   // so the refresh notice can follow the job to completion without blocking
@@ -160,14 +171,46 @@ export class EVStationService {
   }
 
   /**
-   * Search for stations by location query
+   * Google Places autocomplete choices for the search dropdown. The API key
+   * never reaches the browser; /api/stations calls Places on our behalf.
    */
-  static async searchStationsByLocation(query: string): Promise<ChargingStation[]> {
+  static async suggestPlaces(query: string): Promise<PlaceSuggestion[]> {
     try {
       const normalized = query.trim().replace(/\s+/g, ' ');
-      if (!normalized) return [];
+      if (normalized.length < 2) return [];
+      const response = await fetch(
+        `/api/stations?mode=suggest&q=${encodeURIComponent(normalized)}`
+      );
+      if (!response.ok) return [];
+      const suggestions = await response.json();
+      return Array.isArray(suggestions) ? suggestions as PlaceSuggestion[] : [];
+    } catch (error) {
+      console.error('Error in suggestPlaces:', error);
+      return [];
+    }
+  }
 
-      const stations = await fetchStations({ mode: 'search', q: normalized });
+  /**
+   * Search for stations by a typed query or an exact Google place selection.
+   * `onResolved` receives Google's corrected place name so the UI can fix a
+   * misspelled query without hard-coding aliases.
+   */
+  static async searchStationsByLocation(
+    query: string,
+    placeId?: string,
+    onResolved?: (label: string) => void
+  ): Promise<ChargingStation[]> {
+    try {
+      const normalized = query.trim().replace(/\s+/g, ' ');
+      if (!normalized && !placeId) return [];
+
+      const stations = await fetchStations(
+        { mode: 'search', q: normalized, placeId },
+        (headers) => {
+          const resolved = headers.get('X-Ampo-Resolved-Place');
+          if (resolved && onResolved) onResolved(decodeURIComponent(resolved));
+        }
+      );
 
       return stations.map(station => this.mapStation(station));
     } catch (error) {

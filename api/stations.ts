@@ -7,6 +7,11 @@ import {
   runGoogleAreaBackfill,
   type GoogleRefreshInfo,
 } from '../server/lib/googleAreaBackfill.js';
+import {
+  resolvePlaceById,
+  searchPlaceByText,
+  suggestPlaces,
+} from '../server/lib/googlePlaces.js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -64,11 +69,26 @@ export async function OPTIONS(): Promise<Response> {
 
 export async function GET(req: Request): Promise<Response> {
   try {
+    const params = new URL(req.url, 'http://localhost').searchParams;
+    const mode = params.get('mode') ?? 'all';
+
+    // Google Places autocomplete for the search dropdown. This never touches
+    // the database, and the API key stays server-side.
+    if (mode === 'suggest') {
+      const suggestions = await suggestPlaces(params.get('q') ?? '');
+      return new Response(JSON.stringify(suggestions), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      });
+    }
+
     const url = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
     if (!url) throw new Error('POSTGRES_URL / POSTGRES_URL_NON_POOLING is not configured');
     const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require', prepare: false });
-    const params = new URL(req.url, 'http://localhost').searchParams;
-    const mode = params.get('mode') ?? 'all';
 
     if (mode === 'refresh-status') {
       const cell = params.get('cell') ?? '';
@@ -134,6 +154,7 @@ export async function GET(req: Request): Promise<Response> {
     const conditions: Fragment[] = [];
     let searchTokens: string[] = [];
     let resolvedGeo: { lat: number; lng: number } | null = null;
+    let resolvedLabel = '';
     let order = sql`last_updated DESC`;
     let limit = 500;
 
@@ -242,27 +263,19 @@ export async function GET(req: Request): Promise<Response> {
       LIMIT ${limit}
     `;
 
-    // Resolve a location query to an area on the map first, exactly like a
-    // current-location search. Text matching remains the fallback only when
-    // the geocoder has no answer for the supplied keywords.
-    if (mode === 'search' && searchTokens.length > 0) {
+    // Resolve a search to one Google place — the user's dropdown pick first,
+    // otherwise a text search that also corrects misspellings — then list
+    // stations around that exact coordinate. There are no locality-specific
+    // rules and no guessing from how many rows happen to be nearby: the user
+    // chooses the place when a name is ambiguous. Literal text matching above
+    // is only the fallback when Google cannot resolve the query at all.
+    if (mode === 'search') {
       const rawQuery = params.get('q')?.trim() ?? '';
+      const requestedPlaceId = params.get('placeId')?.trim() ?? '';
+      const placeId = /^[A-Za-z0-9_-]{10,}$/.test(requestedPlaceId) ? requestedPlaceId : '';
       const canonicalQuery = searchTokens
         .map((token) => SEARCH_ALIASES[token]?.[0] ?? token)
         .join(' ');
-      const geocode = async (value: string) => {
-        if (!value) return [];
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(value)}`,
-          { headers: { 'User-Agent': 'road-to-charge/1.0' }, signal: AbortSignal.timeout(5000) }
-        );
-        if (!response.ok) return [];
-        const results = (await response.json()) as Array<{ lat: string; lon: string }>;
-        return results
-          .map(geo => ({ lat: Number(geo.lat), lng: Number(geo.lon) }))
-          .filter(geo => Number.isFinite(geo.lat) && Number.isFinite(geo.lng));
-      };
-
       const radiusKm = 10;
       const rowsNear = async (geo: { lat: number; lng: number }) => {
         const latRange = radiusKm / 111.0;
@@ -277,59 +290,18 @@ export async function GET(req: Request): Promise<Response> {
       };
 
       try {
-        let candidates = await geocode(canonicalQuery);
-        if (candidates.length === 0 && canonicalQuery.toLowerCase() !== rawQuery.toLowerCase()) {
-          candidates = await geocode(rawQuery);
+        let place = placeId ? await resolvePlaceById(placeId) : null;
+        if (!place && rawQuery) place = await searchPlaceByText(rawQuery);
+        if (!place && canonicalQuery && canonicalQuery.toLowerCase() !== rawQuery.toLowerCase()) {
+          place = await searchPlaceByText(canonicalQuery);
         }
-        if (candidates.length > 0) {
-          // A bare locality can resolve to several same-named places. Score
-          // each candidate by the stations we actually hold for that area —
-          // no place is special-cased here. Keep Nominatim's relevance order
-          // when coverage is comparable; only override a candidate that is
-          // effectively empty (e.g. a same-named village elsewhere).
-          const scored: Array<{ geo: { lat: number; lng: number }; rows: typeof rows }> = [];
-          for (const candidate of candidates) {
-            scored.push({ geo: candidate, rows: await rowsNear(candidate) });
-          }
-          const maxRows = Math.max(...scored.map(entry => entry.rows.length));
-          let chosen = scored[0];
-          for (const entry of scored) {
-            if (entry.rows.length >= maxRows * 0.8) {
-              chosen = entry;
-              break;
-            }
-          }
-          let best = chosen.geo;
-          let bestRows = chosen.rows;
-
-          // If every candidate is empty, use the centroid of literal text
-          // matches as the tie-breaker before giving up on the geocode.
-          if (bestRows.length === 0 && rows.length > 0) {
-            const located = rows as unknown as Array<{ latitude: string | number; longitude: string | number }>;
-            const centroidLat = located.reduce((sum, row) => sum + Number(row.latitude), 0) / located.length;
-            const centroidLng = located.reduce((sum, row) => sum + Number(row.longitude), 0) / located.length;
-            let bestDistance = Number.POSITIVE_INFINITY;
-            for (const candidate of candidates) {
-              const distance = (candidate.lat - centroidLat) ** 2 + (candidate.lng - centroidLng) ** 2;
-              if (distance < bestDistance) {
-                bestDistance = distance;
-                best = candidate;
-              }
-            }
-            bestRows = await rowsNear(best);
-          }
-
-          if (bestRows.length > 0) {
-            resolvedGeo = best;
-            rows = bestRows;
-          } else if (rows.length === 0) {
-            // Genuinely uncovered area: let the coverage check schedule a
-            // background refresh around Nominatim's best guess.
-            resolvedGeo = best;
-          }
+        if (place) {
+          resolvedGeo = { lat: place.lat, lng: place.lng };
+          resolvedLabel = place.label;
+          rows = await rowsNear(place);
         }
       } catch (error) {
-        console.error('Geocoding fallback failed:', error);
+        console.error('Google place resolution failed:', error);
       }
     }
 
@@ -394,6 +366,12 @@ export async function GET(req: Request): Promise<Response> {
     };
     if (refreshInfo) {
       headers['X-Ampo-Google-Refresh'] = encodeURIComponent(JSON.stringify(refreshInfo));
+    }
+    if (resolvedLabel) {
+      // Lets the UI replace a typo with Google's canonical place name.
+      headers['X-Ampo-Resolved-Place'] = encodeURIComponent(resolvedLabel);
+      headers['Access-Control-Expose-Headers'] =
+        'X-Ampo-Google-Refresh, X-Ampo-Resolved-Place';
     }
     if (mode === 'distance' || mode === 'bounds' || mode === 'id') {
       // Catalog data changes daily; cached responses make detail views instant.
