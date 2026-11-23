@@ -295,9 +295,43 @@ async function checkSearchCentre() {
   await page.close();
 }
 
+// "Show Nearby" must return to the device's CURRENT location, not a snapshot
+// captured at mount and not the searched area — even if a stale cache says
+// something else.
+async function checkShowNearbyUsesCurrentLocation() {
+  const cached = { lat: 17.4485, lng: 78.3908 };
+  const current = { lat: 17.42, lng: 78.42 };
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await page.addInitScript(({ cached, current }) => {
+    localStorage.setItem('ampo_last_location', JSON.stringify({ location: cached, timestamp: Date.now() }));
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition(ok) { ok({ coords: { latitude: current.lat, longitude: current.lng } }); } },
+    });
+  }, { cached, current });
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const input = page.getByLabel('Search for charging stations by area or city');
+  await input.waitFor({ timeout: 20000 });
+  await input.fill('Kokapet');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await page.waitForTimeout(2500);
+
+  const currentRequest = page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
+    && req.url().includes(`lat=${current.lat}`) && req.url().includes(`lng=${current.lng}`),
+  { timeout: 20000 }).catch(() => null);
+  await page.getByRole('button', { name: 'Show Nearby' }).click();
+  const matched = await currentRequest;
+  check('Show Nearby uses the device current location, not a cached snapshot',
+    Boolean(matched), `current=${current.lat},${current.lng} cached=${cached.lat},${cached.lng}`);
+  check('Show Nearby clears the searched query',
+    !page.url().includes('q=') && !page.url().includes('place='), page.url());
+  await page.close();
+}
+
 try {
   await checkPlacePicker();
   await checkSearchCentre();
+  await checkShowNearbyUsesCurrentLocation();
   for (const width of [320, 390]) {
     const page = await browser.newPage({
       viewport: { width, height: 844 },

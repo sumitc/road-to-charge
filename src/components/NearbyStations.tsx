@@ -9,6 +9,7 @@ import { StationCard } from './StationCard';
 import { ConnectorFilter } from './ConnectorFilter';
 import { ChargingStation } from '@/types/station';
 import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
+import { LocationService } from '@/services/locationService';
 import { stationKeys, useNearbyStations, usePrefetchStation } from '@/hooks/useStationQueries';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
@@ -40,17 +41,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
-  // Searching moves the active map centre to the searched area. Remember the
-  // user's real location first so "Show Nearby" can return to it.
-  const originalLocation = useRef<{ lat: number; lng: number } | null>(null);
-  const locationRef = useRef(location);
-  useEffect(() => {
-    locationRef.current = location;
-    // Remember the user's real location as soon as one is available — not
-    // after an awaited search. A slow/cancelled search or a stale GPS refetch
-    // must never let the searched area become the "home" we restore.
-    if (location && !originalLocation.current) originalLocation.current = location;
-  }, [location]);
+  const [isLocating, setIsLocating] = useState(false);
   // Guard so a submit that writes ?q= does not re-run the search from the URL
   // effect, while real back/forward navigation still does. Include the place
   // id so picking a different suggestion with the same label still searches.
@@ -290,35 +281,46 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     suggestionRequest.current++;
   }, []);
 
-  const handleShowNearby = () => {
+  const handleShowNearby = async () => {
+    // Cancel any in-flight search so it cannot re-apply the searched area.
     searchRun.current++;
     setIsSearching(false);
-    appliedQuery.current = '';
-    setSearchParams((previous) => {
-      const next = new URLSearchParams(previous);
-      next.delete('q');
-      next.delete('place');
-      return next;
-    });
-    setShowSearchResults(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setSelectedPlaceId(null);
+    setIsLocating(true);
+    try {
+      // "Show Nearby" always means the device's CURRENT location — never a
+      // snapshot captured at mount and never the searched area. A denied GPS
+      // lookup falls back to the last real fix, never the Delhi display
+      // fallback (which would silently move the user to Delhi).
+      const resolved = await LocationService.getCurrentLocation();
+      const cached = LocationService.getCachedLocation()?.location;
+      const current = resolved.isFallback
+        ? (cached ?? resolved.location)
+        : resolved.location;
+      if (!resolved.isFallback) LocationService.saveLocation(current);
+      onLocationUpdate(current);
 
-    // Return to the user's real location and make sure the nearby list is
-    // refetched for it instead of reusing the searched area's cached rows.
-    const home = originalLocation.current;
-    if (home) {
-      onLocationUpdate(home);
-      // The home query is inactive while search results are shown, so use
-      // refetchType 'all' to make sure it reloads rather than relying on a
-      // possibly-still-fresh cache entry.
+      appliedQuery.current = '';
+      setSearchParams((previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete('q');
+        next.delete('place');
+        return next;
+      });
+      setShowSearchResults(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSelectedPlaceId(null);
+
+      // Force a fresh nearby query for the current location instead of reusing
+      // cached rows from the searched area.
       queryClient.invalidateQueries({
-        queryKey: stationKeys.nearby(home, radius),
+        queryKey: stationKeys.nearby(current, radius),
         refetchType: 'all',
       });
+    } finally {
+      setIsLocating(false);
     }
   };
 
@@ -450,10 +452,12 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleShowNearby}
+                    onClick={() => void handleShowNearby()}
+                    disabled={isLocating}
+                    aria-label="Show Nearby"
                     className="h-10 min-h-0 shrink-0"
                   >
-                    Show Nearby
+                    {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Show Nearby'}
                   </Button>
                 </>
               ) : (
