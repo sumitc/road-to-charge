@@ -205,6 +205,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   // If the user pressed Search/Enter without choosing a row, auto-correct to
   // Google's top place prediction (this also fixes simple misspellings).
   const submitSearch = async (typedQuery: string, placeId?: string) => {
+    // A debounced autocomplete request may still be in flight. Cancel it so a
+    // late response cannot reopen the dropdown over the results/controls.
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
+    setIsFetchingSuggestions(false);
     let finalQuery = typedQuery.trim().replace(/\s+/g, ' ');
     let finalPlaceId = placeId;
     if (!finalQuery && !finalPlaceId) {
@@ -254,7 +259,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       event.preventDefault();
       const highlighted = showSuggestions ? suggestions[highlightedSuggestion] : undefined;
       if (highlighted) selectSuggestion(highlighted);
-      else void submitSearch(searchQuery, selectedPlaceId ?? undefined);
+      else void submitSearch(event.currentTarget.value, selectedPlaceId ?? undefined);
     } else if (event.key === 'Escape') {
       setShowSuggestions(false);
     }

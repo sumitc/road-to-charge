@@ -213,14 +213,14 @@ async function checkPlacePicker() {
     optionText.slice(0, 2).join(' | '));
   if (optionText.length > 0) {
     await options.first().click();
-    await page.waitForTimeout(1500);
+    const cards = page.locator('button[aria-label^="View details for"]');
+    await cards.first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
     check('chosen place is shareable in the URL',
       page.url().includes('q=') && page.url().includes('place='), page.url());
     const picked = await input.inputValue();
     check('chosen place replaces the typed misspelling',
       !/sarovr/i.test(picked) && picked.length > 0, picked);
-    check('chosen place renders station cards',
-      (await page.locator('button[aria-label^="View details for"]').count()) > 0);
+    check('chosen place renders station cards', (await cards.count()) > 0);
     await page.getByRole('button', { name: 'Show Nearby' }).click();
     await page.waitForTimeout(800);
     check('Show Nearby clears the chosen place from the URL',
@@ -228,6 +228,7 @@ async function checkPlacePicker() {
   }
 
   await input.fill('nalagandla');
+  await page.waitForTimeout(150); // let React observe the typed value
   await page.keyboard.press('Enter');
   await page.waitForTimeout(1500);
   const corrected = await input.inputValue();
