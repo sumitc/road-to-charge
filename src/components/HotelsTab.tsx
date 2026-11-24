@@ -1,25 +1,47 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { BatteryCharging, ExternalLink, MapPin, RotateCcw, Search, Star } from 'lucide-react';
+import { BatteryCharging, ExternalLink, Loader2, MapPin, RotateCcw, Search, Star } from 'lucide-react';
 import affiliateLinks from '@/data/affiliateLinks.json';
 import { hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
 import { ConnectorFilter } from '@/components/ConnectorFilter';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { cn } from '@/lib/utils';
+import { trackAmpo } from '@/lib/analytics';
 import { trackEmptyResult } from '@/lib/emptyResults';
+import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
+import { useUserLocation } from '@/hooks/useStationQueries';
+import { useDrivingDistances, type DistancePoint } from '@/hooks/useDrivingDistances';
+import { RouteService } from '@/services/routeService';
+
 const AFFILIATE_LINKS = affiliateLinks as Record<string, string>;
 const HOTEL_PHOTO = '/hotels/placeholder.svg';
 const hasAffiliateLinks = Object.keys(AFFILIATE_LINKS).some(key => !key.startsWith('_'));
 
-const PRICE_OPTIONS = [...new Set(index.hotels.map(hotel => hotel.priceBand).filter(Boolean))]
-  .sort() as string[];
+const RADIUS_OPTIONS = [
+  { value: 'all', label: 'All distances' },
+  { value: '5', label: '5 km' },
+  { value: '10', label: '10 km' },
+  { value: '25', label: '25 km' },
+  { value: '50', label: '50 km' },
+];
 
-function formatDistance(meters?: number | null) {
-  if (!Number.isFinite(meters as number)) return '';
-  return meters! < 1000 ? `${meters} m` : `${(meters! / 1000).toFixed(1)} km`;
+const RATING_OPTIONS = [
+  { value: '0', label: 'Any rating' },
+  { value: '4', label: '4+ rated' },
+  { value: '4.5', label: '4.5+ rated' },
+];
+
+function formatMetres(metres?: number | null) {
+  if (!Number.isFinite(metres as number)) return '';
+  return metres! < 1000 ? `${Math.round(metres!)} m` : `${(metres! / 1000).toFixed(1)} km`;
+}
+
+function formatKm(km?: number | null) {
+  if (!Number.isFinite(km as number)) return '';
+  return km! < 1 ? `${Math.round(km! * 1000)} m` : `${km!.toFixed(1)} km`;
 }
 
 /** Small search-results-style pill; only claim on-site charging when sourced. */
@@ -39,17 +61,18 @@ type FilterSelectProps = {
   value: string;
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
+  className?: string;
 };
 
-function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
+function FilterSelect({ label, value, options, onChange, className }: FilterSelectProps) {
   return (
-    <label className="min-w-0">
+    <label className={cn('min-w-0', className)}>
       <span className="sr-only">{label}</span>
       <select
         aria-label={label}
         value={value}
         onChange={event => onChange(event.target.value)}
-        className="h-9 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+        className="h-9 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
       >
         {options.map(option => (
           <option key={option.value} value={option.value}>{option.label}</option>
@@ -59,12 +82,19 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
   );
 }
 
-function HotelCard({ hotel }: { hotel: Hotel }) {
+type HotelCardProps = {
+  hotel: Hotel;
+  distanceKm?: number;
+  distanceKind?: 'driving' | 'straight';
+};
+
+function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
   const affiliateUrl = AFFILIATE_LINKS[hotel.id] || '';
   const bookingUrl = affiliateUrl || hotel.sourceUrl;
   const nearest = hotel.ev.nearestCharger;
   const evidence = evEvidenceTag(hotel);
   const location = [hotel.locality, hotel.city, hotel.state].filter(Boolean).join(', ');
+  const distanceLabel = distanceKind === 'driving' ? 'Driving distance' : 'Straight-line distance';
 
   return (
     <Card className="animate-fade-in overflow-hidden rounded-2xl border-border/70 shadow-sm">
@@ -79,14 +109,17 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <Link to={`/hotels/${hotel.id}`} className="min-w-0 hover:underline">
-                <h3 className="text-sm font-semibold leading-tight">{hotel.name}</h3>
-              </Link>
-            </div>
+            <Link to={`/hotels/${hotel.id}`} className="min-w-0 hover:underline">
+              <h3 className="text-sm font-semibold leading-tight">{hotel.name}</h3>
+            </Link>
             <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{location || hotel.area}</span>
+              <span className="min-w-0 truncate">{location || hotel.area}</span>
+              {Number.isFinite(distanceKm) && (
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium" title={distanceLabel}>
+                  {distanceKind === 'driving' ? '~' : ''}{formatKm(distanceKm)}
+                </span>
+              )}
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <span className={cn(
@@ -104,7 +137,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
             </div>
             {nearest && (
               <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                Nearest: {nearest.provider} · {nearest.name} · {formatDistance(nearest.distanceMeters)}
+                Nearest: {nearest.provider} · {nearest.name} · {formatMetres(nearest.distanceMeters)}
               </p>
             )}
             {hotel.ev.chargerCountWithinRadius > 1 && (
@@ -121,7 +154,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
         </div>
         {hotel.onSiteEvidence && (
           <p className="mt-2 rounded-lg bg-muted/60 p-2 text-[11px] leading-snug text-muted-foreground">
-            Google place text: “{hotel.onSiteEvidence}”
+            Google place text: &ldquo;{hotel.onSiteEvidence}&rdquo;
           </p>
         )}
         <div className="mt-2 flex items-center justify-between gap-2">
@@ -147,54 +180,241 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
 
 export function HotelsTab() {
   const [query, setQuery] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<PlaceSuggestion | null>(null);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedSuggestion, setHighlightedSuggestion] = useState(-1);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [connectors, setConnectors] = useState<string[]>([]);
-  const [priceBand, setPriceBand] = useState('all');
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  const [minRating, setMinRating] = useState(0);
 
-  const hotels = index.hotels;
+  const suggestionTimer = useRef<number | null>(null);
+  const suggestionRequest = useRef(0);
+  const loggedEmpty = useRef<string | null>(null);
+
+  const { data: userLocation } = useUserLocation();
+
+  // The generated index already carries Google place IDs and coordinates for
+  // every curated area and hotel, so a picked suggestion can anchor distance
+  // without a new runtime endpoint or a geocoding guess.
+  const areaByPlaceId = useMemo(() => new Map(
+    index.areas
+      .filter(area => area.placeId && area.coordinates)
+      .map(area => [area.placeId!, { ...area.coordinates!, label: area.name }] as const),
+  ), []);
+  const hotelByPlaceId = useMemo(() => new Map(
+    index.hotels.map(hotel => [hotel.provenance.placeId, { lat: hotel.location.lat, lng: hotel.location.lng, id: hotel.id }] as const),
+  ), []);
+
+  const placeAnchor = selectedPlace
+    ? (areaByPlaceId.get(selectedPlace.placeId) ?? hotelByPlaceId.get(selectedPlace.placeId) ?? null)
+    : null;
+  const origin = placeAnchor ?? userLocation ?? null;
+  const focusedHotelId = selectedPlace ? hotelByPlaceId.get(selectedPlace.placeId)?.id : undefined;
+
+  const straightKmByHotel = useMemo(() => {
+    const result: Record<string, number> = {};
+    if (!origin) return result;
+    index.hotels.forEach(hotel => {
+      result[hotel.id] = RouteService.calculateDistance(origin, hotel.location);
+    });
+    return result;
+  }, [origin]);
+
+  const allHotelPoints = useMemo<DistancePoint[]>(
+    () => index.hotels.map(hotel => ({ id: hotel.id, lat: hotel.location.lat, lng: hotel.location.lng })),
+    [],
+  );
+  const drivingDistances = useDrivingDistances(origin, allHotelPoints, 'hotels');
+
+  const distanceFor = useCallback((hotel: Hotel): { km?: number; kind: 'driving' | 'straight' } => {
+    const road = drivingDistances.data?.[hotel.id];
+    if (typeof road === 'number' && Number.isFinite(road)) return { km: road, kind: 'driving' };
+    const straight = straightKmByHotel[hotel.id];
+    return Number.isFinite(straight) ? { km: straight, kind: 'straight' } : { kind: 'straight' };
+  }, [drivingDistances.data, straightKmByHotel]);
+
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return hotels.filter(hotel => {
+    // A picked Google suggestion carries a long canonical label ("Jaipur,
+    // Rajasthan, India"); match its primary text so the hotel rows still
+    // resolve. Typed queries stay exactly as entered.
+    const needle = (selectedPlace?.primaryText || query).trim().replace(/\s+/g, ' ').toLowerCase();
+    const rows = index.hotels.filter(hotel => {
+      if (focusedHotelId && hotel.id !== focusedHotelId) return false;
       if (needle) {
-        // The list is driven by the place the user cares about: hotel name,
-        // locality, city or state — not by our internal EV-evidence taxonomy.
+        // Hotel-only search: name, locality, city, state or address. Never the
+        // internal EV taxonomy or charger text.
         const haystack = [
-          hotel.name, hotel.area, hotel.city, hotel.state, hotel.locality,
-          hotel.formattedAddress,
+          hotel.name, hotel.area, hotel.city, hotel.state, hotel.locality, hotel.formattedAddress,
         ].filter(Boolean).join(' ').toLowerCase();
         if (!haystack.includes(needle)) return false;
       }
       if (!matchesConnectorFilters(hotel.ev.connectorTypes, connectors)) return false;
-      if (priceBand !== 'all' && hotel.priceBand !== priceBand) return false;
+      if (minRating > 0 && (hotel.rating ?? 0) < minRating) return false;
+      if (radiusKm !== null) {
+        const distance = distanceFor(hotel).km;
+        if (!Number.isFinite(distance) || distance! > radiusKm) return false;
+      }
       return true;
     });
-  }, [connectors, hotels, priceBand, query]);
+
+    return rows.sort((left, right) => {
+      const leftDistance = distanceFor(left).km;
+      const rightDistance = distanceFor(right).km;
+      if (Number.isFinite(leftDistance) && Number.isFinite(rightDistance) && leftDistance !== rightDistance) {
+        return leftDistance! - rightDistance!;
+      }
+      return (right.rating ?? 0) - (left.rating ?? 0);
+    });
+  }, [connectors, distanceFor, focusedHotelId, minRating, query, radiusKm, selectedPlace]);
 
   // Count each distinct failed query/filter combination once, not on every
   // render. Clearing back to a non-empty list re-arms the same query.
-  const loggedEmpty = useRef<string | null>(null);
   useEffect(() => {
-    const signature = `${query.trim().toLowerCase()}::${connectors.join(',')}::${priceBand}`;
+    const signature = [
+      query.trim().toLowerCase(),
+      connectors.join(','),
+      radiusKm ?? 'all',
+      minRating,
+    ].join('::');
     if (filtered.length > 0) {
       loggedEmpty.current = null;
       return;
     }
     if (loggedEmpty.current === signature) return;
     loggedEmpty.current = signature;
-    const filters = [connectors.length ? `connectors=${connectors.join(',')}` : '', priceBand !== 'all' ? `price=${priceBand}` : '']
-      .filter(Boolean).join(',');
+    const filters = [
+      connectors.length ? `connectors=${connectors.join(',')}` : '',
+      radiusKm !== null ? `radius=${radiusKm}` : '',
+      minRating > 0 ? `rating=${minRating}` : '',
+    ].filter(Boolean).join(',');
     trackEmptyResult({
       surface: 'hotels',
       query: query.trim() || null,
+      placeId: selectedPlace?.placeId ?? null,
+      radiusKm: radiusKm ?? undefined,
       filter: filters || undefined,
       reason: filters ? 'filters' : 'no_rows',
     });
-  }, [connectors, filtered.length, priceBand, query]);
+  }, [connectors, filtered.length, minRating, query, radiusKm, selectedPlace]);
 
-  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || priceBand !== 'all';
+  useEffect(() => () => {
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
+  }, []);
+
+  const loadSuggestions = useCallback(async (term: string) => {
+    const clean = term.trim().replace(/\s+/g, ' ');
+    if (clean.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsFetchingSuggestions(false);
+      return;
+    }
+    const request = ++suggestionRequest.current;
+    setIsFetchingSuggestions(true);
+    const results = await EVStationService.suggestPlaces(clean);
+    if (request !== suggestionRequest.current) return;
+    setSuggestions(results);
+    setHighlightedSuggestion(results.length ? 0 : -1);
+    setShowSuggestions(results.length > 0);
+    setIsFetchingSuggestions(false);
+  }, []);
+
+  const handleInputChange = (value: string) => {
+    setQuery(value);
+    setSelectedPlace(null);
+    setHighlightedSuggestion(-1);
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    const clean = value.trim().replace(/\s+/g, ' ');
+    if (clean.length < 2) {
+      suggestionRequest.current++;
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsFetchingSuggestions(false);
+      return;
+    }
+    suggestionTimer.current = window.setTimeout(() => void loadSuggestions(clean), 250);
+  };
+
+  const selectSuggestion = (suggestion: PlaceSuggestion) => {
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
+    setQuery(suggestion.label);
+    setSelectedPlace(suggestion);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedSuggestion(-1);
+    setIsFetchingSuggestions(false);
+    trackAmpo('place_selected', {
+      place_id: suggestion.placeId,
+      label: suggestion.label.slice(0, 120),
+      source: 'hotels',
+    });
+  };
+
+  const submitSearch = () => {
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
+    const clean = query.trim().replace(/\s+/g, ' ');
+    if (!clean) {
+      setSelectedPlace(null);
+      setShowSuggestions(false);
+      return;
+    }
+    const chosen = selectedPlace
+      ?? (showSuggestions && suggestions.length > 0 && highlightedSuggestion >= 0
+        ? suggestions[highlightedSuggestion]
+        : suggestions[0]);
+    if (chosen) {
+      selectSuggestion(chosen);
+      return;
+    }
+    setQuery(clean);
+    setSelectedPlace(null);
+    setShowSuggestions(false);
+    trackAmpo('search_submit', { query: clean, place_id: null, source: 'hotels' });
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (!suggestions.length) return;
+      event.preventDefault();
+      setShowSuggestions(true);
+      setHighlightedSuggestion(previous => {
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        return (previous + step + suggestions.length) % suggestions.length;
+      });
+      return;
+    }
+    if (event.key === 'Enter') {
+      if (showSuggestions && suggestions.length > 0 && highlightedSuggestion >= 0) {
+        event.preventDefault();
+        selectSuggestion(suggestions[highlightedSuggestion]);
+      }
+      return;
+    }
+    if (event.key === 'Escape') {
+      setShowSuggestions(false);
+      setHighlightedSuggestion(-1);
+    }
+  };
+
+  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || radiusKm !== null || minRating > 0;
+  const showSearchResults = Boolean(query.trim()) || Boolean(selectedPlace);
   const reset = () => {
+    if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
+    suggestionRequest.current++;
     setQuery('');
+    setSelectedPlace(null);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedSuggestion(-1);
+    setIsFetchingSuggestions(false);
     setConnectors([]);
-    setPriceBand('all');
+    setRadiusKm(null);
+    setMinRating(0);
   };
 
   const updated = useMemo(() => {
@@ -215,44 +435,123 @@ export function HotelsTab() {
         </div>
       </div>
 
-      <form className="flex items-center gap-2" onSubmit={event => event.preventDefault()}>
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder="City or hotel name (e.g. Jaipur, Taj Mahal)"
-            className="pl-9 text-sm"
-            aria-label="Search hotels by city or hotel name"
-          />
-        </div>
-        <Button variant="outline" size="icon" aria-label="Submit hotel search" type="submit">
-          <Search className="h-4 w-4" />
-        </Button>
-      </form>
+      <Card className="relative z-20 rounded-2xl">
+        <CardContent className="p-3 sm:p-4">
+          <form className="flex gap-2" onSubmit={event => { event.preventDefault(); submitSearch(); }}>
+            <div className="relative min-w-0 flex-1">
+              <Input
+                value={query}
+                onChange={event => handleInputChange(event.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+                placeholder="Search city, area or hotel name"
+                className="min-w-0 min-h-[44px]"
+                aria-label="Search hotels by city or hotel name"
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-controls="ampo-hotel-place-suggestions"
+                aria-autocomplete="list"
+              />
+              {showSuggestions && (
+                <ul
+                  id="ampo-hotel-place-suggestions"
+                  role="listbox"
+                  aria-label="Matching hotel areas and places"
+                  className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
+                >
+                  {isFetchingSuggestions && suggestions.length === 0 ? (
+                    <li role="presentation" className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Finding places…
+                    </li>
+                  ) : suggestions.map((suggestion, index) => (
+                    <li key={suggestion.placeId} role="presentation">
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={index === highlightedSuggestion}
+                        onMouseDown={event => event.preventDefault()}
+                        onMouseEnter={() => setHighlightedSuggestion(index)}
+                        onClick={() => selectSuggestion(suggestion)}
+                        className={`flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                          index === highlightedSuggestion ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'
+                        }`}
+                      >
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{suggestion.primaryText}</span>
+                          {suggestion.secondaryText && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {suggestion.secondaryText}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <Button
+              type="submit"
+              aria-label="Search"
+              className="shrink-0 min-h-[44px] px-3 bg-gradient-primary hover:opacity-90"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
 
-      <div className="space-y-2 sm:flex sm:items-center sm:gap-2">
-        <ConnectorFilter
-          selected={connectors}
-          onChange={setConnectors}
-          className="sm:w-64"
-        />
-        {PRICE_OPTIONS.length > 0 && (
-          <FilterSelect
-            label="Price band"
-            value={priceBand}
-            options={[
-              { value: 'all', label: 'Any price' },
-              ...PRICE_OPTIONS.map(value => ({ value, label: value })),
-            ]}
-            onChange={setPriceBand}
-          />
-        )}
-      </div>
+          <div className="mt-2.5 space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
+              <span className="min-w-0 truncate" title={showSearchResults ? `Hotel results for "${query}"` : undefined}>
+                {showSearchResults ? `Hotel results for “${query}”` : 'Showing all indexed hotels'}
+              </span>
+              {hasFilters && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={reset}
+                  aria-label="Show all hotels"
+                  className="h-8 shrink-0 px-1 text-xs text-muted-foreground"
+                >
+                  All hotels
+                </Button>
+              )}
+            </div>
+
+            <div data-testid="hotel-search-controls" className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-none">
+              <label className="w-[84px] shrink-0">
+                <span className="sr-only">Search radius in kilometres</span>
+                <select
+                  aria-label="Search radius in kilometres"
+                  value={radiusKm === null ? 'all' : String(radiusKm)}
+                  onChange={event => setRadiusKm(event.target.value === 'all' ? null : Number(event.target.value))}
+                  className="h-9 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+                >
+                  {RADIUS_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <ConnectorFilter
+                selected={connectors}
+                onChange={setConnectors}
+                className="min-w-0 flex-1 sm:w-56 sm:flex-none"
+              />
+              <FilterSelect
+                label="Minimum Google rating"
+                value={String(minRating)}
+                options={RATING_OPTIONS}
+                onChange={value => setMinRating(Number(value))}
+                className="w-[86px] shrink-0"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          {filtered.length} of {hotels.length} stays · chargers within {(index.method.radiusMeters / 1000).toFixed(1)} km
+          {filtered.length} of {index.hotels.length} stays · chargers within {(index.method.radiusMeters / 1000).toFixed(1)} km
         </p>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={reset} className="h-8 shrink-0 px-2 text-xs">
@@ -263,7 +562,17 @@ export function HotelsTab() {
 
       {filtered.length ? (
         <div className="space-y-2.5">
-          {filtered.map(hotel => <HotelCard key={hotel.id} hotel={hotel} />)}
+          {filtered.map(hotel => {
+            const distance = distanceFor(hotel);
+            return (
+              <HotelCard
+                key={hotel.id}
+                hotel={hotel}
+                distanceKm={distance.km}
+                distanceKind={distance.kind}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed p-6 text-center">
@@ -287,7 +596,7 @@ export function HotelsTab() {
         </p>
       )}
       <p className="px-1 pb-2 text-[10px] leading-snug text-muted-foreground">
-        Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. A nearby charger is not an on-site claim — confirm with the property before travel.
+        Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. Distance is to the hotel, while the nearest-charger line is hotel-to-charger. A nearby charger is not an on-site claim — confirm with the property before travel.
       </p>
     </div>
   );

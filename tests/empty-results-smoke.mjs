@@ -53,8 +53,27 @@ async function newPage({ withRoute = false } = {}) {
       },
     });
   });
-  await page.route('**/api/stations**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.route('**/api/stations**', route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('mode') === 'suggest') {
+      const q = (url.searchParams.get('q') ?? '').toLowerCase();
+      const suggestions = q.includes('jaip')
+        ? [{
+          placeId: 'test-jaipur-area',
+          label: 'Jaipur, Rajasthan, India',
+          primaryText: 'Jaipur',
+          secondaryText: 'Rajasthan, India',
+        }]
+        : [];
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(suggestions) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/router.project-osrm.org/table/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ distances: [] }),
+  }));
   if (withRoute) {
     await page.route('**/nominatim.openstreetmap.org/search**', route => {
       const q = new URL(route.request().url()).searchParams.get('q') ?? '';
@@ -99,6 +118,16 @@ async function checkHotels() {
     Boolean(evidenceClass?.includes('rounded-full') && evidenceClass.includes('text-[10px]')),
     evidenceClass ?? '');
 
+  const radiusSelect = page.getByLabel('Search radius in kilometres');
+  check('hotel search has the same distance control as stations',
+    (await radiusSelect.inputValue()) === 'all'
+      && (await radiusSelect.locator('option[value="5"]').count()) === 1
+      && (await radiusSelect.locator('option[value="25"]').count()) === 1);
+  check('hotel search adds a Google rating filter',
+    (await page.getByLabel('Minimum Google rating').count()) === 1);
+  check('hotel cards show distance from the active origin',
+    (await page.locator('span[title="Straight-line distance"]').count()) > 0);
+
   const connectorButton = page.getByRole('button', { name: /All connectors/ });
   check('connector filter replaces the provider box', (await connectorButton.count()) > 0);
   await connectorButton.click();
@@ -115,6 +144,33 @@ async function checkHotels() {
   await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 15000 });
 
   const input = page.getByLabel('Search hotels by city or hotel name');
+  check('hotel search exposes exactly one Search button',
+    (await page.getByRole('button', { name: 'Search', exact: true }).count()) === 1);
+  await input.fill('jaip');
+  const listbox = page.getByRole('listbox', { name: 'Matching hotel areas and places' });
+  await listbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  check('hotel search shows Google suggestions while typing', await listbox.isVisible().catch(() => false));
+  if (await listbox.isVisible().catch(() => false)) {
+    const inputBox = await input.boundingBox();
+    const dropdownBox = await listbox.boundingBox();
+    check('hotel dropdown drops from the input edge',
+      Boolean(inputBox && dropdownBox)
+        && Math.abs(inputBox.x - dropdownBox.x) <= 2
+        && Math.abs(inputBox.width - dropdownBox.width) <= 2
+        && dropdownBox.y >= inputBox.y + inputBox.height - 2
+        && dropdownBox.y <= inputBox.y + inputBox.height + 10,
+      `input=${JSON.stringify(inputBox)} dropdown=${JSON.stringify(dropdownBox)}`);
+    await listbox.getByRole('option').first().click();
+    await page.waitForFunction(() => {
+      const match = document.body.innerText.match(/(\d+) of 183 stays/);
+      return match && Number(match[1]) > 0 && Number(match[1]) < 183;
+    }, null, { timeout: 15000 });
+    const pickedText = await page.locator('body').innerText();
+    const pickedCount = Number((pickedText.match(/(\d+) of 183 stays/) ?? [])[1] ?? 183);
+    check('picking a hotel-area suggestion narrows stays',
+      pickedCount > 0 && pickedCount < 183, `${pickedCount} stays`);
+  }
+
   await input.fill('Jaipur');
   await page.waitForFunction(() => document.body.innerText.includes('of 183 stays'), null, { timeout: 15000 });
   const jaipurText = await page.locator('body').innerText();

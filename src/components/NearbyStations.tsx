@@ -11,7 +11,6 @@ import { ChargingStation } from '@/types/station';
 import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
 import {
   stationKeys,
-  useGoToCurrentLocation,
   useNearbyStations,
   usePrefetchStation,
 } from '@/hooks/useStationQueries';
@@ -50,9 +49,6 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
   const syncedFor = useRef<string | null>(null);
   const prefetched = useRef(new Set<string>());
-  // Shared with the header wordmark/logo so every "home" affordance resolves
-  // the device location the same way.
-  const { goToCurrentLocation, isLocating } = useGoToCurrentLocation();
   // Guard so a submit that writes ?q= does not re-run the search from the URL
   // effect, while real back/forward navigation still does. Include the place
   // id so picking a different suggestion with the same label still searches.
@@ -386,29 +382,6 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     toast({ title: 'Search link copied', description: 'Share it with fellow EV riders' });
   };
 
-  const handleShowNearby = async () => {
-    // Cancel any in-flight search so it cannot re-apply the searched area.
-    searchRun.current++;
-    setIsSearching(false);
-    // Same shared helper the header uses: always the device's CURRENT location.
-    await goToCurrentLocation();
-    trackAmpo('show_nearby', { radius_km: radius, source: 'button' });
-
-    appliedQuery.current = '';
-    setSearchParams((previous) => {
-      const next = new URLSearchParams(previous);
-      next.delete('q');
-      next.delete('place');
-      return next;
-    });
-    setShowSearchResults(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setSelectedPlaceId(null);
-  };
-
   if (isLoadingLocation) {
     return (
       <Card className="rounded-2xl">
@@ -538,23 +511,11 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
             {/* Distance and connector sit side by side on mobile. */}
             <div data-testid="search-controls" className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-none">
               {showSearchResults ? (
-                <>
-                  <ConnectorFilter
-                    selected={connectorFilters}
-                    onChange={setConnectorFilters}
-                    className="min-w-0 flex-1 sm:w-56 sm:flex-none"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void handleShowNearby()}
-                    disabled={isLocating}
-                    aria-label="Show Nearby"
-                    className="h-10 min-h-0 shrink-0"
-                  >
-                    {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Show Nearby'}
-                  </Button>
-                </>
+                <ConnectorFilter
+                  selected={connectorFilters}
+                  onChange={setConnectorFilters}
+                  className="min-w-0 flex-1 sm:w-56 sm:flex-none"
+                />
               ) : (
                 <>
                   <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:flex-none">

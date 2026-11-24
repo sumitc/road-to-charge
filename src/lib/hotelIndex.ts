@@ -74,7 +74,14 @@ export type HotelIndex = {
     providers: string[];
     priceBands: string[];
   };
-  areas: Array<{ id: string; name: string; city?: string; state: string }>;
+  areas: Array<{
+    id: string;
+    name: string;
+    city?: string;
+    state: string;
+    placeId?: string;
+    coordinates?: { lat: number; lng: number };
+  }>;
   hotels: Hotel[];
 };
 

@@ -290,11 +290,16 @@ async function checkPlacePicker() {
         (await ampoEventNames(page)).includes('search_shared'));
     }
 
-    await page.getByRole('button', { name: 'Show Nearby' }).click();
-    await page.waitForTimeout(800);
-    check('Show Nearby clears the chosen place from the URL',
+    check('only one Search button remains after a completed search',
+      (await page.getByRole('button', { name: 'Search', exact: true }).count()) === 1);
+    check('no second nearby/search button is added to the results row',
+      (await page.getByRole('button', { name: 'Show Nearby' }).count()) === 0);
+    await page.getByRole('link', { name: 'Ampo home' }).click();
+    await page.waitForURL(url => !url.search.includes('q=') && !url.search.includes('place='),
+      { timeout: 10000 }).catch(() => {});
+    check('home affordance clears the chosen place from the URL',
       !page.url().includes('q=') && !page.url().includes('place='), page.url());
-    check('Show Nearby queues show_nearby',
+    check('home affordance queues show_nearby',
       (await ampoEventNames(page)).includes('show_nearby'));
   }
 
@@ -374,10 +379,10 @@ async function checkSearchCentre() {
   await page.close();
 }
 
-// "Show Nearby" must return to the device's CURRENT location, not a snapshot
-// captured at mount and not the searched area — even if a stale cache says
-// something else.
-async function checkShowNearbyUsesCurrentLocation() {
+// The header home affordance must return to the device's CURRENT location,
+// not a snapshot captured at mount and not the searched area — even if a stale
+// cache says something else. It replaces the old in-list "Show Nearby" button.
+async function checkHeaderHomeUsesCurrentLocation() {
   const cached = { lat: 17.4485, lng: 78.3908 };
   const current = { lat: 17.42, lng: 78.42 };
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
@@ -398,22 +403,20 @@ async function checkShowNearbyUsesCurrentLocation() {
   const currentRequest = page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
     && req.url().includes(`lat=${current.lat}`) && req.url().includes(`lng=${current.lng}`),
   { timeout: 20000 }).catch(() => null);
-  await page.getByRole('button', { name: 'Show Nearby' }).click();
+  await page.getByRole('link', { name: 'Ampo home' }).click();
   const matched = await currentRequest;
-  check('Show Nearby uses the device current location, not a cached snapshot',
+  check('header home uses the device current location, not a cached snapshot',
     Boolean(matched), `current=${current.lat},${current.lng} cached=${cached.lat},${cached.lng}`);
-  // The fresh-location refetch is awaited before the UI clears the URL, so
-  // wait for the URL to settle instead of sampling it as soon as the request
-  // is issued.
+  // Wait for the route navigation to settle before sampling the URL.
   await page.waitForURL(url => !url.search.includes('q=') && !url.search.includes('place='),
     { timeout: 10000 }).catch(() => {});
-  check('Show Nearby clears the searched query',
+  check('header home clears the searched query',
     !page.url().includes('q=') && !page.url().includes('place='), page.url());
   await page.close();
 }
 
 // The Ampo wordmark and logo icon are home affordances: they must behave
-// exactly like "Show Nearby" — re-read GPS/clear search/reload nearby rows.
+// the primary way home — re-read GPS/clear search/reload nearby rows.
 async function checkHeaderHomeAffordances() {
   const cached = { lat: 17.4485, lng: 78.3908 };
   const current = { lat: 17.42, lng: 78.42 };
@@ -506,7 +509,7 @@ async function checkGarbledNameFallback() {
 try {
   await checkPlacePicker();
   await checkSearchCentre();
-  await checkShowNearbyUsesCurrentLocation();
+  await checkHeaderHomeUsesCurrentLocation();
   await checkHeaderHomeAffordances();
   await checkGarbledNameFallback();
   for (const width of [320, 390]) {
@@ -565,6 +568,8 @@ try {
       afterSearch.controls?.h === before.controls?.h && afterSearch.controls?.y === before.controls?.y,
       `before=${JSON.stringify(before.controls)} after=${JSON.stringify(afterSearch.controls)}`,
     );
+    check(`${width}px: only one Search button remains after results`,
+      (await page.getByRole('button', { name: 'Search', exact: true }).count()) === 1);
     check(`${width}px: no horizontal overflow`, afterSearch.docOverflow <= 0 && afterSearch.cardOverflow <= 0,
       `doc=${afterSearch.docOverflow} card=${afterSearch.cardOverflow}`);
 
@@ -786,28 +791,29 @@ try {
     Math.abs((cachedLocation?.location?.lat ?? 0) - 17.4485) < 0.001,
     JSON.stringify(cachedLocation?.location ?? null));
 
-  // A search moves the active map centre to the searched area. "Show Nearby"
-  // must re-query the user's real location. Compare the API request coords
-  // rather than card order, which changes when road distances arrive.
+  // A search moves the active map centre to the searched area. The header
+  // home affordance must re-query the user's real location. Compare the API
+  // request coords rather than card order, which changes when road distances
+  // arrive.
   const nearbyRequests = [];
   const trackNearby = req => {
     if (req.url().includes('/api/stations?mode=distance')) nearbyRequests.push(req.url());
   };
   locationPage.on('request', trackNearby);
-  await locationPage.getByRole('button', { name: 'Show Nearby' }).click();
+  await locationPage.getByRole('link', { name: 'Ampo home' }).click();
   await locationPage.waitForTimeout(2500);
   locationPage.off('request', trackNearby);
-  check('Show Nearby requeries the saved home location',
+  check('header home requeries the saved home location',
     nearbyRequests.some(u => u.includes('lat=17.4485') && u.includes('lng=78.3908')),
     nearbyRequests.slice(-2).join(' | '));
   const restoredNames = await locationPage.locator('button[aria-label^="View details for"]')
     .evaluateAll(els => els.slice(0, 5).map(el => el.getAttribute('aria-label') ?? ''));
-  check('Show Nearby shows home-area stations again',
+  check('header home shows home-area stations again',
     restoredNames.length > 0 && !restoredNames.some(name => /Kokapet/i.test(name)),
     restoredNames.slice(0, 2).join(' | '));
-  check('Show Nearby clears the shared query from the URL',
+  check('header home clears the shared query from the URL',
     !locationPage.url().includes('q='), locationPage.url());
-  check('Show Nearby clears the search input',
+  check('header home clears the search input',
     (await locationPage.getByLabel('Search for charging stations by area or city').inputValue()) === '');
 
   // First-time visitor (no cache) with failing GPS: the fallback is fine to

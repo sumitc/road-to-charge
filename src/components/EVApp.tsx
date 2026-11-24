@@ -80,9 +80,10 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
   };
 
   // The wordmark and logo icon are home affordances: behave exactly like
-  // "Show Nearby" — re-read the device location and reload nearby stations.
+  // the home affordance — re-read the device location and reload nearby stations.
   const handleHomeClick = () => {
     void goToCurrentLocation();
+    trackAmpo('show_nearby', { source: 'header' });
   };
 
   // Header share follows the active tab: the current search, planned route or
