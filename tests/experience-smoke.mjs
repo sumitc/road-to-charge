@@ -580,7 +580,11 @@ try {
     await input.fill('Kokapet');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     const cards = page.locator('button[aria-label^="View details for"]');
-    await cards.first().waitFor({ state: 'visible', timeout: 45000 }).catch(() => {});
+    await page.waitForFunction(
+      () => document.querySelectorAll('button[aria-label^="View details for"]').length > 0,
+      null,
+      { timeout: 45000 },
+    ).catch(() => {});
     check(`${width}px: search results render station cards`, (await cards.count()) > 0);
     if ((await cards.count()) === 0) {
       await page.close();

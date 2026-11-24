@@ -765,14 +765,18 @@
             "lng": 77.1685887
           },
           "distanceMeters": 607,
-          "sourceUrl": "https://maps.google.com/?cid=961605417584274161&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=961605417584274161&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJe4zp0KMdDTkRm90YLrHBVg8",
@@ -841,7 +845,9 @@
             "lng": 77.2197681
           },
           "distanceMeters": 377,
-          "sourceUrl": "https://maps.google.com/?cid=9090766104971103926&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9090766104971103926&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -850,7 +856,9 @@
           "Hindustan Petroleum",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJEaA-2MPiDDkR6C6xllFemnE",
@@ -902,7 +910,9 @@
             "lng": 77.18947630000001
           },
           "distanceMeters": 158,
-          "sourceUrl": "https://maps.google.com/?cid=3482566925533470231&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3482566925533470231&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -910,7 +920,9 @@
           "Tata Power",
           "Hindustan Petroleum"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJf9AdFZ0DDTkROoUXx6i7QvM",
@@ -962,7 +974,9 @@
             "lng": 77.2090559
           },
           "distanceMeters": 277,
-          "sourceUrl": "https://maps.google.com/?cid=8057429798010451517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8057429798010451517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -971,7 +985,9 @@
           "Jio-bp",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJf6Yp9oL9DDkRzy6u-mAOdQ8",
@@ -1023,7 +1039,9 @@
             "lng": 77.207258
           },
           "distanceMeters": 666,
-          "sourceUrl": "https://maps.google.com/?cid=1049297042837502338&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1049297042837502338&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1031,7 +1049,9 @@
           "Jio-bp",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJV_KLIUD9DDkRsIoHC7hf7Z8",
@@ -1083,7 +1103,9 @@
             "lng": 77.2090559
           },
           "distanceMeters": 232,
-          "sourceUrl": "https://maps.google.com/?cid=8057429798010451517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8057429798010451517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1092,7 +1114,9 @@
           "Jio-bp",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJRyNm3GD9DDkRUDuZ6cJXPy4",
@@ -1144,7 +1168,13 @@
             "lng": 78.049318
           },
           "distanceMeters": 73,
-          "sourceUrl": "https://maps.google.com/?cid=18111655784150989361&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18111655784150989361&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1154,7 +1184,11 @@
           "Ather",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJwanh0htxdDkRpaBl2MhumtY",
@@ -1223,7 +1257,9 @@
             "lng": 78.0529908
           },
           "distanceMeters": 135,
-          "sourceUrl": "https://maps.google.com/?cid=16684295498874632216&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=16684295498874632216&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1234,7 +1270,9 @@
           "Statiq",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJUxFmmA9xdDkR3DpaV2nlAi4",
@@ -1286,7 +1324,9 @@
             "lng": 78.00514799999999
           },
           "distanceMeters": 638,
-          "sourceUrl": "https://maps.google.com/?cid=5961952679347996670&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5961952679347996670&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1295,7 +1335,9 @@
           "ChargeZone",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJGVZOeDF3dDkRvizDu0tlQ1g",
@@ -1347,7 +1389,11 @@
             "lng": 78.0256503
           },
           "distanceMeters": 70,
-          "sourceUrl": "https://maps.google.com/?cid=11303575978822386179&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11303575978822386179&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1357,7 +1403,9 @@
           "Tata Power",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJTSS64DNxdDkRCXIdGhtlc2M",
@@ -1409,7 +1457,9 @@
             "lng": 78.027247
           },
           "distanceMeters": 619,
-          "sourceUrl": "https://maps.google.com/?cid=6456651221138277695&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6456651221138277695&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1419,7 +1469,9 @@
           "Ather",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJi1RKtyhxdDkR5zTMQZSzjWo",
@@ -1471,7 +1523,15 @@
             "lng": 78.05657169999999
           },
           "distanceMeters": 23,
-          "sourceUrl": "https://maps.google.com/?cid=2664591939907983180&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2664591939907983180&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1482,7 +1542,12 @@
           "Statiq",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ2eT-VA5xdDkRTXIbsqsMxZ8",
@@ -1534,7 +1599,13 @@
             "lng": 75.807132
           },
           "distanceMeters": 42,
-          "sourceUrl": "https://maps.google.com/?cid=14263506392099100504&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14263506392099100504&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1544,7 +1615,11 @@
           "ChargeZone",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJXYcrGgi2bTkRD9QZJx7VX6M",
@@ -1596,7 +1671,13 @@
             "lng": 75.78641499999999
           },
           "distanceMeters": 124,
-          "sourceUrl": "https://maps.google.com/?cid=12011516354939505493&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12011516354939505493&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1605,7 +1686,11 @@
           "Jio-bp",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJX2_Rbgu0bTkR-wPc1ueFLpA",
@@ -1674,7 +1759,14 @@
             "lng": 75.840601
           },
           "distanceMeters": 187,
-          "sourceUrl": "https://maps.google.com/?cid=14921557245709544959&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14921557245709544959&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CHADEMO",
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1683,7 +1775,11 @@
           "IndianOil",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJdUEbon23bTkRpKApSGa98Io",
@@ -1735,7 +1831,9 @@
             "lng": 75.81863919999999
           },
           "distanceMeters": 281,
-          "sourceUrl": "https://maps.google.com/?cid=4148976966479745342&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4148976966479745342&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1743,7 +1841,9 @@
           "Ather",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJAQAAAJS2bTkRWUWQ2VmlhSA",
@@ -1795,7 +1895,13 @@
             "lng": 75.7967206
           },
           "distanceMeters": 91,
-          "sourceUrl": "https://maps.google.com/?cid=773557688119901386&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=773557688119901386&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1804,7 +1910,11 @@
           "Ather",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJM2amkeW1bTkRia3J5eg9QO8",
@@ -1856,7 +1966,13 @@
             "lng": 75.792041
           },
           "distanceMeters": 49,
-          "sourceUrl": "https://maps.google.com/?cid=2813815229355949212&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2813815229355949212&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1866,7 +1982,11 @@
           "ChargeZone",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ41HjO_azbTkRxrz9eTU_jyg",
@@ -1918,7 +2038,14 @@
             "lng": 73.0263445
           },
           "distanceMeters": 665,
-          "sourceUrl": "https://maps.google.com/?cid=18179965401720954305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18179965401720954305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1927,7 +2054,11 @@
           "Ather",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJFYZSb7eNQTkREhe9INduaYw",
@@ -1979,7 +2110,9 @@
             "lng": 73.03523
           },
           "distanceMeters": 549,
-          "sourceUrl": "https://maps.google.com/?cid=7873692135534569357&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7873692135534569357&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -1988,7 +2121,9 @@
           "Tata Power",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJucwGqk6MQTkRxnh_4FGmvTo",
@@ -2040,7 +2175,9 @@
             "lng": 73.0308014
           },
           "distanceMeters": 83,
-          "sourceUrl": "https://maps.google.com/?cid=4778088302042045754&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4778088302042045754&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2049,7 +2186,9 @@
           "Tata Power",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJPSrwUCWMQTkRXKdTNQcMaFM",
@@ -2101,7 +2240,14 @@
             "lng": 73.0263445
           },
           "distanceMeters": 127,
-          "sourceUrl": "https://maps.google.com/?cid=18179965401720954305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18179965401720954305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 8,
         "providers": [
@@ -2110,7 +2256,11 @@
           "Statiq",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJubyY2MiNQTkR0BpA6ja0LCo",
@@ -2162,7 +2312,13 @@
             "lng": 73.030378
           },
           "distanceMeters": 17,
-          "sourceUrl": "https://maps.google.com/?cid=6480657446132620189&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6480657446132620189&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2170,7 +2326,11 @@
           "Ather",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJbfpjs1GMQTkRdSx6je4bbbM",
@@ -2222,7 +2382,13 @@
             "lng": 73.6955313
           },
           "distanceMeters": 402,
-          "sourceUrl": "https://maps.google.com/?cid=8726700650712692800&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8726700650712692800&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2233,7 +2399,11 @@
           "Bharat Petroleum",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJm1DianblZzkRSwSoIX59zhk",
@@ -2285,7 +2455,9 @@
             "lng": 73.7286604
           },
           "distanceMeters": 315,
-          "sourceUrl": "https://maps.google.com/?cid=13062706827111358792&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13062706827111358792&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2294,7 +2466,9 @@
           "Ather",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJm9hcSF3vZzkRWym2mj7OGYc",
@@ -2346,7 +2520,13 @@
             "lng": 73.7159959
           },
           "distanceMeters": 261,
-          "sourceUrl": "https://maps.google.com/?cid=1497545445080451900&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1497545445080451900&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2354,7 +2534,11 @@
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJu74WG4LlZzkRl23F_HmVqbY",
@@ -2406,7 +2590,9 @@
             "lng": 73.71099459999999
           },
           "distanceMeters": 354,
-          "sourceUrl": "https://maps.google.com/?cid=7634922577100641219&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7634922577100641219&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2414,7 +2600,9 @@
           "Adani",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJI8ggRMXlZzkRKHWw4Oc-lKU",
@@ -2466,7 +2654,9 @@
             "lng": 73.7079136
           },
           "distanceMeters": 262,
-          "sourceUrl": "https://maps.google.com/?cid=16573599370544545024&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=16573599370544545024&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2475,7 +2665,9 @@
           "Unlisted network",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJTbHzeX7vZzkREcnxSd7Ijm4",
@@ -2527,7 +2719,13 @@
             "lng": 73.7159959
           },
           "distanceMeters": 701,
-          "sourceUrl": "https://maps.google.com/?cid=1497545445080451900&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1497545445080451900&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2535,7 +2733,11 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJeQ68UzHlZzkRnMFYomfcfK4",
@@ -2587,7 +2789,13 @@
             "lng": 70.8861927
           },
           "distanceMeters": 124,
-          "sourceUrl": "https://maps.google.com/?cid=11330253248689226638&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11330253248689226638&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
@@ -2595,7 +2803,11 @@
           "Tata Power",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ06Vz7Cm8RzkRrIBQ6zLrhP0",
@@ -2647,14 +2859,18 @@
             "lng": 70.92337839999999
           },
           "distanceMeters": 1024,
-          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJB581ECa8RzkRcFCrVRxe8fU",
@@ -2706,7 +2922,13 @@
             "lng": 70.8989829
           },
           "distanceMeters": 744,
-          "sourceUrl": "https://maps.google.com/?cid=15223929446661723517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15223929446661723517&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 5,
         "providers": [
@@ -2715,7 +2937,11 @@
           "Tata Power",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJYxmZFTG_RzkRGyd1Ums9frI",
@@ -2767,7 +2993,9 @@
             "lng": 70.92337839999999
           },
           "distanceMeters": 1191,
-          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 4,
         "providers": [
@@ -2775,7 +3003,9 @@
           "ChargeZone",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ2ea8cGy9RzkRV2i7Qb1X0CA",
@@ -2827,14 +3057,18 @@
             "lng": 70.92337839999999
           },
           "distanceMeters": 857,
-          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2127188422544186359&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJabZDZiG8RzkRXX3Ml0RhHoA",
@@ -2887,7 +3121,11 @@
             "lng": 72.850841
           },
           "distanceMeters": 78,
-          "sourceUrl": "https://maps.google.com/?cid=6730458585858448498&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6730458585858448498&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2897,7 +3135,9 @@
           "ChargeZone",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJicI_AALJ5zsRrMFrgB6LMEA",
@@ -2967,7 +3207,13 @@
             "lng": 72.8245482
           },
           "distanceMeters": 180,
-          "sourceUrl": "https://maps.google.com/?cid=16938437226839346968&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=16938437226839346968&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -2975,7 +3221,11 @@
           "Jio-bp",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJBenqXObR5zsRU2j7XLGvIp0",
@@ -3028,7 +3278,16 @@
             "lng": 72.82149439999999
           },
           "distanceMeters": 327,
-          "sourceUrl": "https://maps.google.com/?cid=978312921584522784&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=978312921584522784&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_1"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3038,7 +3297,12 @@
           "Adani",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJH7A8Z-DP5zsRqMloyBcVlDs",
@@ -3091,7 +3355,9 @@
             "lng": 72.8985762
           },
           "distanceMeters": 426,
-          "sourceUrl": "https://maps.google.com/?cid=18390710327558743422&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18390710327558743422&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3099,7 +3365,9 @@
           "Ather",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJW3jfqB_G5zsRyFGwWm3-FS0",
@@ -3152,7 +3420,13 @@
             "lng": 72.82133100000001
           },
           "distanceMeters": 38,
-          "sourceUrl": "https://maps.google.com/?cid=10868540547790160564&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10868540547790160564&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3160,7 +3434,11 @@
           "Jio-bp",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJwf3RJe_R5zsR7_3ZfzIk-eM",
@@ -3230,7 +3508,13 @@
             "lng": 72.82071499999999
           },
           "distanceMeters": 64,
-          "sourceUrl": "https://maps.google.com/?cid=17891771612821361521&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=17891771612821361521&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3238,7 +3522,11 @@
           "Jio-bp",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ____b-nR5zsRwb4q2GWqXjg",
@@ -3307,7 +3595,13 @@
             "lng": 73.8339012
           },
           "distanceMeters": 52,
-          "sourceUrl": "https://maps.google.com/?cid=14090789264250893164&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14090789264250893164&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3315,7 +3609,11 @@
           "Jio-bp",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ-8MSxoTAvzsRtD2GWO5AU5E",
@@ -3367,7 +3665,13 @@
             "lng": 73.8201515
           },
           "distanceMeters": 42,
-          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3376,7 +3680,11 @@
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJlaCiV8TAvzsRVZO2_uOlzyA",
@@ -3428,7 +3736,9 @@
             "lng": 73.83
           },
           "distanceMeters": 85,
-          "sourceUrl": "https://maps.google.com/?cid=13696202333705424912&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13696202333705424912&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3436,7 +3746,9 @@
           "Unlisted network",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJDcRFAYbAvzsRax5-SjowkDY",
@@ -3488,14 +3800,18 @@
             "lng": 73.82
           },
           "distanceMeters": 602,
-          "sourceUrl": "https://maps.google.com/?cid=3157294256726831988&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3157294256726831988&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Jio-bp",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJobmmmI7AvzsRFFG1w8BHJY8",
@@ -3547,7 +3863,13 @@
             "lng": 73.8201515
           },
           "distanceMeters": 136,
-          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3556,7 +3878,11 @@
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJPeTZII3AvzsR4eF2nNZIBGY",
@@ -3608,7 +3934,13 @@
             "lng": 73.8201515
           },
           "distanceMeters": 216,
-          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4387886505531184718&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3616,7 +3948,11 @@
           "Jio-bp",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJdZeul43AvzsRdddlyHsYN-k",
@@ -3668,7 +4004,9 @@
             "lng": 73.87678
           },
           "distanceMeters": 47,
-          "sourceUrl": "https://maps.google.com/?cid=15962838487443232695&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15962838487443232695&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3678,7 +4016,9 @@
           "ChargeZone",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJxXr72lnAwjsRjvhU9fqjYPY",
@@ -3730,7 +4070,9 @@
             "lng": 73.7647107
           },
           "distanceMeters": 80,
-          "sourceUrl": "https://maps.google.com/?cid=8328700841074684211&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8328700841074684211&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3738,7 +4080,9 @@
           "Exicom",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJx_Vw9Uy5wjsRuFfk6fag9d0",
@@ -3790,7 +4134,13 @@
             "lng": 73.88788660000002
           },
           "distanceMeters": 73,
-          "sourceUrl": "https://maps.google.com/?cid=15671985143570397775&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15671985143570397775&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3798,7 +4148,11 @@
           "Ather",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJGSlHprTBwjsR998vZOf8QFQ",
@@ -3850,7 +4204,9 @@
             "lng": 73.90711499999999
           },
           "distanceMeters": 133,
-          "sourceUrl": "https://maps.google.com/?cid=12898855105866126591&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12898855105866126591&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3860,7 +4216,9 @@
           "Ather",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJtZ0tUgnBwjsRYt1OE9ryjsw",
@@ -3929,7 +4287,13 @@
             "lng": 73.8739911
           },
           "distanceMeters": 236,
-          "sourceUrl": "https://maps.google.com/?cid=3765360195736442506&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3765360195736442506&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -3939,7 +4303,11 @@
           "Ather",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJC3UTNKzBwjsRCtdt9zVvDnE",
@@ -3991,14 +4359,18 @@
             "lng": 73.8682642
           },
           "distanceMeters": 437,
-          "sourceUrl": "https://maps.google.com/?cid=9572306577047975162&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9572306577047975162&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJTfFeh0LAwjsRRB8fbI49QNM",
@@ -4050,14 +4422,20 @@
             "lng": 77.5830182
           },
           "distanceMeters": 63,
-          "sourceUrl": "https://maps.google.com/?cid=13988191053704931803&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13988191053704931803&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJycIZwOcVrjsRD9ycSPHr4y0",
@@ -4109,14 +4487,20 @@
             "lng": 77.57206599999999
           },
           "distanceMeters": 226,
-          "sourceUrl": "https://maps.google.com/?cid=15747378656541921721&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15747378656541921721&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ10zX9AkWrjsRqIM_W10CeXA",
@@ -4168,13 +4552,17 @@
             "lng": 77.5719659
           },
           "distanceMeters": 230,
-          "sourceUrl": "https://maps.google.com/?cid=3250196736780761586&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3250196736780761586&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJC08zoQgWrjsRQw0Ge0e9ipA",
@@ -4226,13 +4614,19 @@
             "lng": 77.6208973
           },
           "distanceMeters": 60,
-          "sourceUrl": "https://maps.google.com/?cid=14731975606410218360&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14731975606410218360&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ_ZJc_cMVrjsRqmSYQUgZkGE",
@@ -4284,13 +4678,17 @@
             "lng": 77.5780059
           },
           "distanceMeters": 177,
-          "sourceUrl": "https://maps.google.com/?cid=539697045000469766&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=539697045000469766&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJpxB_PuAVrjsRNCNOZ4Y79hM",
@@ -4342,14 +4740,20 @@
             "lng": 77.5775556
           },
           "distanceMeters": 15,
-          "sourceUrl": "https://maps.google.com/?cid=17026243218428704449&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=17026243218428704449&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJMzM-VSAVrjsRtT5Fn4mFKaM",
@@ -4401,7 +4805,9 @@
             "lng": 76.6448367
           },
           "distanceMeters": 65,
-          "sourceUrl": "https://maps.google.com/?cid=14037302068576052911&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14037302068576052911&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4409,7 +4815,9 @@
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ3TtBOgtwrzsRMayCivqnAUo",
@@ -4461,7 +4869,9 @@
             "lng": 76.6474197
           },
           "distanceMeters": 156,
-          "sourceUrl": "https://maps.google.com/?cid=10283162869203332062&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10283162869203332062&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4469,7 +4879,9 @@
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJrQxk6w5wrzsR0aTo9Nb0F1w",
@@ -4521,7 +4933,9 @@
             "lng": 76.6477737
           },
           "distanceMeters": 875,
-          "sourceUrl": "https://maps.google.com/?cid=1026337048561035584&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1026337048561035584&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4529,7 +4943,9 @@
           "Unlisted network",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJedZ9XaZxrzsR9SIjabg8RCo",
@@ -4581,7 +4997,9 @@
             "lng": 76.6477737
           },
           "distanceMeters": 425,
-          "sourceUrl": "https://maps.google.com/?cid=1026337048561035584&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1026337048561035584&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4589,7 +5007,9 @@
           "Tata Power",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJrefs5VtxrzsR4pkeqPwQJNY",
@@ -4641,7 +5061,9 @@
             "lng": 76.66481
           },
           "distanceMeters": 326,
-          "sourceUrl": "https://maps.google.com/?cid=11933291060422817093&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11933291060422817093&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4652,7 +5074,9 @@
           "Jio-bp",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJCTHijppxrzsRFIz9n-snUPk",
@@ -4704,7 +5128,13 @@
             "lng": 76.6390443
           },
           "distanceMeters": 1162,
-          "sourceUrl": "https://maps.google.com/?cid=14164616846066909476&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14164616846066909476&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4713,7 +5143,11 @@
           "Ather",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ77dtVYBxrzsRHZtS7m69xtY",
@@ -4765,7 +5199,9 @@
             "lng": 78.4651866
           },
           "distanceMeters": 568,
-          "sourceUrl": "https://maps.google.com/?cid=7468461379991012134&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7468461379991012134&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4774,7 +5210,9 @@
           "IndianOil",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJVfQrJVyXyzsRZwxPZ74BlcU",
@@ -4826,7 +5264,13 @@
             "lng": 78.487979
           },
           "distanceMeters": 100,
-          "sourceUrl": "https://maps.google.com/?cid=14241896007981997346&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14241896007981997346&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4835,7 +5279,11 @@
           "IndianOil",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJgeE2cPeZyzsRW4Yql-JFFkk",
@@ -4904,7 +5352,9 @@
             "lng": 78.44537439999999
           },
           "distanceMeters": 282,
-          "sourceUrl": "https://maps.google.com/?cid=4687526963685446333&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4687526963685446333&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4913,7 +5363,9 @@
           "Tata Power",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJdSBEcBGXyzsRVQw8ykJE-Dw",
@@ -4965,7 +5417,13 @@
             "lng": 78.46006799999999
           },
           "distanceMeters": 382,
-          "sourceUrl": "https://maps.google.com/?cid=13381776400817477250&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13381776400817477250&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -4974,7 +5432,11 @@
           "IndianOil",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ99yHjWiXyzsRDnrQ8QGfrIU",
@@ -5026,7 +5488,9 @@
             "lng": 78.4766724
           },
           "distanceMeters": 18,
-          "sourceUrl": "https://maps.google.com/?cid=9733374928625966984&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9733374928625966984&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5034,7 +5498,9 @@
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJxwozzBSZyzsRiwULSfN7Fxk",
@@ -5086,14 +5552,18 @@
             "lng": 78.4738789
           },
           "distanceMeters": 603,
-          "sourceUrl": "https://maps.google.com/?cid=9807609876950468275&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9807609876950468275&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJfV0o_CKZyzsRT4TTs1gzfBM",
@@ -5145,7 +5615,13 @@
             "lng": 80.26414419999999
           },
           "distanceMeters": 955,
-          "sourceUrl": "https://maps.google.com/?cid=5882056577851163254&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5882056577851163254&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5154,7 +5630,11 @@
           "IndianOil",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJo0qxmRdnUjoRqrqV8sdY13U",
@@ -5206,7 +5686,9 @@
             "lng": 80.2696794
           },
           "distanceMeters": 885,
-          "sourceUrl": "https://maps.google.com/?cid=200462330889369028&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=200462330889369028&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5215,7 +5697,9 @@
           "Tata Power",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJae5-QftlUjoRFwzW5-5DLxI",
@@ -5267,7 +5751,13 @@
             "lng": 80.186596
           },
           "distanceMeters": 44,
-          "sourceUrl": "https://maps.google.com/?cid=8346190673738391360&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8346190673738391360&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5279,7 +5769,11 @@
           "Ather",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJpcUI-RdeUjoRRfKPvaNO8O4",
@@ -5331,7 +5825,9 @@
             "lng": 80.24465490000001
           },
           "distanceMeters": 538,
-          "sourceUrl": "https://maps.google.com/?cid=8395476041641331907&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8395476041641331907&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5342,7 +5838,9 @@
           "Statiq",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJj6glq2hmUjoRWtToHiA3J-w",
@@ -5394,7 +5892,9 @@
             "lng": 80.19955399999999
           },
           "distanceMeters": 342,
-          "sourceUrl": "https://maps.google.com/?cid=14962584088815496850&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14962584088815496850&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5402,7 +5902,9 @@
           "Unlisted network",
           "Shell Recharge"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJZQ8wt95nUjoRqYbXh8Esim4",
@@ -5454,7 +5956,9 @@
             "lng": 80.20952199999999
           },
           "distanceMeters": 188,
-          "sourceUrl": "https://maps.google.com/?cid=13726708549863036773&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13726708549863036773&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5464,7 +5968,9 @@
           "Unlisted network",
           "Shell Recharge"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJsQVdIcJmUjoRb7SYkLj2mMk",
@@ -5516,7 +6022,13 @@
             "lng": 78.1391111
           },
           "distanceMeters": 52,
-          "sourceUrl": "https://maps.google.com/?cid=14774713862283392848&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14774713862283392848&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5526,7 +6038,11 @@
           "Zeon",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJZatS4ZjFADsRGf1AXpm8p1g",
@@ -5578,7 +6094,14 @@
             "lng": 78.09902579999999
           },
           "distanceMeters": 310,
-          "sourceUrl": "https://maps.google.com/?cid=13064331498360153932&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13064331498360153932&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CHADEMO",
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5587,7 +6110,11 @@
           "IndianOil",
           "Bharat Petroleum"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJy_A5L0XPADsRtXjLDlXDc-A",
@@ -5639,7 +6166,9 @@
             "lng": 78.1128186
           },
           "distanceMeters": 1037,
-          "sourceUrl": "https://maps.google.com/?cid=1040939412423482418&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1040939412423482418&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5648,7 +6177,9 @@
           "Jio-bp",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ_2y3M3zPADsR6ieKwLihJto",
@@ -5700,7 +6231,9 @@
             "lng": 78.100892
           },
           "distanceMeters": 1190,
-          "sourceUrl": "https://maps.google.com/?cid=4719662901199383704&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4719662901199383704&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5709,7 +6242,9 @@
           "IndianOil",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJo9d9uH7PADsRGRPfEmOi5DM",
@@ -5761,7 +6296,9 @@
             "lng": 78.14836
           },
           "distanceMeters": 598,
-          "sourceUrl": "https://maps.google.com/?cid=2111680581954210604&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2111680581954210604&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5771,7 +6308,9 @@
           "ChargeZone",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJWZMbqwPFADsROORxPqiv_ig",
@@ -5823,7 +6362,9 @@
             "lng": 78.1128186
           },
           "distanceMeters": 676,
-          "sourceUrl": "https://maps.google.com/?cid=1040939412423482418&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1040939412423482418&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5832,7 +6373,9 @@
           "Jio-bp",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJVwr8c4fFADsRlqfdKaZbtNY",
@@ -5884,7 +6427,9 @@
             "lng": 76.958344
           },
           "distanceMeters": 780,
-          "sourceUrl": "https://maps.google.com/?cid=5180989039001124962&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5180989039001124962&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5893,7 +6438,9 @@
           "Zeon",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJlVjsm1dZqDsRZDMr5c_dNzQ",
@@ -5945,7 +6492,9 @@
             "lng": 76.9656536
           },
           "distanceMeters": 232,
-          "sourceUrl": "https://maps.google.com/?cid=4383705044040454329&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4383705044040454329&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -5954,7 +6503,9 @@
           "IndianOil",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJNZKnTlRYqDsR3D9pa_bkyIM",
@@ -6006,7 +6557,13 @@
             "lng": 76.96449170000001
           },
           "distanceMeters": 269,
-          "sourceUrl": "https://maps.google.com/?cid=3920864302081513868&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3920864302081513868&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6015,7 +6572,11 @@
           "Zeon",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJh-FAheFZqDsR4zkiuILrSaU",
@@ -6067,7 +6628,13 @@
             "lng": 76.984473
           },
           "distanceMeters": 3,
-          "sourceUrl": "https://maps.google.com/?cid=9216666779078562552&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9216666779078562552&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6077,7 +6644,11 @@
           "Zeon",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJy2rNU7RZqDsRwK-fh9L16XE",
@@ -6129,7 +6700,15 @@
             "lng": 76.9735419
           },
           "distanceMeters": 11,
-          "sourceUrl": "https://maps.google.com/?cid=14860407156480413211&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14860407156480413211&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs",
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2",
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6140,7 +6719,12 @@
           "Zeon",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs",
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJK8JTcKVZqDsRZBry2wOIdVk",
@@ -6192,7 +6776,9 @@
             "lng": 76.9709562
           },
           "distanceMeters": 60,
-          "sourceUrl": "https://maps.google.com/?cid=5192456397099840126&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5192456397099840126&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6201,7 +6787,9 @@
           "Ather",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJz4Ah8lJYqDsRMFNyAY9h40o",
@@ -6253,7 +6841,13 @@
             "lng": 76.70353709999999
           },
           "distanceMeters": 489,
-          "sourceUrl": "https://maps.google.com/?cid=1726057415585343952&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1726057415585343952&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6261,7 +6855,11 @@
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJlYWoCpO9qDsRyiedeB7iyPc",
@@ -6313,7 +6911,13 @@
             "lng": 76.69756939999999
           },
           "distanceMeters": 21,
-          "sourceUrl": "https://maps.google.com/?cid=5368418237568873527&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5368418237568873527&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6322,7 +6926,11 @@
           "Jio-bp",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ11eihYe9qDsRo6KN6a0wTrI",
@@ -6374,7 +6982,13 @@
             "lng": 76.7042036
           },
           "distanceMeters": 227,
-          "sourceUrl": "https://maps.google.com/?cid=10265928985526098670&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10265928985526098670&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6382,7 +6996,11 @@
           "Zeon",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJAUH66Xy9qDsRI9l-qGaX-Zw",
@@ -6434,14 +7052,18 @@
             "lng": 76.73169039999999
           },
           "distanceMeters": 37,
-          "sourceUrl": "https://maps.google.com/?cid=10604246650609289543&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10604246650609289543&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 5,
         "providers": [
           "Unlisted network",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJU4IGO-K9qDsR7oyVfkm0xKA",
@@ -6493,7 +7115,9 @@
             "lng": 76.71809209999999
           },
           "distanceMeters": 874,
-          "sourceUrl": "https://maps.google.com/?cid=433915788647215641&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=433915788647215641&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -6502,7 +7126,9 @@
           "Jio-bp",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJX5GooRGWqDsRywO14c56sXE",
@@ -6554,7 +7180,13 @@
             "lng": 76.6930246
           },
           "distanceMeters": 19,
-          "sourceUrl": "https://maps.google.com/?cid=14405522880784458037&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14405522880784458037&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6562,7 +7194,11 @@
           "Unlisted network",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ9VVqHpu9qDsRNbNrBx-wXsQ",
@@ -6614,7 +7250,13 @@
             "lng": 76.2643243
           },
           "distanceMeters": 53,
-          "sourceUrl": "https://maps.google.com/?cid=13912042024027163547&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13912042024027163547&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6623,7 +7265,11 @@
           "IndianOil",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJbRITI6QSCDsR6Dnl6E6FiUA",
@@ -6692,7 +7338,13 @@
             "lng": 76.258325
           },
           "distanceMeters": 22,
-          "sourceUrl": "https://maps.google.com/?cid=15453394552269728652&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15453394552269728652&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6701,7 +7353,11 @@
           "Zeon",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJoa1FvU1tCDsR0XkVsrehmd4",
@@ -6753,7 +7409,9 @@
             "lng": 76.3168931
           },
           "distanceMeters": 51,
-          "sourceUrl": "https://maps.google.com/?cid=13751066622507930461&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13751066622507930461&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6761,7 +7419,9 @@
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJZ-hWLf5yCDsRWFpDp2AKktE",
@@ -6813,14 +7473,18 @@
             "lng": 76.30382
           },
           "distanceMeters": 381,
-          "sourceUrl": "https://maps.google.com/?cid=1580855808526860998&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1580855808526860998&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJOfGIwNFyCDsRuAmritNLl1Q",
@@ -6872,7 +7536,9 @@
             "lng": 76.3001539
           },
           "distanceMeters": 3,
-          "sourceUrl": "https://maps.google.com/?cid=2940315994705016980&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2940315994705016980&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -6880,7 +7546,9 @@
           "IndianOil",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJdzMHn8ByCDsRQUTS_8yHGTo",
@@ -6932,14 +7600,18 @@
             "lng": 76.3167467
           },
           "distanceMeters": 35,
-          "sourceUrl": "https://maps.google.com/?cid=2578961237352996527&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2578961237352996527&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 6,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJRQLrqCpyCDsRMT9fO8xUaac",
@@ -6991,14 +7663,18 @@
             "lng": 77.06168079999999
           },
           "distanceMeters": 323,
-          "sourceUrl": "https://maps.google.com/?cid=6193498873911301409&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6193498873911301409&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "IndianOil",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJITP2ItObBzsRICcCzlhCMrg",
@@ -7050,14 +7726,20 @@
             "lng": 77.0623904
           },
           "distanceMeters": 409,
-          "sourceUrl": "https://maps.google.com/?cid=4201430653743488378&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4201430653743488378&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ_3om436ZBzsRZ9qL4z3-sIg",
@@ -7109,14 +7791,20 @@
             "lng": 77.0601293
           },
           "distanceMeters": 224,
-          "sourceUrl": "https://maps.google.com/?cid=16972884182733989038&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=16972884182733989038&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJAZyVqmSZBzsRbzd30zHBCWI",
@@ -7168,14 +7856,18 @@
             "lng": 77.06168079999999
           },
           "distanceMeters": 358,
-          "sourceUrl": "https://maps.google.com/?cid=6193498873911301409&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6193498873911301409&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "IndianOil",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJs7EaeD2ZBzsREUeqKDrb3sU",
@@ -7227,14 +7919,18 @@
             "lng": 77.073054
           },
           "distanceMeters": 36,
-          "sourceUrl": "https://maps.google.com/?cid=14838536470853623051&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14838536470853623051&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJY6ElBnyZBzsRR6T-tidcEaQ",
@@ -7286,14 +7982,20 @@
             "lng": 77.0623904
           },
           "distanceMeters": 385,
-          "sourceUrl": "https://maps.google.com/?cid=4201430653743488378&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=4201430653743488378&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJdVhRB3yZBzsRZKfV4p1nusU",
@@ -7345,7 +8047,9 @@
             "lng": 76.9609364
           },
           "distanceMeters": 444,
-          "sourceUrl": "https://maps.google.com/?cid=6142656483167057268&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6142656483167057268&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -7353,7 +8057,9 @@
           "Unlisted network",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJGwAAwNW7BTsRy9l4Sg-MKrE",
@@ -7405,7 +8111,13 @@
             "lng": 76.9764805
           },
           "distanceMeters": 1314,
-          "sourceUrl": "https://maps.google.com/?cid=12746611364065531282&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12746611364065531282&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 5,
         "providers": [
@@ -7413,7 +8125,11 @@
           "Tata Power",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJT1U00ZKlBTsRJW6O8kCthN4",
@@ -7465,14 +8181,20 @@
             "lng": 76.9075574
           },
           "distanceMeters": 126,
-          "sourceUrl": "https://maps.google.com/?cid=13757703552709486332&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13757703552709486332&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJRWf3FNK9BTsR8SR4grJFnnU",
@@ -7524,7 +8246,9 @@
             "lng": 76.9359307
           },
           "distanceMeters": 34,
-          "sourceUrl": "https://maps.google.com/?cid=1753141614940067666&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1753141614940067666&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -7532,7 +8256,9 @@
           "Ather",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJqRqLRZG7BTsRYIHFD3k6Ewg",
@@ -7584,14 +8310,25 @@
             "lng": 76.90785079999999
           },
           "distanceMeters": 231,
-          "sourceUrl": "https://maps.google.com/?cid=11948555867221720891&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11948555867221720891&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJpUbPTgW9BTsRoowNoXsLSXg",
@@ -7643,7 +8380,13 @@
             "lng": 76.9650877
           },
           "distanceMeters": 767,
-          "sourceUrl": "https://maps.google.com/?cid=12905694597848409635&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12905694597848409635&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -7652,7 +8395,11 @@
           "Ather",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJMxMwL3q5BTsRGydwgrge-64",
@@ -7704,14 +8451,24 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 1008,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJk220Gb54BTkRgQNa0DdC4n8",
@@ -7763,13 +8520,23 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 1374,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJH6cFAKN4BTkRoGVzpfME81Q",
@@ -7821,14 +8588,24 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 524,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ90AL6Op4BTkRKuzfUmkJu4o",
@@ -7880,14 +8657,24 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 1064,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJxRoDDb54BTkRLsU7S7tDvVY",
@@ -7939,14 +8726,24 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 1054,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJjTq1mIJ5BTkRrrWjmPnl47c",
@@ -7998,14 +8795,24 @@
             "lng": 77.17765010000001
           },
           "distanceMeters": 262,
-          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12696948031618828616&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJucy9cJN4BTkREcJcmOUizvo",
@@ -8057,7 +8864,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 455,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -8067,7 +8876,9 @@
           "Zeon",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJX4Cf6gKIBDkRpkyNQkDMSDU",
@@ -8119,7 +8930,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 353,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -8128,7 +8941,9 @@
           "Adani",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJnytlc7aHBDkR9-xghJuBTE0",
@@ -8180,7 +8995,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 343,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -8189,7 +9006,9 @@
           "Adani",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJiwdBB6-HBDkRGdVGqhN47-M",
@@ -8241,7 +9060,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 168,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -8251,7 +9072,9 @@
           "Jio-bp",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJs93KCv6HBDkRLwVMd0QjRBM",
@@ -8303,7 +9126,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 95,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -8313,7 +9138,9 @@
           "Jio-bp",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJpw42TgeIBDkRLFm7_L59qUw",
@@ -8365,7 +9192,9 @@
             "lng": 77.1891761
           },
           "distanceMeters": 22,
-          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=586047449876719834&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -8375,7 +9204,9 @@
           "Jio-bp",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJwQ27zAaIBDkRLjWzCaaFLQk",
@@ -8427,7 +9258,11 @@
             "lng": 76.3269275
           },
           "distanceMeters": 609,
-          "sourceUrl": "https://maps.google.com/?cid=14960769794232731594&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14960769794232731594&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -8435,7 +9270,9 @@
           "Tata Power",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ_2O_EiVRGzkRHDsFtgm9tRw",
@@ -8487,14 +9324,24 @@
             "lng": 76.317042
           },
           "distanceMeters": 661,
-          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 5,
         "providers": [
           "Unlisted network",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJGWrJN-pRGzkRXNK9rQpXUHE",
@@ -8546,14 +9393,24 @@
             "lng": 76.317042
           },
           "distanceMeters": 762,
-          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 5,
         "providers": [
           "Unlisted network",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJy_ICduBQGzkRujejdxDSSVo",
@@ -8605,7 +9462,13 @@
             "lng": 76.317042
           },
           "distanceMeters": 1279,
-          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 4,
         "providers": [
@@ -8613,7 +9476,11 @@
           "Statiq",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ2zPIp1dRGzkRjmYJjNr9tRI",
@@ -8665,14 +9532,24 @@
             "lng": 76.324882
           },
           "distanceMeters": 316,
-          "sourceUrl": "https://maps.google.com/?cid=9087032039600220143&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9087032039600220143&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Statiq",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJCeBSxeVRGzkR6elpQQUEtrs",
@@ -8720,14 +9597,24 @@
             "lng": 76.317042
           },
           "distanceMeters": 762,
-          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6701451028837069614&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 5,
         "providers": [
           "Unlisted network",
           "Statiq"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJVZwoAyJRGzkRuMHrWHaOuFo",
@@ -8779,7 +9666,9 @@
             "lng": 78.32501839999999
           },
           "distanceMeters": 188,
-          "sourceUrl": "https://maps.google.com/?cid=2409841590257906199&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2409841590257906199&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 5,
         "providers": [
@@ -8787,7 +9676,9 @@
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJx1xBRv49CTkR8QQMN0HeXeo",
@@ -8839,7 +9730,9 @@
             "lng": 78.32501839999999
           },
           "distanceMeters": 1,
-          "sourceUrl": "https://maps.google.com/?cid=2409841590257906199&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2409841590257906199&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 5,
         "providers": [
@@ -8847,7 +9740,9 @@
           "Unlisted network",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJg5bbmk8WCTkRKTNDuuGBE9E",
@@ -8899,7 +9794,15 @@
             "lng": 78.32094909999999
           },
           "distanceMeters": 794,
-          "sourceUrl": "https://maps.google.com/?cid=1711558803240005321&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1711558803240005321&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -8907,7 +9810,12 @@
           "Tata Power",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJJZfpywAXCTkREs7OPUx2WUM",
@@ -8959,7 +9867,11 @@
             "lng": 78.277362
           },
           "distanceMeters": 1088,
-          "sourceUrl": "https://maps.google.com/?cid=6581356155025850306&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6581356155025850306&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -8967,7 +9879,9 @@
           "Unlisted network",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJne0MFhI_CTkR33gXcjYlFHI",
@@ -9019,7 +9933,9 @@
             "lng": 78.30291319999999
           },
           "distanceMeters": 690,
-          "sourceUrl": "https://maps.google.com/?cid=18403051206147455334&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18403051206147455334&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -9028,7 +9944,9 @@
           "IndianOil",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJl95hB7wXCTkRk8RRFcaTWDE",
@@ -9080,14 +9998,20 @@
             "lng": 78.277362
           },
           "distanceMeters": 1151,
-          "sourceUrl": "https://maps.google.com/?cid=6581356155025850306&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6581356155025850306&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Tata Power",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJATFRxAA-CTkR8rZSJT_R9po",
@@ -9139,7 +10063,9 @@
             "lng": 78.159904
           },
           "distanceMeters": 305,
-          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9149,7 +10075,9 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ-WUEiSZHCTkR9VIjeg4-GVs",
@@ -9201,7 +10129,9 @@
             "lng": 78.1726625
           },
           "distanceMeters": 633,
-          "sourceUrl": "https://maps.google.com/?cid=444453323469338430&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=444453323469338430&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -9211,7 +10141,9 @@
           "Statiq",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJu9JsqwRHCTkR5VDY1hOu-Oo",
@@ -9263,7 +10195,9 @@
             "lng": 78.159904
           },
           "distanceMeters": 225,
-          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9273,7 +10207,9 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJy3z-bSNHCTkRTC2Dyuwul7w",
@@ -9325,7 +10261,9 @@
             "lng": 78.159904
           },
           "distanceMeters": 259,
-          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3027554385667887299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9335,7 +10273,9 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJfQAQXbhHCTkRWpngWJQG4Ko",
@@ -9387,7 +10327,15 @@
             "lng": 78.15563499999999
           },
           "distanceMeters": 367,
-          "sourceUrl": "https://maps.google.com/?cid=11349561298381898508&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11349561298381898508&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9397,7 +10345,12 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJOSUpUwBHCTkRzER86Xj2JJE",
@@ -9449,7 +10402,15 @@
             "lng": 78.15563499999999
           },
           "distanceMeters": 321,
-          "sourceUrl": "https://maps.google.com/?cid=11349561298381898508&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11349561298381898508&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9459,7 +10420,12 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJy0A45_9GCTkR0-IM9Wu2yg4",
@@ -9511,14 +10477,25 @@
             "lng": 83.0092803
           },
           "distanceMeters": 1841,
-          "sourceUrl": "https://maps.google.com/?cid=13108407967239290056&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=13108407967239290056&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_CHADEMO"
+          ]
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJmdm4NT8vjjkRa86sU4PNswE",
@@ -9570,7 +10547,9 @@
             "lng": 82.981397
           },
           "distanceMeters": 865,
-          "sourceUrl": "https://maps.google.com/?cid=10395560130998661291&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10395560130998661291&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
@@ -9579,7 +10558,9 @@
           "Tata Power",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJYUIMg_ctjjkRifnzZTZ0CBY",
@@ -9631,14 +10612,24 @@
             "lng": 82.99977779999999
           },
           "distanceMeters": 1500,
-          "sourceUrl": "https://maps.google.com/?cid=5961708443832314906&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5961708443832314906&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 4,
         "providers": [
           "Tata Power",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJm0U0pmsxjjkRQAnK9_eBOsI",
@@ -9690,7 +10681,9 @@
             "lng": 82.98101439999999
           },
           "distanceMeters": 1133,
-          "sourceUrl": "https://maps.google.com/?cid=16574318803995473387&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=16574318803995473387&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 8,
         "providers": [
@@ -9699,7 +10692,9 @@
           "Ather",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJK47QQf0tjjkRP_FDVWl0ITo",
@@ -9751,7 +10746,9 @@
             "lng": 82.979801
           },
           "distanceMeters": 428,
-          "sourceUrl": "https://maps.google.com/?cid=2388908525528655464&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2388908525528655464&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -9760,7 +10757,9 @@
           "IndianOil",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJcXbeX6YzjjkRs73tpzCRlZY",
@@ -9812,14 +10811,18 @@
             "lng": 83.00322
           },
           "distanceMeters": 629,
-          "sourceUrl": "https://maps.google.com/?cid=15863897559656819962&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15863897559656819962&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJF1bS-fcxjjkRhXyZTQq0nVM",
@@ -9871,7 +10874,13 @@
             "lng": 80.97282969999999
           },
           "distanceMeters": 100,
-          "sourceUrl": "https://maps.google.com/?cid=6294156806390962120&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6294156806390962120&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -9882,7 +10891,11 @@
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJgab7mTr9mzkRO_V6GBx1K-g",
@@ -9934,14 +10947,18 @@
             "lng": 80.936627
           },
           "distanceMeters": 217,
-          "sourceUrl": "https://maps.google.com/?cid=18079810827970502491&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18079810827970502491&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ6Sx3c6v9mzkR6bQwQPrAiIQ",
@@ -9993,7 +11010,13 @@
             "lng": 80.880759
           },
           "distanceMeters": 128,
-          "sourceUrl": "https://maps.google.com/?cid=18102822702314452229&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=18102822702314452229&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10003,7 +11026,11 @@
           "Adani",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ11DHJXv5mzkRo5kZWxr3Rb4",
@@ -10055,7 +11082,13 @@
             "lng": 80.9762403
           },
           "distanceMeters": 485,
-          "sourceUrl": "https://maps.google.com/?cid=7999979246579748539&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7999979246579748539&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10066,7 +11099,11 @@
           "ChargeZone",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJFwAAQDb9mzkRzTva3PThgjo",
@@ -10118,7 +11155,16 @@
             "lng": 81.00831140000001
           },
           "distanceMeters": 26,
-          "sourceUrl": "https://maps.google.com/?cid=7277619305643476299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7277619305643476299&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER",
+            "EV_CONNECTOR_TYPE_TYPE_2",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10128,7 +11174,12 @@
           "ChargeZone",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJzQ338b_imzkRijGXF0hg3L8",
@@ -10180,7 +11231,15 @@
             "lng": 81.00923890000001
           },
           "distanceMeters": 37,
-          "sourceUrl": "https://maps.google.com/?cid=15843041210760796710&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=15843041210760796710&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo",
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CHADEMO",
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10191,7 +11250,12 @@
           "Statiq",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo",
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJL1RV9ZXimzkRl-s01uKNu-Y",
@@ -10243,14 +11307,18 @@
             "lng": 72.5843414
           },
           "distanceMeters": 277,
-          "sourceUrl": "https://maps.google.com/?cid=6994762178819333809&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6994762178819333809&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
           "Unlisted network",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJVVVVpVGEXjkR6JMuIgeY2CA",
@@ -10302,7 +11370,13 @@
             "lng": 72.50713619999999
           },
           "distanceMeters": 20,
-          "sourceUrl": "https://maps.google.com/?cid=10858279611573678009&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=10858279611573678009&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10311,7 +11385,11 @@
           "Tata Power",
           "Hindustan Petroleum"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ_SQ6ZzqbXjkRNyHDMo8xKIs",
@@ -10363,7 +11441,13 @@
             "lng": 72.5614387
           },
           "distanceMeters": 275,
-          "sourceUrl": "https://maps.google.com/?cid=17271896605457115825&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=17271896605457115825&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10373,7 +11457,11 @@
           "Statiq",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJTyElP7iFXjkR8PXFgTCFXcQ",
@@ -10425,7 +11513,11 @@
             "lng": 72.5708539
           },
           "distanceMeters": 624,
-          "sourceUrl": "https://maps.google.com/?cid=6939159246053949324&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=6939159246053949324&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_OTHER"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10434,7 +11526,9 @@
           "Ather",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJz6HEklCEXjkRsxuvR6_KWnA",
@@ -10486,7 +11580,9 @@
             "lng": 72.5681067
           },
           "distanceMeters": 214,
-          "sourceUrl": "https://maps.google.com/?cid=11566547980278745778&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=11566547980278745778&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10495,7 +11591,9 @@
           "Tata Power",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJBz0PVNKFXjkRmu0YyESEOHs",
@@ -10547,7 +11645,13 @@
             "lng": 74.8924526
           },
           "distanceMeters": 31,
-          "sourceUrl": "https://maps.google.com/?cid=3311809255174629283&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=3311809255174629283&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10557,7 +11661,11 @@
           "ChargeZone",
           "IndianOil"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ459b2v59GTkREnir789JQu0",
@@ -10609,7 +11717,9 @@
             "lng": 74.8842449
           },
           "distanceMeters": 489,
-          "sourceUrl": "https://maps.google.com/?cid=12577094158992486090&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=12577094158992486090&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10617,7 +11727,9 @@
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ-dLZMI59GTkR8CSgbvoe1So",
@@ -10669,7 +11781,13 @@
             "lng": 74.8667962
           },
           "distanceMeters": 10,
-          "sourceUrl": "https://maps.google.com/?cid=14656551055288201659&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14656551055288201659&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10677,7 +11795,11 @@
           "Ather",
           "Adani"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJx11UIq9kGTkR5PRNQfUOGFo",
@@ -10729,7 +11851,9 @@
             "lng": 74.873952
           },
           "distanceMeters": 351,
-          "sourceUrl": "https://maps.google.com/?cid=14413325799723544913&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14413325799723544913&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10737,7 +11861,9 @@
           "Ather",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJXZGgC6lkGTkRx8K_VNmU4-k",
@@ -10789,7 +11915,9 @@
             "lng": 74.87938199999999
           },
           "distanceMeters": 316,
-          "sourceUrl": "https://maps.google.com/?cid=2584867264195653523&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=2584867264195653523&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10797,7 +11925,9 @@
           "Adani",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJAQAA3KlkGTkR9pesMtOI9k8",
@@ -10849,7 +11979,9 @@
             "lng": 74.870769
           },
           "distanceMeters": 253,
-          "sourceUrl": "https://maps.google.com/?cid=257970141055384326&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=257970141055384326&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -10857,7 +11989,9 @@
           "Ather",
           "ChargeZone"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJJ0CeeKpkGTkRTNojMrgZkbs",
@@ -10909,14 +12043,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 73,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJa4YhtFgv5DkR59Dkycqb5F4",
@@ -10968,14 +12106,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 105,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ02r6XOsu5DkRCAbSLUerQ5w",
@@ -11027,14 +12169,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 409,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 3,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJu-GFaJIv5DkRqnnLxEnZv8A",
@@ -11086,14 +12232,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 82,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ9b0cV-su5DkRGPOEJwOn7M8",
@@ -11145,14 +12295,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 144,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJc_4xRaEv5DkR0_-GuGmgeQM",
@@ -11204,14 +12358,18 @@
             "lng": 88.2665524
           },
           "distanceMeters": 61,
-          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=7559753682492503797&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 2,
         "providers": [
           "Ather",
           "Unlisted network"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ96fqPsQv5DkRIgUXa3QngsU",
@@ -11263,14 +12421,18 @@
             "lng": 85.82674999999999
           },
           "distanceMeters": 796,
-          "sourceUrl": "https://maps.google.com/?cid=1894185867301286304&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1894185867301286304&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJxUosxRvEGToRuI2BdYgUdbI",
@@ -11322,14 +12484,25 @@
             "lng": 85.8312359
           },
           "distanceMeters": 584,
-          "sourceUrl": "https://maps.google.com/?cid=14815047438227859407&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14815047438227859407&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_CHADEMO"
+          ]
         },
         "chargerCountWithinRadius": 7,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJa4zgRgnHGToR_W3R4uL0zuA",
@@ -11381,14 +12554,18 @@
             "lng": 85.82674999999999
           },
           "distanceMeters": 1241,
-          "sourceUrl": "https://maps.google.com/?cid=1894185867301286304&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=1894185867301286304&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 6,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJHVD_rgPEGToR2t-3ieP0bXs",
@@ -11440,7 +12617,9 @@
             "lng": 85.83633999999999
           },
           "distanceMeters": 668,
-          "sourceUrl": "https://maps.google.com/?cid=17207733633283203029&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=17207733633283203029&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 8,
         "providers": [
@@ -11449,7 +12628,9 @@
           "Bharat Petroleum",
           "Tata Power"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJuSvP4JjHGToRc60ngroUf1U",
@@ -11501,14 +12682,25 @@
             "lng": 85.8312359
           },
           "distanceMeters": 650,
-          "sourceUrl": "https://maps.google.com/?cid=14815047438227859407&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=14815047438227859407&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET",
+            "EV_CONNECTOR_TYPE_CHADEMO"
+          ]
         },
         "chargerCountWithinRadius": 9,
         "providers": [
           "Unlisted network",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJx0LttFXHGToR8RZDg7bZy7E",
@@ -11560,7 +12752,13 @@
             "lng": 85.8030868
           },
           "distanceMeters": 181,
-          "sourceUrl": "https://maps.google.com/?cid=5173028818830636566&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5173028818830636566&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 6,
         "providers": [
@@ -11568,7 +12766,11 @@
           "Tata Power",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJcSnPD6vFGToRMc_udx4TRn8",
@@ -11620,7 +12822,13 @@
             "lng": 83.3121343
           },
           "distanceMeters": 48,
-          "sourceUrl": "https://maps.google.com/?cid=5061316755862629623&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5061316755862629623&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11629,7 +12837,11 @@
           "Unlisted network",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJ2Y1ieRVDOToRvHc2nERuj9c",
@@ -11681,7 +12893,15 @@
             "lng": 83.2986925
           },
           "distanceMeters": 145,
-          "sourceUrl": "https://maps.google.com/?cid=5549942933888398164&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5549942933888398164&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs",
+            "chademo"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2",
+            "EV_CONNECTOR_TYPE_CHADEMO"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11691,7 +12911,12 @@
           "Unlisted network",
           "Jio-bp"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs",
+          "chademo"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJrdQHJBlDOToRhMfUQOgsdX4",
@@ -11743,7 +12968,9 @@
             "lng": 83.30082469999999
           },
           "distanceMeters": 12,
-          "sourceUrl": "https://maps.google.com/?cid=9259111734155495843&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9259111734155495843&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11751,7 +12978,9 @@
           "Ather",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJjdR5ZztDOToRHe7bBSRTars",
@@ -11803,7 +13032,13 @@
             "lng": 83.3121343
           },
           "distanceMeters": 150,
-          "sourceUrl": "https://maps.google.com/?cid=5061316755862629623&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=5061316755862629623&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "ccs"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_CCS_COMBO_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11813,7 +13048,11 @@
           "Jio-bp",
           "Hindustan Petroleum"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "ccs"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJLe2qZxVDOToRcM-7yyjslU8",
@@ -11865,7 +13104,9 @@
             "lng": 83.30305
           },
           "distanceMeters": 89,
-          "sourceUrl": "https://maps.google.com/?cid=8395249860261206305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=8395249860261206305&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [],
+          "googleConnectorTypes": []
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11873,7 +13114,9 @@
           "Unlisted network",
           "Zeon"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJHQyhnSRDOToRVA7V4B7YImQ",
@@ -11925,7 +13168,13 @@
             "lng": 83.3070662
           },
           "distanceMeters": 107,
-          "sourceUrl": "https://maps.google.com/?cid=9308134161681909534&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA"
+          "sourceUrl": "https://maps.google.com/?cid=9308134161681909534&g_mp=Cilnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaE5lYXJieRACGAQgAA",
+          "connectors": [
+            "type2"
+          ],
+          "googleConnectorTypes": [
+            "EV_CONNECTOR_TYPE_TYPE_2"
+          ]
         },
         "chargerCountWithinRadius": 10,
         "providers": [
@@ -11935,7 +13184,11 @@
           "Jio-bp",
           "Ather"
         ],
-        "radiusMeters": 2500
+        "radiusMeters": 2500,
+        "connectorTypes": [
+          "type2"
+        ],
+        "connectorSource": "google_places_evChargeOptions"
       },
       "provenance": {
         "placeId": "ChIJWwNJFmdDOToRHw95KOWTMts",
@@ -11947,5 +13200,6 @@
       },
       "ratingSource": "google"
     }
-  ]
+  ],
+  "connectorEnrichedAt": "2026-11-24T14:14:01.108Z"
 }

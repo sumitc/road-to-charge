@@ -185,14 +185,14 @@ async function checkHubsAndHotels() {
   const hotels = await newPage();
   await hotels.page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
   await hotels.page.waitForFunction(
-    () => document.querySelector('[role="tab"][data-state="active"]')?.textContent?.includes('Hotels'),
-    null,
+    expected => document.body.innerText.includes(expected),
+    `${hotelIndex.hotels.length} of ${hotelIndex.hotels.length} stays`,
     { timeout: 15000 },
   );
   const hotelText = await hotels.page.locator('body').innerText();
   check('published Hotels tab uses the real Google Places index',
-    hotelText.includes(`${hotelIndex.hotels.length} hotels`)
-      || hotelText.includes('Google Places index'),
+    hotelText.includes(`${hotelIndex.hotels.length} of ${hotelIndex.hotels.length} stays`)
+      && hotelText.includes('Google Places'),
     hotelText.slice(0, 120).replace(/\n/g, ' '));
   const hotelsMeta = await metaOf(hotels.page);
   check('hotel index has its own canonical',
@@ -202,7 +202,8 @@ async function checkHubsAndHotels() {
   const detail = await newPage();
   await detail.page.goto(`${BASE_URL}/hotels/${hotel.id}/`, { waitUntil: 'domcontentloaded' });
   await detail.page.waitForFunction(
-    () => document.title.includes('Hotels with EV charging'),
+    () => document.body.innerText.includes('NEAREST VERIFIED PUBLIC CHARGER')
+      || document.body.innerText.includes('Source: Google Places API'),
     null,
     { timeout: 15000 },
   );

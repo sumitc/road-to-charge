@@ -1,19 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BatteryCharging, ExternalLink, MapPin, RotateCcw, Search, Star } from 'lucide-react';
 import affiliateLinks from '@/data/affiliateLinks.json';
 import { hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
+import { ConnectorFilter } from '@/components/ConnectorFilter';
+import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { trackEmptyResult } from '@/lib/emptyResults';
 const AFFILIATE_LINKS = affiliateLinks as Record<string, string>;
 const HOTEL_PHOTO = '/hotels/placeholder.svg';
 const hasAffiliateLinks = Object.keys(AFFILIATE_LINKS).some(key => !key.startsWith('_'));
 
-const PROVIDER_OPTIONS = [...new Set(index.hotels.flatMap(hotel => hotel.ev.providers || []))]
-  .filter(Boolean).sort();
 const PRICE_OPTIONS = [...new Set(index.hotels.map(hotel => hotel.priceBand).filter(Boolean))]
   .sort() as string[];
 
@@ -50,7 +49,6 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
 function HotelCard({ hotel }: { hotel: Hotel }) {
   const affiliateUrl = AFFILIATE_LINKS[hotel.id] || '';
   const bookingUrl = affiliateUrl || hotel.sourceUrl;
-  const onSite = hotel.evSignal === 'both' || hotel.evSignal === 'on_site_google_place';
   const nearest = hotel.ev.nearestCharger;
   const location = [hotel.locality, hotel.city, hotel.state].filter(Boolean).join(', ');
 
@@ -71,16 +69,12 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
               <Link to={`/hotels/${hotel.id}`} className="min-w-0 hover:underline">
                 <h3 className="text-sm font-semibold leading-tight">{hotel.name}</h3>
               </Link>
-              <Badge className="shrink-0 bg-emerald-600 text-[10px] text-white hover:bg-emerald-600">EV</Badge>
             </div>
             <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{location || hotel.area}</span>
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <Badge variant={onSite ? 'default' : 'secondary'} className="text-[10px]">
-                {onSite ? 'EV on site' : 'Charger nearby'}
-              </Badge>
+            <div className="mt-1.5 flex items-center gap-1.5">
               <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                 <BatteryCharging className="h-3.5 w-3.5 shrink-0" />
                 {hotel.ev.label}
@@ -131,7 +125,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
 
 export function HotelsTab() {
   const [query, setQuery] = useState('');
-  const [provider, setProvider] = useState('all');
+  const [connectors, setConnectors] = useState<string[]>([]);
   const [priceBand, setPriceBand] = useState('all');
 
   const hotels = index.hotels;
@@ -147,24 +141,24 @@ export function HotelsTab() {
         ].filter(Boolean).join(' ').toLowerCase();
         if (!haystack.includes(needle)) return false;
       }
-      if (provider !== 'all' && !(hotel.ev.providers || []).includes(provider)) return false;
+      if (!matchesConnectorFilters(hotel.ev.connectorTypes, connectors)) return false;
       if (priceBand !== 'all' && hotel.priceBand !== priceBand) return false;
       return true;
     });
-  }, [hotels, query, provider, priceBand]);
+  }, [connectors, hotels, priceBand, query]);
 
   // Count each distinct failed query/filter combination once, not on every
   // render. Clearing back to a non-empty list re-arms the same query.
   const loggedEmpty = useRef<string | null>(null);
   useEffect(() => {
-    const signature = `${query.trim().toLowerCase()}::${provider}::${priceBand}`;
+    const signature = `${query.trim().toLowerCase()}::${connectors.join(',')}::${priceBand}`;
     if (filtered.length > 0) {
       loggedEmpty.current = null;
       return;
     }
     if (loggedEmpty.current === signature) return;
     loggedEmpty.current = signature;
-    const filters = [provider !== 'all' ? `provider=${provider}` : '', priceBand !== 'all' ? `price=${priceBand}` : '']
+    const filters = [connectors.length ? `connectors=${connectors.join(',')}` : '', priceBand !== 'all' ? `price=${priceBand}` : '']
       .filter(Boolean).join(',');
     trackEmptyResult({
       surface: 'hotels',
@@ -172,12 +166,12 @@ export function HotelsTab() {
       filter: filters || undefined,
       reason: filters ? 'filters' : 'no_rows',
     });
-  }, [filtered.length, priceBand, provider, query]);
+  }, [connectors, filtered.length, priceBand, query]);
 
-  const hasFilters = Boolean(query.trim()) || provider !== 'all' || priceBand !== 'all';
+  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || priceBand !== 'all';
   const reset = () => {
     setQuery('');
-    setProvider('all');
+    setConnectors([]);
     setPriceBand('all');
   };
 
@@ -194,10 +188,9 @@ export function HotelsTab() {
         <div className="min-w-0">
           <h2 className="text-base font-semibold">Hotels with EV charging</h2>
           <p className="truncate text-[11px] text-muted-foreground">
-            Curated Google Places index · {index.areas.length} areas · Updated {updated}
+            Google Places · Updated {updated}
           </p>
         </div>
-        <Badge variant="outline" className="text-[10px]">EV INDEX</Badge>
       </div>
 
       <form className="flex items-center gap-2" onSubmit={event => event.preventDefault()}>
@@ -216,18 +209,12 @@ export function HotelsTab() {
         </Button>
       </form>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {PROVIDER_OPTIONS.length > 0 && (
-          <FilterSelect
-            label="Charging provider"
-            value={provider}
-            options={[
-              { value: 'all', label: 'All providers' },
-              ...PROVIDER_OPTIONS.map(value => ({ value, label: value })),
-            ]}
-            onChange={setProvider}
-          />
-        )}
+      <div className="space-y-2 sm:flex sm:items-center sm:gap-2">
+        <ConnectorFilter
+          selected={connectors}
+          onChange={setConnectors}
+          className="sm:w-64"
+        />
         {PRICE_OPTIONS.length > 0 && (
           <FilterSelect
             label="Price band"
@@ -278,7 +265,7 @@ export function HotelsTab() {
         </p>
       )}
       <p className="px-1 pb-2 text-[10px] leading-snug text-muted-foreground">
-        Google Places source index. “EV on site” is shown only when Google's place text says so; a nearby charger is not an on-site claim. Confirm with the property before travel.
+        Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. A nearby charger is not an on-site claim — confirm with the property before travel.
       </p>
     </div>
   );

@@ -7,6 +7,9 @@ export type Charger = {
   location: { lat: number; lng: number };
   distanceMeters: number;
   sourceUrl: string;
+  /** Canonical connector filter values from Google evChargeOptions (if available). */
+  connectors?: string[];
+  googleConnectorTypes?: string[];
 };
 
 export type SourceLink = {
@@ -49,6 +52,8 @@ export type Hotel = {
     chargerCountWithinRadius: number;
     providers: string[];
     radiusMeters: number;
+    connectorTypes?: string[];
+    connectorSource?: string;
   };
   provenance: {
     placeId: string;
@@ -59,6 +64,7 @@ export type Hotel = {
 
 export type HotelIndex = {
   generatedAt: string;
+  connectorEnrichedAt?: string;
   indexVersion: number;
   method: { source: string; radiusMeters: number };
   coverage: {

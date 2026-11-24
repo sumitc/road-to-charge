@@ -86,7 +86,30 @@ async function checkHotels() {
   await page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 30000 });
 
-  check('EV evidence filter is gone', (await page.locator('select[aria-label="EV signal"]').count()) === 0);
+  check('EV evidence and provider filters are gone',
+    (await page.locator('select[aria-label="EV signal"]').count()) === 0
+      && (await page.locator('select[aria-label="Charging provider"]').count()) === 0);
+
+  const initialBody = await page.locator('body').innerText();
+  check('EV index badge and per-hotel EV tags are gone',
+    !initialBody.includes('EV INDEX')
+      && !initialBody.includes('EV on site')
+      && !initialBody.includes('Charger nearby'));
+
+  const connectorButton = page.getByRole('button', { name: /All connectors/ });
+  check('connector filter replaces the provider box', (await connectorButton.count()) > 0);
+  await connectorButton.click();
+  await page.getByRole('button', { name: /Super-fast · CCS/ }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.waitForFunction(() => {
+    const match = document.body.innerText.match(/(\d+) of 183 stays/);
+    return match && Number(match[1]) > 0 && Number(match[1]) < 183;
+  }, null, { timeout: 15000 });
+  const ccsCount = Number(((await page.locator('body').innerText()).match(/(\d+) of 183 stays/) ?? [])[1] ?? 183);
+  check('connector filter narrows hotels using real Google connector data',
+    ccsCount > 0 && ccsCount < 183, `${ccsCount} stays`);
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 15000 });
 
   const input = page.getByLabel('Search hotels by city or hotel name');
   await input.fill('Jaipur');

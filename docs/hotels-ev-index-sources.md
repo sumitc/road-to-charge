@@ -55,4 +55,8 @@ Explicit on-site charging is recorded **only** when Google's own place name or e
 
 Google Places terms are treated as point-in-time data: the index stores place IDs, source URLs, coordinates and a retrieval timestamp; it is not a permanent copy of Google content. Photos are stored as Google photo resource references plus a Google Maps source URL; optional local thumbnails are only written with `--photos`.
 
+## Connector filter data
+
+`scripts/enrich-hotel-connectors.mjs` adds real connector types to the generated hotel index by reading `evChargeOptions.connectorAggregation` from Google Places (New) for each unique nearby charger place ID. It maps CCS Combo 1/2, CHAdeMO and Type 2 to the same filter values used on the station search page; Google types such as `OTHER`, wall outlets and GB/T are left unmapped rather than guessed. Results are cached for 30 days in the OS temp dir. At this snapshot 76 of 183 hotels have at least one known connector, so the UI states that stays without connector data are excluded when a connector is selected. Re-run the enrichment after any fresh `build-hotels-ev-index.mjs` pass.
+
 No PlugShare data, fabricated rows, new Vercel functions, or DB/nightly enrichment changes are involved.
