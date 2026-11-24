@@ -8,12 +8,18 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/build-seo-pages.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/build-seo-pages.mjs --dist",
     "build:dev": "vite build --mode development",
+    "seo:build": "node scripts/build-seo-pages.mjs",
+    "seo:validate": "node scripts/build-seo-pages.mjs --validate",
     "mobile:sync": "npm run build && cap sync android",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:experience": "node tests/experience-smoke.mjs"
+    "test:experience": "node tests/experience-smoke.mjs",
+    "test:seo": "node tests/seo-route-smoke.mjs",
+    "test:empty": "node tests/empty-results-smoke.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^7.2.0",

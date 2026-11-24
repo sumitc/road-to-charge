@@ -12,6 +12,423 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Bengaluru"
+        }
+      ],
+      "destination": "/seo/search/bengaluru.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Delhi"
+        }
+      ],
+      "destination": "/seo/search/delhi.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Mumbai"
+        }
+      ],
+      "destination": "/seo/search/mumbai.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Pune"
+        }
+      ],
+      "destination": "/seo/search/pune.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Chennai"
+        }
+      ],
+      "destination": "/seo/search/chennai.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Hyderabad"
+        }
+      ],
+      "destination": "/seo/search/hyderabad.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Koramangala"
+        }
+      ],
+      "destination": "/seo/search/koramangala.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Indiranagar"
+        }
+      ],
+      "destination": "/seo/search/indiranagar.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Whitefield"
+        }
+      ],
+      "destination": "/seo/search/whitefield.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Kokapet"
+        }
+      ],
+      "destination": "/seo/search/kokapet.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Nallagandla"
+        }
+      ],
+      "destination": "/seo/search/nallagandla.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Gachibowli"
+        }
+      ],
+      "destination": "/seo/search/gachibowli.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Hinjawadi"
+        }
+      ],
+      "destination": "/seo/search/hinjawadi.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Bandra Kurla Complex"
+        }
+      ],
+      "destination": "/seo/search/bandra-kurla-complex.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Indira Gandhi International Airport"
+        }
+      ],
+      "destination": "/seo/search/igi-airport.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Ahmedabad"
+        }
+      ],
+      "destination": "/seo/search/ahmedabad.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Jaipur"
+        }
+      ],
+      "destination": "/seo/search/jaipur.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Kochi"
+        }
+      ],
+      "destination": "/seo/search/kochi.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Kolkata"
+        }
+      ],
+      "destination": "/seo/search/kolkata.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Chandigarh"
+        }
+      ],
+      "destination": "/seo/search/chandigarh.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Gurugram"
+        }
+      ],
+      "destination": "/seo/search/gurugram.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Noida"
+        }
+      ],
+      "destination": "/seo/search/noida.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Kempegowda International Airport"
+        }
+      ],
+      "destination": "/seo/search/bengaluru-airport.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Chhatrapati Shivaji Maharaj International Airport"
+        }
+      ],
+      "destination": "/seo/search/mumbai-airport.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Rajiv Gandhi International Airport"
+        }
+      ],
+      "destination": "/seo/search/hyderabad-airport.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "q",
+          "value": "Chennai International Airport"
+        }
+      ],
+      "destination": "/seo/search/chennai-airport.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Hyderabad"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Bengaluru"
+        }
+      ],
+      "destination": "/seo/route/hyderabad-to-bengaluru.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Bengaluru"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Chennai"
+        }
+      ],
+      "destination": "/seo/route/bengaluru-to-chennai.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Mumbai"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Pune"
+        }
+      ],
+      "destination": "/seo/route/mumbai-to-pune.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Delhi"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Jaipur"
+        }
+      ],
+      "destination": "/seo/route/delhi-to-jaipur.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Bengaluru"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Mysuru"
+        }
+      ],
+      "destination": "/seo/route/bengaluru-to-mysuru.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Delhi"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Agra"
+        }
+      ],
+      "destination": "/seo/route/delhi-to-agra.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Chennai"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Kochi"
+        }
+      ],
+      "destination": "/seo/route/chennai-to-kochi.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "Pune"
+        },
+        {
+          "type": "query",
+          "key": "to",
+          "value": "Goa"
+        }
+      ],
+      "destination": "/seo/route/pune-to-goa.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

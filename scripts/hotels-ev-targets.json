@@ -1,0 +1,295 @@
+{
+  "note": "Local-only curated coverage targets for the Hotels EV index. Demand signal: each destination has its own Ministry of Tourism / Incredible India destination page (verified HTTP 200 on 2026-11-24), covering popular tourist states and city clusters. This is coverage curation, not a ranking or a claim about visitor numbers. Google Places resolves each query at build time.",
+  "reviewedOn": "2026-11-24",
+  "demandSource": "Incredible India (Ministry of Tourism, Government of India)",
+  "areas": [
+    {
+      "id": "delhi",
+      "name": "Delhi",
+      "city": "Delhi",
+      "state": "Delhi",
+      "query": "New Delhi, Delhi, India",
+      "interestTags": ["heritage", "museums", "business"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/delhi"
+    },
+    {
+      "id": "agra",
+      "name": "Agra",
+      "city": "Agra",
+      "state": "Uttar Pradesh",
+      "query": "Agra, Uttar Pradesh, India",
+      "interestTags": ["heritage", "Taj Mahal", "history"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/uttar-pradesh/agra"
+    },
+    {
+      "id": "jaipur",
+      "name": "Jaipur",
+      "city": "Jaipur",
+      "state": "Rajasthan",
+      "query": "Jaipur, Rajasthan, India",
+      "interestTags": ["heritage", "palaces", "pink city"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/rajasthan/jaipur"
+    },
+    {
+      "id": "jodhpur",
+      "name": "Jodhpur",
+      "city": "Jodhpur",
+      "state": "Rajasthan",
+      "query": "Jodhpur, Rajasthan, India",
+      "interestTags": ["heritage", "forts", "blue city"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/rajasthan/jodhpur"
+    },
+    {
+      "id": "udaipur",
+      "name": "Udaipur",
+      "city": "Udaipur",
+      "state": "Rajasthan",
+      "query": "Udaipur, Rajasthan, India",
+      "interestTags": ["lakes", "palaces", "romance"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/rajasthan/udaipur"
+    },
+    {
+      "id": "jaisalmer",
+      "name": "Jaisalmer",
+      "city": "Jaisalmer",
+      "state": "Rajasthan",
+      "query": "Jaisalmer, Rajasthan, India",
+      "interestTags": ["desert", "forts", "safari"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/rajasthan/jaisalmer"
+    },
+    {
+      "id": "mumbai",
+      "name": "Mumbai",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "query": "Mumbai, Maharashtra, India",
+      "interestTags": ["city", "business", "nightlife", "coast"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/maharashtra/mumbai"
+    },
+    {
+      "id": "goa",
+      "name": "Goa (Panaji)",
+      "city": "Panaji",
+      "state": "Goa",
+      "query": "Panaji, Goa, India",
+      "interestTags": ["beach", "nightlife", "heritage"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/goa"
+    },
+    {
+      "id": "pune",
+      "name": "Pune",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "query": "Pune, Maharashtra, India",
+      "interestTags": ["city", "heritage", "business"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/maharashtra/pune"
+    },
+    {
+      "id": "bengaluru",
+      "name": "Bengaluru",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "query": "Bengaluru, Karnataka, India",
+      "interestTags": ["city", "business", "gardens"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/karnataka/bengaluru"
+    },
+    {
+      "id": "mysuru",
+      "name": "Mysuru",
+      "city": "Mysuru",
+      "state": "Karnataka",
+      "query": "Mysuru, Karnataka, India",
+      "interestTags": ["palaces", "heritage", "festivals"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/karnataka/mysuru"
+    },
+    {
+      "id": "hyderabad",
+      "name": "Hyderabad",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "query": "Hyderabad, Telangana, India",
+      "interestTags": ["heritage", "food", "business"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/telangana/hyderabad"
+    },
+    {
+      "id": "chennai",
+      "name": "Chennai",
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "query": "Chennai, Tamil Nadu, India",
+      "interestTags": ["temples", "coast", "business"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/tamil-nadu/chennai"
+    },
+    {
+      "id": "madurai",
+      "name": "Madurai",
+      "city": "Madurai",
+      "state": "Tamil Nadu",
+      "query": "Madurai, Tamil Nadu, India",
+      "interestTags": ["temples", "heritage", "pilgrimage"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/tamil-nadu/madurai"
+    },
+    {
+      "id": "coimbatore",
+      "name": "Coimbatore",
+      "city": "Coimbatore",
+      "state": "Tamil Nadu",
+      "query": "Coimbatore, Tamil Nadu, India",
+      "interestTags": ["city", "waterfalls", "wildlife"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/tamil-nadu/coimbatore"
+    },
+    {
+      "id": "ooty",
+      "name": "Ooty",
+      "city": "Udhagamandalam",
+      "state": "Tamil Nadu",
+      "query": "Ooty, Tamil Nadu, India",
+      "interestTags": ["hill station", "tea gardens", "railway"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/tamil-nadu/ooty"
+    },
+    {
+      "id": "kochi",
+      "name": "Kochi",
+      "city": "Kochi",
+      "state": "Kerala",
+      "query": "Kochi, Kerala, India",
+      "interestTags": ["backwaters", "heritage", "coast"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/kerala/kochi"
+    },
+    {
+      "id": "munnar",
+      "name": "Munnar",
+      "city": "Munnar",
+      "state": "Kerala",
+      "query": "Munnar, Kerala, India",
+      "interestTags": ["hill station", "tea gardens", "wildlife"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/kerala/munnar"
+    },
+    {
+      "id": "thiruvananthapuram",
+      "name": "Thiruvananthapuram",
+      "city": "Thiruvananthapuram",
+      "state": "Kerala",
+      "query": "Thiruvananthapuram, Kerala, India",
+      "interestTags": ["temples", "beach", "museums"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/kerala/thiruvananthapuram"
+    },
+    {
+      "id": "shimla",
+      "name": "Shimla",
+      "city": "Shimla",
+      "state": "Himachal Pradesh",
+      "query": "Shimla, Himachal Pradesh, India",
+      "interestTags": ["hill station", "heritage", "railway"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/himachal-pradesh/shimla"
+    },
+    {
+      "id": "manali",
+      "name": "Manali",
+      "city": "Manali",
+      "state": "Himachal Pradesh",
+      "query": "Manali, Himachal Pradesh, India",
+      "interestTags": ["hill station", "adventure", "snow"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/himachal-pradesh/manali"
+    },
+    {
+      "id": "dharamshala",
+      "name": "Dharamshala",
+      "city": "Dharamshala",
+      "state": "Himachal Pradesh",
+      "query": "Dharamshala, Himachal Pradesh, India",
+      "interestTags": ["hill station", "culture", "trekking"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/himachal-pradesh/dharamshala"
+    },
+    {
+      "id": "rishikesh",
+      "name": "Rishikesh",
+      "city": "Rishikesh",
+      "state": "Uttarakhand",
+      "query": "Rishikesh, Uttarakhand, India",
+      "interestTags": ["yoga", "river", "adventure"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/uttarakhand/rishikesh"
+    },
+    {
+      "id": "haridwar",
+      "name": "Haridwar",
+      "city": "Haridwar",
+      "state": "Uttarakhand",
+      "query": "Haridwar, Uttarakhand, India",
+      "interestTags": ["pilgrimage", "river", "festivals"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/uttarakhand/haridwar"
+    },
+    {
+      "id": "varanasi",
+      "name": "Varanasi",
+      "city": "Varanasi",
+      "state": "Uttar Pradesh",
+      "query": "Varanasi, Uttar Pradesh, India",
+      "interestTags": ["pilgrimage", "heritage", "river"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/uttar-pradesh/varanasi"
+    },
+    {
+      "id": "lucknow",
+      "name": "Lucknow",
+      "city": "Lucknow",
+      "state": "Uttar Pradesh",
+      "query": "Lucknow, Uttar Pradesh, India",
+      "interestTags": ["heritage", "food", "museums"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/uttar-pradesh/lucknow"
+    },
+    {
+      "id": "ahmedabad",
+      "name": "Ahmedabad",
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "query": "Ahmedabad, Gujarat, India",
+      "interestTags": ["heritage", "food", "business"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/gujarat/ahmedabad"
+    },
+    {
+      "id": "amritsar",
+      "name": "Amritsar",
+      "city": "Amritsar",
+      "state": "Punjab",
+      "query": "Amritsar, Punjab, India",
+      "interestTags": ["pilgrimage", "heritage", "food"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/punjab/amritsar"
+    },
+    {
+      "id": "darjeeling",
+      "name": "Darjeeling",
+      "city": "Darjeeling",
+      "state": "West Bengal",
+      "query": "Darjeeling, West Bengal, India",
+      "interestTags": ["hill station", "tea gardens", "railway"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/west-bengal/darjeeling"
+    },
+    {
+      "id": "gangtok",
+      "name": "Gangtok",
+      "city": "Gangtok",
+      "state": "Sikkim",
+      "query": "Gangtok, Sikkim, India",
+      "interestTags": ["hill station", "culture", "trekking"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/sikkim/gangtok"
+    },
+    {
+      "id": "puri",
+      "name": "Puri",
+      "city": "Puri",
+      "state": "Odisha",
+      "query": "Puri, Odisha, India",
+      "interestTags": ["beach", "pilgrimage", "temples"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/odisha/puri"
+    },
+    {
+      "id": "visakhapatnam",
+      "name": "Visakhapatnam",
+      "city": "Visakhapatnam",
+      "state": "Andhra Pradesh",
+      "query": "Visakhapatnam, Andhra Pradesh, India",
+      "interestTags": ["coast", "beach", "city"],
+      "demandUrl": "https://www.incredibleindia.gov.in/en/andhra-pradesh/visakhapatnam"
+    }
+  ]
+}

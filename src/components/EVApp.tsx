@@ -1,9 +1,9 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
+import { BedDouble, MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
 import { BrandTitle } from './BrandTitle';
 import { SiteFooter } from './SiteFooter';
 import { NearbyStations } from './NearbyStations';
@@ -18,6 +18,16 @@ import { useToast } from '@/hooks/use-toast';
 const loadTripPlanner = () => import('./TripPlanner');
 const TripPlanner = lazy(loadTripPlanner);
 
+// Local-only chunk: the Google Places seed JSON must never inflate the main
+// station-finder entry, and is not requested at all when the tab is disabled.
+const loadHotelsTab = () => import('./HotelsTab').then(module => ({ default: module.HotelsTab }));
+const HotelsTab = lazy(loadHotelsTab);
+
+// The Hotels tab is part of the published experience. The env var remains as an
+// emergency opt-out for local debugging; production only omits it if explicitly
+// set to "false".
+const SHOW_HOTELS_TAB = import.meta.env.VITE_ENABLE_HOTELS_TAB !== 'false';
+
 function TripPlannerSkeleton() {
   return (
     <div className="space-y-3" aria-label="Loading trip planner">
@@ -27,14 +37,40 @@ function TripPlannerSkeleton() {
   );
 }
 
-export const EVApp = () => {
+function HotelsSkeleton() {
+  return (
+    <div className="space-y-3 px-3 pt-3" aria-label="Loading hotels">
+      <div className="h-9 animate-pulse rounded-lg bg-muted/60" />
+      <div className="h-9 animate-pulse rounded-lg bg-muted/60" />
+      <div className="h-28 animate-pulse rounded-2xl bg-muted/60" />
+    </div>
+  );
+}
+
+export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const hasRouteParams = Boolean(searchParams.get('from')?.trim() && searchParams.get('to')?.trim());
+  const [activeTab, setActiveTab] = useState(initialTab ?? (hasRouteParams ? 'trip' : 'nearby'));
+  const previousRouteState = useRef({ initialTab, hasRouteParams });
   // Cached in React Query across routes and in localStorage across launches,
   // so returning from a detail page never re-runs geolocation.
   const { data: location, isLoading: isLoadingLocation } = useUserLocation();
   const { goToCurrentLocation } = useGoToCurrentLocation();
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+
+  // A ?from=&to= share link should land on the trip planner. A dedicated
+  // /hotels route passes initialTab so the same app shell opens the index.
+  // Only real transitions change the tab: ordinary ?q= search updates must not
+  // yank the user out of Trips/Hotels while they are typing.
+  useEffect(() => {
+    const previous = previousRouteState.current;
+    if (initialTab !== previous.initialTab || hasRouteParams !== previous.hasRouteParams) {
+      setActiveTab(initialTab ?? (hasRouteParams ? 'trip' : 'nearby'));
+    }
+    previousRouteState.current = { initialTab, hasRouteParams };
+  }, [initialTab, hasRouteParams]);
 
   const handleLocationUpdate = (next: { lat: number; lng: number }) => {
     // Searching another city only moves the active list/map centre for this
@@ -135,8 +171,8 @@ export const EVApp = () => {
         className="max-w-4xl mx-auto px-3 pt-2 pb-8 sm:p-4"
         style={{ paddingBottom: 'calc(2rem + var(--ampo-banner-height, 0px))' }}
       >
-        <Tabs defaultValue="nearby" className="space-y-3 sm:space-y-6">
-          <TabsList className="grid !h-auto w-full grid-cols-3 bg-card shadow-sm sm:!h-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-6">
+          <TabsList className={`grid !h-auto w-full ${SHOW_HOTELS_TAB ? 'grid-cols-4' : 'grid-cols-3'} bg-card shadow-sm sm:!h-10`}>
             <TabsTrigger
               value="nearby"
               className="flex min-h-[44px] flex-col gap-1 px-1 text-[11px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
@@ -163,6 +199,20 @@ export const EVApp = () => {
               <span className="sm:hidden">Saved</span>
               <span className="hidden sm:inline">Favourites</span>
             </TabsTrigger>
+            {SHOW_HOTELS_TAB && (
+              <TabsTrigger
+                value="hotels"
+                onPointerEnter={loadHotelsTab}
+                onFocus={loadHotelsTab}
+                className="relative flex min-h-[44px] flex-col gap-1 px-1 text-[10px] sm:min-h-[40px] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+              >
+                <BedDouble className="w-4 h-4" />
+                <span>Hotels</span>
+                <span className="absolute right-1 top-1 rounded bg-emerald-600 px-1 text-[8px] font-bold leading-tight text-white sm:static sm:px-1.5 sm:text-[9px]">
+                  NEW
+                </span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="nearby" className="space-y-4">
@@ -182,6 +232,14 @@ export const EVApp = () => {
           <TabsContent value="favourites" className="space-y-4">
             <FavouriteStations />
           </TabsContent>
+
+          {SHOW_HOTELS_TAB && (
+            <TabsContent value="hotels" className="space-y-4">
+              <Suspense fallback={<HotelsSkeleton />}>
+                <HotelsTab />
+              </Suspense>
+            </TabsContent>
+          )}
         </Tabs>
         <SiteFooter />
       </main>

@@ -1,0 +1,51 @@
+# Ampo
+
+> Ampo is an EV charging station finder for India. It helps drivers find, compare and navigate to public EV chargers.
+
+Canonical site: https://ampo.vercel.app
+Curated search pages use `?q=<place>&place=<google_place_id>`; route pages use `?from=<start>&to=<destination>`.
+Station data is point-in-time. Always open Ampo for current details.
+
+## Key pages
+
+- [Ampo home](https://ampo.vercel.app/)
+- [All EV hotels](https://ampo.vercel.app/hotels/)
+- [EV charging stations near me](https://ampo.vercel.app/ev-charging/ev-charging-near-me/)
+- [Fast EV charging stations near me](https://ampo.vercel.app/ev-charging/ev-fast-charging-near-me/)
+- [CCS2 charging stations](https://ampo.vercel.app/ev-charging/ccs2-charging-stations/)
+- [Bharat AC charging stations](https://ampo.vercel.app/ev-charging/bharat-standard-charging/)
+- [Tata Power EV charging stations](https://ampo.vercel.app/ev-charging/tata-power-ev-charging/)
+- [Jio-bp Pulse EV charging stations](https://ampo.vercel.app/ev-charging/jio-bp-pulse-charging/)
+- [Bolt.Earth EV charging stations](https://ampo.vercel.app/ev-charging/bolt-earth-charging/)
+- [Ather Grid charging stations](https://ampo.vercel.app/ev-charging/ather-grid-charging/)
+- [ChargeZone EV charging stations](https://ampo.vercel.app/ev-charging/chargezone-charging/)
+- [EV charging at airports in India](https://ampo.vercel.app/ev-charging/airport-ev-charging/)
+- [EV road trip planner](https://ampo.vercel.app/ev-charging/ev-road-trip-planner/)
+- [Hotels with EV charging in India](https://ampo.vercel.app/ev-charging/hotels-with-ev-charging/)
+- [Type 2 EV charging stations](https://ampo.vercel.app/ev-charging/type-2-charging-stations/)
+- [CHAdeMO charging stations](https://ampo.vercel.app/ev-charging/chademo-charging-stations/)
+- [EV charging apps and wallets](https://ampo.vercel.app/ev-charging/charging-apps-and-wallets/)
+- [EV charging cost and rates](https://ampo.vercel.app/ev-charging/ev-charging-cost/)
+- [Best EV charging apps in India](https://ampo.vercel.app/ev-charging/best-ev-charging-apps-india/)
+- [EV charging station map India](https://ampo.vercel.app/ev-charging/india-ev-charging-map/)
+
+## Example curated searches
+
+- [EV charging stations in Bengaluru](https://ampo.vercel.app/?q=Bengaluru&place=ChIJbU60yXAWrjsR4E9-UejD3_g)
+- [EV charging stations in Delhi](https://ampo.vercel.app/?q=Delhi&place=ChIJL_P_CXMEDTkRw0ZdG-0GVvw)
+- [EV charging stations in Mumbai](https://ampo.vercel.app/?q=Mumbai&place=ChIJwe1EZjDG5zsRaYxkjY_tpF0)
+- [EV charging stations in Pune](https://ampo.vercel.app/?q=Pune&place=ChIJARFGZy6_wjsRQ-Oenb9DjYI)
+- [EV charging stations in Chennai](https://ampo.vercel.app/?q=Chennai&place=ChIJYTN9T-plUjoRM9RjaAunYW4)
+- [EV charging stations in Hyderabad](https://ampo.vercel.app/?q=Hyderabad&place=ChIJx9Lr6tqZyzsRwvu6koO3k64)
+- [EV charging stations in Koramangala](https://ampo.vercel.app/?q=Koramangala&place=ChIJLfyY2E4UrjsRVq4AjI7zgRY)
+- [EV charging stations in Indiranagar](https://ampo.vercel.app/?q=Indiranagar&place=ChIJkQN3GKQWrjsRNhBQJrhGD7U)
+
+## Example routes
+
+- [EV road trip from Hyderabad to Bengaluru](https://ampo.vercel.app/?from=Hyderabad&to=Bengaluru)
+- [EV road trip from Bengaluru to Chennai](https://ampo.vercel.app/?from=Bengaluru&to=Chennai)
+- [EV road trip from Mumbai to Pune](https://ampo.vercel.app/?from=Mumbai&to=Pune)
+- [EV road trip from Delhi to Jaipur](https://ampo.vercel.app/?from=Delhi&to=Jaipur)
+- [EV road trip from Bengaluru to Mysuru](https://ampo.vercel.app/?from=Bengaluru&to=Mysuru)
+
+The local hotel index contains 183 source-attributed hotels with nearby public chargers.

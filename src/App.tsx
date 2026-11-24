@@ -11,8 +11,12 @@ import { WebAdBanner } from "./components/WebAdBanner";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Detail is a separate route chunk so the list (the default view) parses less JS.
+// Detail and SEO pages are separate route chunks so the list (the default view)
+// parses less JS. Hotel data stays out of the entry chunk.
 const StationDetail = lazy(() => import("./pages/StationDetail"));
+const SeoHubPage = lazy(() => import("./components/SeoHubPage"));
+const HotelsPage = lazy(() => import("./pages/HotelsPage"));
+const HotelDetailPage = lazy(() => import("./pages/HotelDetailPage"));
 
 const queryClient = new QueryClient();
 
@@ -33,6 +37,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/station/:id" element={<StationDetail />} />
+            <Route path="/ev-charging/:slug" element={<SeoHubPage />} />
+            <Route path="/hotels" element={<HotelsPage />} />
+            <Route path="/hotels/:id" element={<HotelDetailPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

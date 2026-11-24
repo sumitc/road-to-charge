@@ -1,4 +1,5 @@
-import React, { lazy, Suspense, useState, useCallback, useMemo, useRef } from 'react';
+import React, { lazy, Suspense, useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { RouteService, RoutePoint, Route } from '@/services/routeService';
 import { EVStationService } from '@/services/evStationService';
 import { ChargingStation } from '@/types/station';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
+import { trackEmptyResult } from '@/lib/emptyResults';
 import { ConnectorFilter } from './ConnectorFilter';
 import { StationCard } from './StationCard';
 import { usePrefetchStation } from '@/hooks/useStationQueries';
@@ -23,10 +25,20 @@ interface Waypoint extends RoutePoint {
   id: string;
 }
 
+const tripKey = (from: string, to: string) =>
+  `${from.trim().toLowerCase()}::${to.trim().toLowerCase()}`;
+
 const TripPlanner = () => {
   const { toast } = useToast();
-  const [startLocation, setStartLocation] = useState('');
-  const [endLocation, setEndLocation] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlFrom = searchParams.get('from')?.trim() ?? '';
+  const urlTo = searchParams.get('to')?.trim() ?? '';
+  const urlTripKey = urlFrom && urlTo ? tripKey(urlFrom, urlTo) : '';
+  // A URL-driven plan and a plan that writes the URL must not re-trigger each
+  // other. The key records the endpoint pair already reflected in the URL.
+  const appliedUrlTrip = useRef<string | null>(null);
+  const [startLocation, setStartLocation] = useState(urlFrom);
+  const [endLocation, setEndLocation] = useState(urlTo);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [newWaypoint, setNewWaypoint] = useState('');
   const [connectorFilters, setConnectorFilters] = useState<string[]>([]);
@@ -151,8 +163,12 @@ const TripPlanner = () => {
     }
   }, []);
 
-  const planTrip = useCallback(async () => {
-    if (!startLocation.trim() || !endLocation.trim()) {
+  // override lets a shared ?from=&to= link plan the same route as the form,
+  // without waiting for the state initializer to propagate.
+  const planTrip = useCallback(async (override?: { from?: string; to?: string }) => {
+    const from = (override?.from ?? startLocation).trim();
+    const to = (override?.to ?? endLocation).trim();
+    if (!from || !to) {
       toast({
         title: 'Missing locations',
         description: 'Please enter both start and end locations.',
@@ -161,13 +177,15 @@ const TripPlanner = () => {
       return;
     }
 
+    setStartLocation(from);
+    setEndLocation(to);
     setIsPlanning(true);
-    
+
     try {
       // Geocode start and end locations
       const [startPoint, endPoint] = await Promise.all([
-        RouteService.geocodeAddress(startLocation),
-        RouteService.geocodeAddress(endLocation)
+        RouteService.geocodeAddress(from),
+        RouteService.geocodeAddress(to)
       ]);
 
       if (!startPoint || !endPoint) {
@@ -196,14 +214,39 @@ const TripPlanner = () => {
       const visibleCount = stations.filter(station =>
         matchesConnectorFilters(station.connectorTypes, connectorFilters)
       ).length;
+      if (stations.length === 0) {
+        trackEmptyResult({ surface: 'route', from, to, reason: 'no_rows' });
+      } else if (visibleCount === 0) {
+        trackEmptyResult({
+          surface: 'route',
+          from,
+          to,
+          filter: `connectors=${connectorFilters.join(',')}`,
+          reason: 'filters',
+        });
+      }
 
       setCurrentRoute(route);
       setAllRouteStations(stations);
       setRouteCoordinates([startPoint, ...waypoints, endPoint]);
 
+      // Every successful plan becomes a shareable canonical ?from=&to= URL.
+      // Mark it applied first so the URL effect does not plan it a second time.
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('from', from);
+      nextParams.set('to', to);
+      nextParams.delete('q');
+      nextParams.delete('place');
+      appliedUrlTrip.current = tripKey(from, to);
+      if (nextParams.toString() !== searchParams.toString()) {
+        setSearchParams(nextParams, { replace: true });
+      }
+
       toast({
-        title: 'Trip planned successfully',
-        description: `Found ${visibleCount} charging stations along your ${RouteService.formatDistance(route.distance)} route.`,
+        title: stations.length > 0 ? 'Trip planned successfully' : 'Route planned — no chargers found',
+        description: stations.length > 0
+          ? `Found ${visibleCount} charging stations along your ${RouteService.formatDistance(route.distance)} route.`
+          : `We mapped ${from} → ${to}, but found no public chargers along it yet. Try another route.`,
       });
 
     } catch (error) {
@@ -216,7 +259,31 @@ const TripPlanner = () => {
     } finally {
       setIsPlanning(false);
     }
-  }, [startLocation, endLocation, waypoints, connectorFilters, findStationsAlongRoute, toast]);
+  }, [
+    startLocation,
+    endLocation,
+    waypoints,
+    connectorFilters,
+    findStationsAlongRoute,
+    toast,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  // Shared SEO links land on the Trips tab with both endpoints prefilled and
+  // the route planned. Manual form behavior stays unchanged: no URL params
+  // means no auto-plan.
+  useEffect(() => {
+    if (!urlTripKey) {
+      appliedUrlTrip.current = null;
+      return;
+    }
+    if (appliedUrlTrip.current === urlTripKey) return;
+    appliedUrlTrip.current = urlTripKey;
+    setStartLocation(urlFrom);
+    setEndLocation(urlTo);
+    void planTrip({ from: urlFrom, to: urlTo });
+  }, [urlFrom, urlTo, urlTripKey, planTrip]);
 
   const clearTrip = useCallback(() => {
     setCurrentRoute(null);
@@ -322,7 +389,7 @@ const TripPlanner = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button onClick={planTrip} disabled={isPlanning} className="min-h-[44px] flex-1">
+            <Button onClick={() => void planTrip()} disabled={isPlanning} className="min-h-[44px] flex-1">
               {isPlanning ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -397,6 +464,18 @@ const TripPlanner = () => {
                 routePoints={routeCoordinates}
               />
             </Suspense>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentRoute && allRouteStations.length === 0 && (
+        <Card className="rounded-2xl">
+          <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+            <Zap className="h-7 w-7 text-muted-foreground" />
+            <p className="text-sm font-medium">No public chargers found along this route yet</p>
+            <p className="text-xs leading-snug text-muted-foreground">
+              We mapped the route but Ampo only shows real public charging stations. Try another destination or check back as the catalog grows.
+            </p>
           </CardContent>
         </Card>
       )}

@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { EVApp } from '@/components/EVApp';
+import { useRootSeo } from '@/hooks/useRootSeo';
 
 const SCROLL_KEY = 'ampo-list-scroll';
 
 const Index = () => {
+  useRootSeo();
+
   useEffect(() => {
     const saved = Number(sessionStorage.getItem(SCROLL_KEY) ?? 0);
     const restore = () => window.scrollTo(0, saved);

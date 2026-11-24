@@ -1,0 +1,614 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-24",
+  "note": "Curated SEO registry. Only these pages are indexable. Query URLs use ?q/place or ?from/to; hub pages use clean paths. All place IDs were resolved from Ampo's own Google Places suggest API during the 2026-11-24 research pass.",
+  "searchPages": [
+    {
+      "slug": "bengaluru",
+      "q": "Bengaluru",
+      "placeId": "ChIJbU60yXAWrjsR4E9-UejD3_g",
+      "state": "Karnataka",
+      "title": "EV Charging Stations in Bengaluru | Ampo",
+      "description": "Find public EV charging stations in Bengaluru with Ampo. Compare chargers by connector, provider and distance, then open directions or the correct charging app.",
+      "h1": "EV charging stations in Bengaluru",
+      "intro": "Search real charging locations across Bengaluru, from Koramangala and Indiranagar to Whitefield and Electronic City. Ampo shows the charging provider, connector types and the matching charging app where available."
+    },
+    {
+      "slug": "delhi",
+      "q": "Delhi",
+      "placeId": "ChIJL_P_CXMEDTkRw0ZdG-0GVvw",
+      "state": "Delhi",
+      "title": "EV Charging Stations in Delhi | Ampo",
+      "description": "Find EV chargers in Delhi with Ampo. Compare public charging stations by provider, connector and distance across Delhi NCR.",
+      "h1": "EV charging stations in Delhi",
+      "intro": "Explore public EV charging options across Delhi. The place ID on this page is locked to Delhi, India so the search does not resolve to Delhi, New York."
+    },
+    {
+      "slug": "mumbai",
+      "q": "Mumbai",
+      "placeId": "ChIJwe1EZjDG5zsRaYxkjY_tpF0",
+      "state": "Maharashtra",
+      "title": "EV Charging Stations in Mumbai | Ampo",
+      "description": "Find EV charging stations in Mumbai with Ampo. Compare chargers near BKC, Andheri, Powai and the airport before you travel.",
+      "h1": "EV charging stations in Mumbai",
+      "intro": "Find public chargers across Mumbai and compare provider, connector type and distance. Open the relevant charging app or Maps directions from each result."
+    },
+    {
+      "slug": "pune",
+      "q": "Pune",
+      "placeId": "ChIJARFGZy6_wjsRQ-Oenb9DjYI",
+      "state": "Maharashtra",
+      "title": "EV Charging Stations in Pune | Ampo",
+      "description": "Discover public EV charging stations in Pune with Ampo. Filter by connector and compare chargers near Hinjawadi, Baner and the city centre.",
+      "h1": "EV charging stations in Pune",
+      "intro": "Search real EV chargers in Pune and nearby business districts. Ampo surfaces provider details, connector types and directions in one place."
+    },
+    {
+      "slug": "chennai",
+      "q": "Chennai",
+      "placeId": "ChIJYTN9T-plUjoRM9RjaAunYW4",
+      "state": "Tamil Nadu",
+      "title": "EV Charging Stations in Chennai | Ampo",
+      "description": "Find EV charging stations in Chennai with Ampo. Compare public chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Chennai",
+      "intro": "Browse public EV charging locations across Chennai, including routes toward OMR, GST Road and the airport corridor."
+    },
+    {
+      "slug": "hyderabad",
+      "q": "Hyderabad",
+      "placeId": "ChIJx9Lr6tqZyzsRwvu6koO3k64",
+      "state": "Telangana",
+      "title": "EV Charging Stations in Hyderabad | Ampo",
+      "description": "Find public EV chargers in Hyderabad with Ampo. Compare charging stations around Gachibowli, Kokapet, Nallagandla and HITEC City.",
+      "h1": "EV charging stations in Hyderabad",
+      "intro": "Search real EV charging locations across Hyderabad. Ampo shows provider, connector types and the charging app to use where available."
+    },
+    {
+      "slug": "koramangala",
+      "q": "Koramangala",
+      "placeId": "ChIJLfyY2E4UrjsRVq4AjI7zgRY",
+      "state": "Karnataka",
+      "title": "EV Charging Stations in Koramangala | Ampo",
+      "description": "Find EV chargers in Koramangala, Bengaluru with Ampo. Compare nearby public charging stations by provider, connector and distance.",
+      "h1": "EV charging stations in Koramangala",
+      "intro": "A high-intent Bengaluru locality page for drivers searching for chargers in and around Koramangala."
+    },
+    {
+      "slug": "indiranagar",
+      "q": "Indiranagar",
+      "placeId": "ChIJkQN3GKQWrjsRNhBQJrhGD7U",
+      "state": "Karnataka",
+      "title": "EV Charging Stations in Indiranagar | Ampo",
+      "description": "Find public EV charging stations in Indiranagar, Bengaluru with Ampo. Compare connectors, providers and distance.",
+      "h1": "EV charging stations in Indiranagar",
+      "intro": "Locate EV chargers around Indiranagar and nearby Bengaluru neighbourhoods with real provider and connector information."
+    },
+    {
+      "slug": "whitefield",
+      "q": "Whitefield",
+      "placeId": "ChIJg_wNXfMRrjsR-RUB2BKlzzA",
+      "state": "Karnataka",
+      "title": "EV Charging Stations in Whitefield | Ampo",
+      "description": "Find EV chargers in Whitefield, Bengaluru with Ampo. Compare public chargers for daily commutes and longer trips.",
+      "h1": "EV charging stations in Whitefield",
+      "intro": "Whitefield is a major Bengaluru commute corridor. Search public chargers here and open directions or the matching charging app."
+    },
+    {
+      "slug": "kokapet",
+      "q": "Kokapet",
+      "placeId": "ChIJXXXT4fSUyzsRLT2UC850hUI",
+      "state": "Telangana",
+      "title": "EV Charging Stations in Kokapet | Ampo",
+      "description": "Find EV charging stations in Kokapet, Hyderabad with Ampo. Compare nearby chargers and check west Hyderabad coverage.",
+      "h1": "EV charging stations in Kokapet",
+      "intro": "Search public EV chargers around Kokapet. Ampo uses the resolved place centre so nearby results are sorted from Kokapet rather than a list centroid."
+    },
+    {
+      "slug": "nallagandla",
+      "q": "Nallagandla",
+      "placeId": "ChIJW7VICNqSyzsR_YH_QKDXHYs",
+      "state": "Telangana",
+      "title": "EV Charging Stations in Nallagandla | Ampo",
+      "description": "Find public EV chargers in Nallagandla, Hyderabad with Ampo. Compare providers, connectors and distance.",
+      "h1": "EV charging stations in Nallagandla",
+      "intro": "Search real charging locations near Nallagandla and understand local coverage without being sorted toward distant Kondapur pins."
+    },
+    {
+      "slug": "gachibowli",
+      "q": "Gachibowli",
+      "placeId": "ChIJ387edqKTyzsR4kSTb57nEiw",
+      "state": "Telangana",
+      "title": "EV Charging Stations in Gachibowli | Ampo",
+      "description": "Find EV charging stations in Gachibowli and Hyderabad's Financial District with Ampo.",
+      "h1": "EV charging stations in Gachibowli",
+      "intro": "Compare public chargers around Gachibowli, the Financial District and nearby IT corridors."
+    },
+    {
+      "slug": "hinjawadi",
+      "q": "Hinjawadi",
+      "placeId": "ChIJ7xsESMC7wjsR5d7Dw1rrydA",
+      "state": "Maharashtra",
+      "title": "EV Charging Stations in Hinjawadi | Ampo",
+      "description": "Find EV chargers in Hinjawadi, Pune with Ampo. Compare public charging points for commuters and weekend trips.",
+      "h1": "EV charging stations in Hinjawadi",
+      "intro": "Search real public chargers around Pune's Hinjawadi IT corridor and see provider, connector and distance details."
+    },
+    {
+      "slug": "bandra-kurla-complex",
+      "q": "Bandra Kurla Complex",
+      "placeId": "ChIJG-qGC9_I5zsRlvK9G0vqfs4",
+      "state": "Maharashtra",
+      "title": "EV Charging Stations in BKC | Ampo",
+      "description": "Find public EV charging stations at Bandra Kurla Complex, Mumbai with Ampo.",
+      "h1": "EV charging stations in Bandra Kurla Complex",
+      "intro": "Compare EV charging options around BKC, Mumbai's business district, with provider and connector details."
+    },
+    {
+      "slug": "igi-airport",
+      "q": "Indira Gandhi International Airport",
+      "placeId": "ChIJiS0q_IUbDTkRne1DLBh2874",
+      "state": "Delhi",
+      "title": "EV Charging Near Delhi Airport | Ampo",
+      "description": "Find EV charging stations near Indira Gandhi International Airport with Ampo. Compare public chargers before your flight.",
+      "h1": "EV charging near Indira Gandhi International Airport",
+      "intro": "Search public EV chargers around Delhi airport and Aerocity, with provider, connector and directions information."
+    },
+    {
+      "slug": "ahmedabad",
+      "q": "Ahmedabad",
+      "placeId": "ChIJSdRbuoqEXjkRFmVPYRHdzk8",
+      "state": "Gujarat",
+      "title": "EV Charging Stations in Ahmedabad | Ampo",
+      "description": "Find public EV charging stations in Ahmedabad, Gujarat with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Ahmedabad",
+      "intro": "Search real public EV chargers in and around Ahmedabad, Gujarat. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "jaipur",
+      "q": "Jaipur",
+      "placeId": "ChIJgeJXTN9KbDkRCS7yDDrG4Qw",
+      "state": "Rajasthan",
+      "title": "EV Charging Stations in Jaipur | Ampo",
+      "description": "Find public EV charging stations in Jaipur, Rajasthan with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Jaipur",
+      "intro": "Search real public EV chargers in and around Jaipur, Rajasthan. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "kochi",
+      "q": "Kochi",
+      "placeId": "ChIJv8a-SlENCDsRkkGEpcqC1Qs",
+      "state": "Keralam",
+      "title": "EV Charging Stations in Kochi | Ampo",
+      "description": "Find public EV charging stations in Kochi, Keralam with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Kochi",
+      "intro": "Search real public EV chargers in and around Kochi, Keralam. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "kolkata",
+      "q": "Kolkata",
+      "placeId": "ChIJZ_YISduC-DkRvCxsj-Yw40M",
+      "state": "West Bengal",
+      "title": "EV Charging Stations in Kolkata | Ampo",
+      "description": "Find public EV charging stations in Kolkata, West Bengal with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Kolkata",
+      "intro": "Search real public EV chargers in and around Kolkata, West Bengal. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "chandigarh",
+      "q": "Chandigarh",
+      "placeId": "ChIJa8lu5gvtDzkR_hlzUvln_6U",
+      "state": "Chandigarh",
+      "title": "EV Charging Stations in Chandigarh | Ampo",
+      "description": "Find public EV charging stations in Chandigarh, Chandigarh with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Chandigarh",
+      "intro": "Search real public EV chargers in and around Chandigarh, Chandigarh. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "gurugram",
+      "q": "Gurugram",
+      "placeId": "ChIJWYjjgtUZDTkRHkvG5ehfzwI",
+      "state": "Haryana",
+      "title": "EV Charging Stations in Gurugram | Ampo",
+      "description": "Find public EV charging stations in Gurugram, Haryana with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Gurugram",
+      "intro": "Search real public EV chargers in and around Gurugram, Haryana. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "noida",
+      "q": "Noida",
+      "placeId": "ChIJezVzMaTlDDkRP8B8yDDO_zc",
+      "state": "Uttar Pradesh",
+      "title": "EV Charging Stations in Noida | Ampo",
+      "description": "Find public EV charging stations in Noida, Uttar Pradesh with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations in Noida",
+      "intro": "Search real public EV chargers in and around Noida, Uttar Pradesh. Ampo shows provider, connector types and directions in one place."
+    },
+    {
+      "slug": "bengaluru-airport",
+      "q": "Kempegowda International Airport",
+      "placeId": "ChIJZWJEdf4crjsRjkEpoelwbCk",
+      "state": "Karnataka",
+      "title": "EV Charging Near Bengaluru Airport | Ampo",
+      "description": "Find public EV charging stations near Kempegowda International Airport in Karnataka with Ampo. Compare chargers before you travel.",
+      "h1": "EV charging near Kempegowda International Airport",
+      "intro": "Search real public EV chargers around Kempegowda International Airport. Ampo shows provider, connector and directions information."
+    },
+    {
+      "slug": "mumbai-airport",
+      "q": "Chhatrapati Shivaji Maharaj International Airport",
+      "placeId": "ChIJRym9mVDI5zsRrqh0xGAazB4",
+      "state": "Maharashtra",
+      "title": "EV Charging Near Mumbai Airport | Ampo",
+      "description": "Find public EV charging stations near Chhatrapati Shivaji Maharaj International Airport in Maharashtra with Ampo. Compare chargers before you travel.",
+      "h1": "EV charging near Chhatrapati Shivaji Maharaj International Airport",
+      "intro": "Search real public EV chargers around Chhatrapati Shivaji Maharaj International Airport. Ampo shows provider, connector and directions information."
+    },
+    {
+      "slug": "hyderabad-airport",
+      "q": "Rajiv Gandhi International Airport",
+      "placeId": "ChIJRRvZsX-7yzsRUajqM-wpIFM",
+      "state": "Telangana",
+      "title": "EV Charging Near Hyderabad Airport | Ampo",
+      "description": "Find public EV charging stations near Rajiv Gandhi International Airport in Telangana with Ampo. Compare chargers before you travel.",
+      "h1": "EV charging near Rajiv Gandhi International Airport",
+      "intro": "Search real public EV chargers around Rajiv Gandhi International Airport. Ampo shows provider, connector and directions information."
+    },
+    {
+      "slug": "chennai-airport",
+      "q": "Chennai International Airport",
+      "placeId": "ChIJl2OoXR9eUjoRR27ibiEvCSE",
+      "state": "Tamil Nadu",
+      "title": "EV Charging Near Chennai Airport | Ampo",
+      "description": "Find public EV charging stations near Chennai International Airport in Tamil Nadu with Ampo. Compare chargers before you travel.",
+      "h1": "EV charging near Chennai International Airport",
+      "intro": "Search real public EV chargers around Chennai International Airport. Ampo shows provider, connector and directions information."
+    }
+  ],
+  "routePages": [
+    {
+      "slug": "hyderabad-to-bengaluru",
+      "from": "Hyderabad",
+      "to": "Bengaluru",
+      "title": "EV Road Trip: Hyderabad to Bengaluru | Ampo",
+      "description": "Plan an EV road trip from Hyderabad to Bengaluru. Find public charging stations along the route with Ampo's route planner.",
+      "h1": "EV road trip from Hyderabad to Bengaluru",
+      "intro": "Open the route planner with Hyderabad as the start and Bengaluru as the destination, then compare chargers along the corridor."
+    },
+    {
+      "slug": "bengaluru-to-chennai",
+      "from": "Bengaluru",
+      "to": "Chennai",
+      "title": "EV Road Trip: Bengaluru to Chennai | Ampo",
+      "description": "Plan an EV trip from Bengaluru to Chennai and find charging stations along the route with Ampo.",
+      "h1": "EV road trip from Bengaluru to Chennai",
+      "intro": "Open a shareable route search from Bengaluru to Chennai with live charger results along the corridor."
+    },
+    {
+      "slug": "mumbai-to-pune",
+      "from": "Mumbai",
+      "to": "Pune",
+      "title": "EV Road Trip: Mumbai to Pune | Ampo",
+      "description": "Find public EV chargers along the Mumbai to Pune route with Ampo's EV trip planner.",
+      "h1": "EV road trip from Mumbai to Pune",
+      "intro": "Check charging options before driving between Mumbai and Pune. The route planner prefills both endpoints from this page."
+    },
+    {
+      "slug": "delhi-to-jaipur",
+      "from": "Delhi",
+      "to": "Jaipur",
+      "title": "EV Road Trip: Delhi to Jaipur | Ampo",
+      "description": "Plan an EV drive from Delhi to Jaipur and find public charging stations on the route with Ampo.",
+      "h1": "EV road trip from Delhi to Jaipur",
+      "intro": "Open the Delhi to Jaipur corridor in Ampo's route planner and see chargers near the route."
+    },
+    {
+      "slug": "bengaluru-to-mysuru",
+      "from": "Bengaluru",
+      "to": "Mysuru",
+      "title": "EV Road Trip: Bengaluru to Mysuru | Ampo",
+      "description": "Find EV charging stations between Bengaluru and Mysuru with Ampo's route planner.",
+      "h1": "EV road trip from Bengaluru to Mysuru",
+      "intro": "A popular short highway corridor. Prefill the route planner and compare public chargers near the route."
+    },
+    {
+      "slug": "delhi-to-agra",
+      "from": "Delhi",
+      "to": "Agra",
+      "title": "EV Road Trip: Delhi to Agra | Ampo",
+      "description": "Plan an EV trip from Delhi to Agra and find public chargers along the way with Ampo.",
+      "h1": "EV road trip from Delhi to Agra",
+      "intro": "Open the Delhi to Agra route with charging stations found from real public data sources."
+    },
+    {
+      "slug": "chennai-to-kochi",
+      "from": "Chennai",
+      "to": "Kochi",
+      "title": "EV Road Trip: Chennai to Kochi | Ampo",
+      "description": "Plan a long-distance EV route from Chennai to Kochi and find chargers along the corridor with Ampo.",
+      "h1": "EV road trip from Chennai to Kochi",
+      "intro": "Prefill a long-distance south India route and inspect chargers near the full route corridor."
+    },
+    {
+      "slug": "pune-to-goa",
+      "from": "Pune",
+      "to": "Goa",
+      "title": "EV Road Trip: Pune to Goa | Ampo",
+      "description": "Find EV chargers on the Pune to Goa route with Ampo's route planner.",
+      "h1": "EV road trip from Pune to Goa",
+      "intro": "Check public charging options before the Pune to Goa drive. The route planner opens with both endpoints prefilled."
+    }
+  ],
+  "hubPages": [
+    {
+      "slug": "near-me",
+      "path": "/ev-charging/ev-charging-near-me/",
+      "title": "EV Charging Stations Near Me | Ampo",
+      "description": "Find public EV charging stations near you with Ampo. Compare chargers by connector, provider and distance.",
+      "h1": "EV charging stations near me",
+      "intro": "Ampo uses your current location to show real public EV chargers nearby. Compare connector types, providers and distance, then open directions or the charging app.",
+      "bullets": [
+        "Current-location nearby search",
+        "Connector and radius filters",
+        "Provider and charging-app links"
+      ],
+      "ctaLabel": "Find chargers near me",
+      "ctaQuery": ""
+    },
+    {
+      "slug": "fast-charging-near-me",
+      "path": "/ev-charging/ev-fast-charging-near-me/",
+      "title": "Fast EV Charging Stations Near Me | Ampo",
+      "description": "Find fast and super-fast public EV chargers near you with Ampo. Compare DC charging options by provider and distance.",
+      "h1": "Fast EV charging stations near me",
+      "intro": "Use Ampo's connector and charging-speed filter to find fast public chargers near your current location.",
+      "bullets": [
+        "DC fast and super-fast connectors",
+        "Distance-based results",
+        "Provider and app details"
+      ],
+      "ctaLabel": "Find fast chargers",
+      "ctaQuery": "fast charger"
+    },
+    {
+      "slug": "ccs2-charging",
+      "path": "/ev-charging/ccs2-charging-stations/",
+      "title": "CCS2 Charging Stations in India | Ampo",
+      "description": "Find public CCS2 EV charging stations in India with Ampo. Filter real charger results by connector type.",
+      "h1": "CCS2 charging stations",
+      "intro": "Ampo lists connector types on real public charging stations so CCS2 drivers can filter results before travelling.",
+      "bullets": [
+        "CCS2 connector filter",
+        "Real station provider details",
+        "Directions and charging-app links"
+      ],
+      "ctaLabel": "Search CCS2 chargers",
+      "ctaQuery": "CCS2"
+    },
+    {
+      "slug": "bharat-ac-charging",
+      "path": "/ev-charging/bharat-standard-charging/",
+      "title": "Bharat AC Charging Stations | Ampo",
+      "description": "Find Bharat AC and Bharat DC public EV chargers with Ampo. Compare connectors and nearby stations.",
+      "h1": "Bharat AC charging stations",
+      "intro": "Search public chargers and filter by connector standard, including Bharat AC and Bharat DC where listed.",
+      "bullets": [
+        "Bharat AC/DC connector filter",
+        "Nearby public stations",
+        "Provider and distance details"
+      ],
+      "ctaLabel": "Search Bharat AC chargers",
+      "ctaQuery": "Bharat AC"
+    },
+    {
+      "slug": "tata-power-charging",
+      "path": "/ev-charging/tata-power-ev-charging/",
+      "title": "Tata Power EV Charging Stations | Ampo",
+      "description": "Find Tata Power EV charging stations across India with Ampo. Compare locations, connectors and the Tata Power charging app.",
+      "h1": "Tata Power EV charging stations",
+      "intro": "Ampo shows Tata Power chargers from real public data and links to the correct Tata Power charging app where available.",
+      "bullets": [
+        "Tata Power charger results",
+        "Charging-app links",
+        "Connector and distance filters"
+      ],
+      "ctaLabel": "Find Tata Power chargers",
+      "ctaQuery": "Tata Power"
+    },
+    {
+      "slug": "jio-bp-charging",
+      "path": "/ev-charging/jio-bp-pulse-charging/",
+      "title": "Jio-bp Pulse EV Charging Stations | Ampo",
+      "description": "Find Jio-bp Pulse public EV chargers in India with Ampo. Compare station details and charging-app links.",
+      "h1": "Jio-bp Pulse EV charging stations",
+      "intro": "Search real public Jio-bp Pulse chargers and open the matching charging app from each station result.",
+      "bullets": [
+        "Jio-bp Pulse results",
+        "Provider and connector details",
+        "Direct charging-app links"
+      ],
+      "ctaLabel": "Find Jio-bp chargers",
+      "ctaQuery": "Jio-bp"
+    },
+    {
+      "slug": "bolt-earth-charging",
+      "path": "/ev-charging/bolt-earth-charging/",
+      "title": "Bolt.Earth EV Charging Stations | Ampo",
+      "description": "Find Bolt.Earth public EV chargers across India with Ampo. Compare connector types, providers and distance.",
+      "h1": "Bolt.Earth EV charging stations",
+      "intro": "Ampo surfaces Bolt.Earth charging locations from real public sources and shows relevant connector and app information.",
+      "bullets": [
+        "Bolt.Earth station results",
+        "Connector filters",
+        "Directions and app links"
+      ],
+      "ctaLabel": "Find Bolt.Earth chargers",
+      "ctaQuery": "Bolt.Earth"
+    },
+    {
+      "slug": "ather-charging",
+      "path": "/ev-charging/ather-grid-charging/",
+      "title": "Ather Grid Charging Stations | Ampo",
+      "description": "Find Ather Grid and Ather fast chargers across India with Ampo. Compare locations and connector details.",
+      "h1": "Ather Grid charging stations",
+      "intro": "Search public Ather charging points and see provider, connector and distance in one place.",
+      "bullets": [
+        "Ather Grid results",
+        "Fast-charger details",
+        "Ather app link where available"
+      ],
+      "ctaLabel": "Find Ather chargers",
+      "ctaQuery": "Ather"
+    },
+    {
+      "slug": "chargezone-charging",
+      "path": "/ev-charging/chargezone-charging/",
+      "title": "ChargeZone EV Charging Stations | Ampo",
+      "description": "Find ChargeZone public EV chargers and highway charging corridors with Ampo.",
+      "h1": "ChargeZone EV charging stations",
+      "intro": "Compare real ChargeZone station listings and plan routes to chargers along major Indian corridors.",
+      "bullets": [
+        "ChargeZone station results",
+        "Highway corridor planning",
+        "Connector and app details"
+      ],
+      "ctaLabel": "Find ChargeZone chargers",
+      "ctaQuery": "ChargeZone"
+    },
+    {
+      "slug": "airport-ev-charging",
+      "path": "/ev-charging/airport-ev-charging/",
+      "title": "EV Charging at Airports in India | Ampo",
+      "description": "Find public EV chargers near major Indian airports with Ampo. Compare airport and nearby city charging options.",
+      "h1": "EV charging at airports in India",
+      "intro": "Open curated airport searches for Delhi, Mumbai, Bengaluru, Hyderabad and Chennai, or search another airport with Ampo.",
+      "bullets": [
+        "Delhi IGI airport",
+        "Mumbai CSMIA",
+        "Bengaluru BLR",
+        "Hyderabad HYD and Chennai MAA"
+      ],
+      "ctaLabel": "Search airport chargers",
+      "ctaQuery": "airport EV charging"
+    },
+    {
+      "slug": "ev-road-trip-planner",
+      "path": "/ev-charging/ev-road-trip-planner/",
+      "title": "EV Road Trip Planner for India | Ampo",
+      "description": "Plan an EV road trip in India with Ampo. Find public charging stations along your route and share the route with a link.",
+      "h1": "EV road trip planner",
+      "intro": "Enter a start, destination and optional waypoints. Ampo finds public chargers near the route corridor and lets you share the exact trip.",
+      "bullets": [
+        "Route-based charger discovery",
+        "Optional waypoints",
+        "Shareable ?from=&to= links"
+      ],
+      "ctaLabel": "Open the trip planner",
+      "ctaQuery": ""
+    },
+    {
+      "slug": "hotels-with-ev-charging",
+      "path": "/ev-charging/hotels-with-ev-charging/",
+      "title": "Hotels with EV Charging in India | Ampo",
+      "description": "Find hotels near public EV chargers in popular Indian tourist destinations with Ampo's hotel and EV index.",
+      "h1": "Hotels with EV charging in India",
+      "intro": "Browse a curated, source-attributed index of hotels with verified public chargers nearby. Nearby chargers are never described as on-site charging unless the source says so.",
+      "bullets": [
+        "Tourist destination coverage",
+        "Real nearby charger distances",
+        "Google Places provenance"
+      ],
+      "ctaLabel": "Browse hotels with EV charging",
+      "ctaQuery": ""
+    },
+    {
+      "slug": "type-2-charging",
+      "path": "/ev-charging/type-2-charging-stations/",
+      "title": "Type 2 EV Charging Stations Near Me | Ampo",
+      "description": "Find public Type 2 EV charging stations with Ampo. Compare real chargers by connector, provider and distance.",
+      "h1": "Type 2 EV charging stations",
+      "intro": "Ampo lists connector types on real public chargers so Type 2 drivers can filter results before travelling.",
+      "bullets": [
+        "Type 2 connector filter",
+        "Real provider details",
+        "Directions and charging-app links"
+      ],
+      "ctaLabel": "Search Type 2 chargers",
+      "ctaQuery": "Type 2"
+    },
+    {
+      "slug": "chademo-charging",
+      "path": "/ev-charging/chademo-charging-stations/",
+      "title": "CHAdeMO Charging Stations Near Me | Ampo",
+      "description": "Find public CHAdeMO EV charging stations with Ampo. Compare real chargers by connector, provider and distance.",
+      "h1": "CHAdeMO charging stations",
+      "intro": "Search public CHAdeMO chargers and compare connector, provider and distance information.",
+      "bullets": [
+        "CHAdeMO connector filter",
+        "Provider and distance details",
+        "Directions and app links"
+      ],
+      "ctaLabel": "Search CHAdeMO chargers",
+      "ctaQuery": "CHAdeMO"
+    },
+    {
+      "slug": "charging-apps-and-wallets",
+      "path": "/ev-charging/charging-apps-and-wallets/",
+      "title": "EV Charging Apps and Wallets in India | Ampo",
+      "description": "Find out which EV charging app works at a charger. Ampo links providers to their charging apps and shows stations from real public data.",
+      "h1": "EV charging apps and wallets",
+      "intro": "Ampo shows the charging provider on each station and links to the matching app where available, useful when you have wallet balance across networks.",
+      "bullets": [
+        "Provider-to-app links",
+        "Real station listings",
+        "No PlugShare scraping or invented wallet claims"
+      ],
+      "ctaLabel": "Find stations by provider",
+      "ctaQuery": "Tata Power"
+    },
+    {
+      "slug": "ev-charging-cost",
+      "path": "/ev-charging/ev-charging-cost/",
+      "title": "EV Charging Cost and Rates in India | Ampo",
+      "description": "Explore EV charging cost queries and find public chargers near you with Ampo. Compare providers and connectors before you travel.",
+      "h1": "EV charging cost and rates",
+      "intro": "Charging prices vary by provider, state and connector. Ampo helps you locate real public stations; always confirm current tariffs with the operator.",
+      "bullets": [
+        "Real public station locations",
+        "Provider and connector details",
+        "Confirm tariffs with the operator"
+      ],
+      "ctaLabel": "Find chargers near me",
+      "ctaQuery": ""
+    },
+    {
+      "slug": "best-ev-charging-apps",
+      "path": "/ev-charging/best-ev-charging-apps-india/",
+      "title": "Best EV Charging Apps in India | Ampo",
+      "description": "Compare EV charging finder apps and locate the right charging app for each public station with Ampo.",
+      "h1": "Best EV charging apps in India",
+      "intro": "Ampo focuses on the practical question: which app or wallet works at the charger you can actually reach.",
+      "bullets": [
+        "Station-first provider links",
+        "Real public charger data",
+        "Shareable searches and routes"
+      ],
+      "ctaLabel": "Open Ampo",
+      "ctaQuery": ""
+    },
+    {
+      "slug": "india-ev-charging-map",
+      "path": "/ev-charging/india-ev-charging-map/",
+      "title": "EV Charging Station Map India | Ampo",
+      "description": "Explore a map-based EV charging finder for India with Ampo. Search by city, area or current location.",
+      "h1": "EV charging station map India",
+      "intro": "Search real public charging locations across Indian cities and corridors, then open directions or the matching charging app.",
+      "bullets": [
+        "City and locality search",
+        "Nearby map-style results",
+        "Corridor and route planning"
+      ],
+      "ctaLabel": "Open the map",
+      "ctaQuery": ""
+    }
+  ]
+}

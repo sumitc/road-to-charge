@@ -18,6 +18,7 @@ import {
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { trackAmpo } from '@/lib/analytics';
+import { trackEmptyResult } from '@/lib/emptyResults';
 import { useToast } from '@/hooks/use-toast';
 
 interface NearbyStationsProps {
@@ -93,6 +94,14 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       });
       if (runId !== searchRun.current) return;
       setSearchResults(results);
+      if (results.length === 0) {
+        trackEmptyResult({
+          surface: 'search',
+          query,
+          placeId: placeId ?? null,
+          radiusKm: radius,
+        });
+      }
 
       // Centre distances on the exact resolved Google place, not the centroid
       // of the returned rows — averaging skews toward whichever part of the
@@ -114,8 +123,10 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
       }
 
       toast({
-        title: 'Search completed',
-        description: `Found ${results.length} stations for "${query}"`,
+        title: results.length > 0 ? 'Search completed' : 'No stations found yet',
+        description: results.length > 0
+          ? `Found ${results.length} stations for "${query}"`
+          : `We couldn't find public chargers near "${query}". Try a nearby area or a larger radius.`,
       });
     } catch (error) {
       toast({
@@ -126,7 +137,7 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     } finally {
       if (runId === searchRun.current) setIsSearching(false);
     }
-  }, [queryClient, onLocationUpdate, toast]);
+  }, [queryClient, onLocationUpdate, radius, toast]);
 
   // A shared link (?q=&place=) restores the exact search, including on a fresh
   // load. Back/forward navigation updates the query without a reload.
@@ -180,6 +191,39 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
   const visibleStations = orderedStations.filter(station =>
     matchesConnectorFilters(station.connectorTypes, connectorFilters)
   );
+
+  // Nearby (no ?q=) has no submit event, so log its empty state once per
+  // location/radius. The searched-empty case is logged in runSearch itself.
+  const loggedEmpty = useRef<string | null>(null);
+  useEffect(() => {
+    if (showSearchResults || isLoading || isSearching || nearbyQuery.isFetching || !location) return;
+    if (nearbyStations.length > 0) {
+      loggedEmpty.current = null;
+      return;
+    }
+    const signature = `nearby::${location.lat.toFixed(3)},${location.lng.toFixed(3)}::${radius}`;
+    if (loggedEmpty.current === signature) return;
+    loggedEmpty.current = signature;
+    trackEmptyResult({ surface: 'search', radiusKm: radius, reason: 'no_rows' });
+  }, [isLoading, isSearching, location, nearbyQuery.isFetching, nearbyStations.length, radius, showSearchResults]);
+
+  const loggedFilteredEmpty = useRef<string | null>(null);
+  useEffect(() => {
+    if (isSearching || stations.length === 0 || visibleStations.length > 0) {
+      loggedFilteredEmpty.current = null;
+      return;
+    }
+    const signature = `${showSearchResults ? searchQuery : 'nearby'}::${connectorFilters.join(',')}`;
+    if (loggedFilteredEmpty.current === signature) return;
+    loggedFilteredEmpty.current = signature;
+    trackEmptyResult({
+      surface: 'search',
+      query: showSearchResults ? searchQuery : undefined,
+      radiusKm: radius,
+      filter: `connectors=${connectorFilters.join(',')}`,
+      reason: 'filters',
+    });
+  }, [connectorFilters, isSearching, radius, searchQuery, showSearchResults, stations.length, visibleStations.length]);
 
   // Only sync once per area if the catalog happens to be empty.
   useEffect(() => {
@@ -583,9 +627,13 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
               <CardContent className="flex items-center justify-center p-6">
                 <div className="text-center space-y-2">
                   <AlertCircle className="w-7 h-7 text-muted-foreground mx-auto" />
-                  <p className="text-muted-foreground">No charging stations found</p>
-                  <p className="text-sm text-muted-foreground">
-                    Try increasing the search radius or check your location
+                  <p className="text-sm font-medium">
+                    {showSearchResults && searchQuery.trim()
+                      ? `No charging stations found near “${searchQuery.trim()}”`
+                      : 'No charging stations found near you'}
+                  </p>
+                  <p className="text-xs leading-snug text-muted-foreground">
+                    Try a nearby area, a different spelling, or a larger radius. Ampo only shows real public chargers.
                   </p>
                 </div>
               </CardContent>
