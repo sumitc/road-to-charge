@@ -30,6 +30,7 @@ const browser = await chromium.launch({
 
 async function newPage() {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
@@ -39,6 +40,9 @@ async function newPage() {
         },
       },
     });
+    // Headless desktop Chrome: force the copy-link fallback so share checks
+    // never open a platform share sheet.
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
   });
 
   const counters = { route: 0 };
@@ -85,6 +89,11 @@ async function metaOf(page) {
       try { return JSON.parse(script.textContent ?? '{}'); } catch { return {}; }
     }),
   }));
+}
+
+async function copiedHeaderShareUrl(page) {
+  await page.getByRole('button', { name: 'Share this view' }).click();
+  return page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
 }
 
 async function checkStaticAssets() {
@@ -147,6 +156,10 @@ async function checkCuratedSearch() {
     JSON.stringify(meta.jsonLd.map(item => item['@type'])));
   check('curated search updates Open Graph metadata',
     meta.ogTitle === meta.title);
+  const copiedSearch = await copiedHeaderShareUrl(page);
+  check('header share copies the current search URL',
+    copiedSearch.includes('q=Delhi') && copiedSearch.includes('place=ChIJL_P_CXMEDTkRw0ZdG-0GVvw'),
+    copiedSearch);
   await page.close();
 }
 
@@ -197,6 +210,9 @@ async function checkHubsAndHotels() {
   const hotelsMeta = await metaOf(hotels.page);
   check('hotel index has its own canonical',
     hotelsMeta.canonical === 'https://ampo.vercel.app/hotels/', hotelsMeta.canonical);
+  const copiedHotels = await copiedHeaderShareUrl(hotels.page);
+  check('header share copies the hotel list URL',
+    new URL(copiedHotels, BASE_URL).pathname === '/hotels/', copiedHotels);
   await hotels.page.close();
 
   const detail = await newPage();
@@ -249,6 +265,9 @@ async function checkRouteLinks() {
     routeMeta.canonical === 'https://ampo.vercel.app/?from=Delhi&to=Jaipur'
       && routeMeta.jsonLd.some(item => item['@type'] === 'WebPage'),
     routeMeta.canonical);
+  const copiedRoute = await copiedHeaderShareUrl(shared.page);
+  check('header share copies the planned route URL',
+    copiedRoute.includes('from=Delhi') && copiedRoute.includes('to=Jaipur'), copiedRoute);
   await shared.page.close();
 
   const manual = await newPage();

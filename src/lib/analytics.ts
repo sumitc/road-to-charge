@@ -10,6 +10,7 @@ export type AmpoEvent =
   | 'feedback_submit'
   | 'charger_submitted'
   | 'search_shared'
+  | 'link_shared'
   | 'zero_results';
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;

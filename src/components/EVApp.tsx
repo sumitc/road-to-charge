@@ -3,15 +3,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BedDouble, MapPin, Star, Zap, RefreshCw, Route } from 'lucide-react';
+import { BedDouble, MapPin, Share2, Star, Zap, Route } from 'lucide-react';
 import { BrandTitle } from './BrandTitle';
 import { SiteFooter } from './SiteFooter';
 import { NearbyStations } from './NearbyStations';
 import { FavouriteStations } from './FavouriteStations';
 import { ContributionButton } from './ContributionButton';
 import { GoogleRefreshNotice } from './GoogleRefreshNotice';
-import { ChargingStationsSync as ChargingStationsSyncService } from '@/services/chargingStationsSync';
 import { useGoToCurrentLocation, useUserLocation } from '@/hooks/useStationQueries';
+import { trackAmpo } from '@/lib/analytics';
+import { shareAmpoLink, shareTargetForView } from '@/lib/shareLink';
 import { useToast } from '@/hooks/use-toast';
 
 // Only loaded when the Trips tab is opened (or warmed on hover/focus).
@@ -57,7 +58,6 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
   // so returning from a detail page never re-runs geolocation.
   const { data: location, isLoading: isLoadingLocation } = useUserLocation();
   const { goToCurrentLocation } = useGoToCurrentLocation();
-  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
   // A ?from=&to= share link should land on the trip planner. A dedicated
@@ -85,47 +85,46 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
     void goToCurrentLocation();
   };
 
-  const handleSync = async () => {
-    if (!location) {
+  // Header share follows the active tab: the current search, planned route or
+  // hotel index. Native share is used on mobile browsers; desktop copies.
+  const handleShare = async () => {
+    const target = shareTargetForView(activeTab, searchParams);
+    if (!target) {
       toast({
-        title: "Location required",
-        description: "Enable location to sync nearby stations",
-        variant: "destructive",
+        title: 'Plan a route first',
+        description: 'Add a start and destination, then share the trip.',
       });
       return;
     }
 
-    setIsSyncing(true);
-    try {
-      const result = await ChargingStationsSyncService.fetchAndSyncStations(
-        location.lat,
-        location.lng,
-        100
-      );
+    const result = await shareAmpoLink(target);
+    if (result === 'cancelled') return;
+    if (result === 'failed') {
+      toast({ title: 'Could not share link', variant: 'destructive' });
+      return;
+    }
 
-      if (result.success) {
-        toast({
-          title: "Sync successful",
-          description: `Added ${result.stats?.new || 0} new stations`,
-        });
-        // Refetch station lists instead of a full page reload so the cached
-        // location and UI state survive.
-        await queryClient.invalidateQueries({ queryKey: ['stations'] });
-      } else {
-        toast({
-          title: "Sync failed",
-          description: result.error || "Unknown error",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Sync error",
-        description: "Failed to sync station data",
-        variant: "destructive",
+    const method = result === 'shared' ? 'native' : 'clipboard';
+    if (target.surface === 'search') {
+      trackAmpo('search_shared', {
+        query: target.properties?.query ?? null,
+        place_id: target.properties?.place_id ?? null,
+        source: 'header',
+        method,
       });
-    } finally {
-      setIsSyncing(false);
+    } else {
+      trackAmpo('link_shared', {
+        surface: target.surface,
+        method,
+        ...target.properties,
+      });
+    }
+
+    if (result === 'copied') {
+      const label = target.surface === 'route' ? 'Route link'
+        : target.surface === 'hotels' ? 'Hotel list link'
+          : target.surface === 'search' ? 'Search link' : 'Ampo link';
+      toast({ title: `${label} copied`, description: 'Share it with fellow EV riders' });
     }
   };
 
@@ -151,16 +150,15 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
                 <BrandTitle subtitle="EV station finder" onClick={handleHomeClick} />
               </div>
             </div>
-            <Button 
-              onClick={handleSync} 
-              disabled={isSyncing}
-              variant="outline" 
+            <Button
+              onClick={() => void handleShare()}
+              variant="outline"
               size="sm"
-              aria-label={isSyncing ? 'Syncing station data' : 'Sync station data'}
+              aria-label="Share this view"
               className="h-9 min-h-0 shrink-0 bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30 sm:h-10 sm:min-h-[44px]"
             >
-              <RefreshCw className={`w-4 h-4 sm:mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Data'}</span>
+              <Share2 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Share</span>
             </Button>
           </div>
         </div>

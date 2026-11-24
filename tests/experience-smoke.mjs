@@ -26,7 +26,11 @@ const browser = await chromium.launch({
 const rawNewPage = browser.newPage.bind(browser);
 browser.newPage = async (...args) => {
   const page = await rawNewPage(...args);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
   await page.addInitScript(() => {
+    // Headless desktop Chrome: force the copy-link fallback so share checks
+    // never open a platform share sheet.
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
     window.__ampoEvents = [];
     let current;
     Object.defineProperty(window, 'va', {

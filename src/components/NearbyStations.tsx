@@ -18,6 +18,7 @@ import {
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { trackAmpo } from '@/lib/analytics';
+import { shareAmpoLink } from '@/lib/shareLink';
 import { trackEmptyResult } from '@/lib/emptyResults';
 import { useToast } from '@/hooks/use-toast';
 
@@ -366,18 +367,23 @@ export const NearbyStations: React.FC<NearbyStationsProps> = ({
     shareUrl.search = '';
     if (query) shareUrl.searchParams.set('q', query);
     if (selectedPlaceId) shareUrl.searchParams.set('place', selectedPlaceId);
-    try {
-      if (!navigator.clipboard) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(shareUrl.toString());
-      trackAmpo('search_shared', {
-        query,
-        place_id: selectedPlaceId ?? null,
-        source: 'list',
-      });
-      toast({ title: 'Search link copied', description: 'Share it with fellow EV riders' });
-    } catch {
+    const result = await shareAmpoLink({
+      url: `${shareUrl.pathname}${shareUrl.search}`,
+      title: `EV charging stations in ${query || 'India'} | Ampo`,
+      text: `Public EV chargers${query ? ` in ${query}` : ''}`,
+    });
+    if (result === 'cancelled') return;
+    if (result === 'failed') {
       toast({ title: 'Could not copy link', variant: 'destructive' });
+      return;
     }
+    trackAmpo('search_shared', {
+      query,
+      place_id: selectedPlaceId ?? null,
+      source: 'list',
+      method: result === 'shared' ? 'native' : 'clipboard',
+    });
+    toast({ title: 'Search link copied', description: 'Share it with fellow EV riders' });
   };
 
   const handleShowNearby = async () => {
