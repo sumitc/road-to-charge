@@ -144,6 +144,9 @@ async function checkHotels() {
   await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 15000 });
 
   const input = page.getByLabel('Search hotels by city or hotel name');
+  check('hotels title is moved into the grey search placeholder',
+    (await input.getAttribute('placeholder')) === 'Hotels with EV charging'
+      && (await page.getByRole('heading', { name: 'Hotels with EV charging' }).count()) === 0);
   check('hotel search exposes exactly one Search button',
     (await page.getByRole('button', { name: 'Search', exact: true }).count()) === 1);
   await input.fill('jaip');

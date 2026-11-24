@@ -426,15 +426,6 @@ export function HotelsTab() {
 
   return (
     <div className="space-y-3 px-3 pb-24 pt-3" aria-label="Hotels with EV charging">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold">Hotels with EV charging</h2>
-          <p className="truncate text-[11px] text-muted-foreground">
-            Google Places · Updated {updated}
-          </p>
-        </div>
-      </div>
-
       <Card className="relative z-20 rounded-2xl">
         <CardContent className="p-3 sm:p-4">
           <form className="flex gap-2" onSubmit={event => { event.preventDefault(); submitSearch(); }}>
@@ -444,7 +435,7 @@ export function HotelsTab() {
                 onChange={event => handleInputChange(event.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder="Search city, area or hotel name"
+                placeholder="Hotels with EV charging"
                 className="min-w-0 min-h-[44px]"
                 aria-label="Search hotels by city or hotel name"
                 role="combobox"
@@ -596,7 +587,7 @@ export function HotelsTab() {
         </p>
       )}
       <p className="px-1 pb-2 text-[10px] leading-snug text-muted-foreground">
-        Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. Distance is to the hotel, while the nearest-charger line is hotel-to-charger. A nearby charger is not an on-site claim — confirm with the property before travel.
+        Google Places index updated {updated}. Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. Distance is to the hotel, while the nearest-charger line is hotel-to-charger. A nearby charger is not an on-site claim — confirm with the property before travel.
       </p>
     </div>
   );
