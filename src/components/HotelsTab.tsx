@@ -8,6 +8,7 @@ import affiliateLinks from '@/data/affiliateLinks.json';
 import { hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
 import { ConnectorFilter } from '@/components/ConnectorFilter';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
+import { cn } from '@/lib/utils';
 import { trackEmptyResult } from '@/lib/emptyResults';
 const AFFILIATE_LINKS = affiliateLinks as Record<string, string>;
 const HOTEL_PHOTO = '/hotels/placeholder.svg';
@@ -19,6 +20,18 @@ const PRICE_OPTIONS = [...new Set(index.hotels.map(hotel => hotel.priceBand).fil
 function formatDistance(meters?: number | null) {
   if (!Number.isFinite(meters as number)) return '';
   return meters! < 1000 ? `${meters} m` : `${(meters! / 1000).toFixed(1)} km`;
+}
+
+/** Small search-results-style pill; only claim on-site charging when sourced. */
+function evEvidenceTag(hotel: Hotel) {
+  const onSite = hotel.evSignal === 'both' || hotel.evSignal === 'on_site_google_place';
+  return {
+    label: onSite ? 'EV on site' : 'Charger nearby',
+    tone: onSite
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : 'border-blue-200 bg-blue-50 text-blue-700',
+    dot: onSite ? 'bg-emerald-500' : 'bg-blue-500',
+  };
 }
 
 type FilterSelectProps = {
@@ -50,6 +63,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
   const affiliateUrl = AFFILIATE_LINKS[hotel.id] || '';
   const bookingUrl = affiliateUrl || hotel.sourceUrl;
   const nearest = hotel.ev.nearestCharger;
+  const evidence = evEvidenceTag(hotel);
   const location = [hotel.locality, hotel.city, hotel.state].filter(Boolean).join(', ');
 
   return (
@@ -74,9 +88,17 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{location || hotel.area}</span>
             </p>
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                <BatteryCharging className="h-3.5 w-3.5 shrink-0" />
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className={cn(
+                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                evidence.tone,
+              )}
+              >
+                <span className={cn('h-1.5 w-1.5 rounded-full', evidence.dot)} />
+                {evidence.label}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                <BatteryCharging className="h-3 w-3 shrink-0" />
                 {hotel.ev.label}
               </span>
             </div>

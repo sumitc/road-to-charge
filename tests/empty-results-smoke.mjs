@@ -91,10 +91,13 @@ async function checkHotels() {
       && (await page.locator('select[aria-label="Charging provider"]').count()) === 0);
 
   const initialBody = await page.locator('body').innerText();
-  check('EV index badge and per-hotel EV tags are gone',
-    !initialBody.includes('EV INDEX')
-      && !initialBody.includes('EV on site')
-      && !initialBody.includes('Charger nearby'));
+  check('EV index badge is gone but honest per-hotel evidence tags remain',
+    !initialBody.includes('EV INDEX') && initialBody.includes('Charger nearby'));
+  const evidenceTag = page.getByText('Charger nearby', { exact: true }).first();
+  const evidenceClass = await evidenceTag.getAttribute('class');
+  check('evidence tag is a small search-results-style pill',
+    Boolean(evidenceClass?.includes('rounded-full') && evidenceClass.includes('text-[10px]')),
+    evidenceClass ?? '');
 
   const connectorButton = page.getByRole('button', { name: /All connectors/ });
   check('connector filter replaces the provider box', (await connectorButton.count()) > 0);
