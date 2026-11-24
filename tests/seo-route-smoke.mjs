@@ -115,12 +115,17 @@ async function checkStaticAssets() {
     shell.includes('data-ampo-seo="static"'));
 
   const config = JSON.parse(await fs.readFile('vercel.json', 'utf8'));
-  const queryRewrites = (config.rewrites ?? []).filter(r => r.has?.length);
-  check('vercel.json keeps curated query rewrites and SPA fallback',
-    queryRewrites.length === 34
-      && (config.rewrites ?? []).at(-1)?.source === '/(.*)'
+  const queryRoutes = (config.routes ?? []).filter(r => r.has?.length);
+  const fsHandleAt = (config.routes ?? []).findIndex(r => r.handle === 'filesystem');
+  // `rewrites` would be evaluated AFTER a filesystem hit on /index.html, so
+  // curated query URLs would silently serve the generic shell.
+  check('vercel.json keeps curated query routes ahead of filesystem and SPA fallback',
+    queryRoutes.length === 34
+      && fsHandleAt === 34
+      && (config.routes ?? []).at(-1)?.src === '/(.*)'
+      && (config.rewrites ?? []).length === 0
       && config.crons?.length === 2,
-    `${queryRewrites.length} query rewrites`);
+    `${queryRoutes.length} query routes, filesystem at ${fsHandleAt}`);
 }
 
 async function checkCuratedSearch() {

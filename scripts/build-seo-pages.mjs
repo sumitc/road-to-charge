@@ -12,6 +12,11 @@
  * `npm run build` runs this script as prebuild (public/) and postbuild (dist/).
  * The dist pass swaps /src/main.tsx for the hashed Vite asset tags so the React
  * app takes over cleanly after crawlers see the static content.
+ *
+ * Routing note: these rules are emitted as low-level `routes` for vercel.json,
+ * NOT `rewrites`. Vercel evaluates the filesystem before rewrite rules, so a
+ * rewrite on `/` loses to the existing /index.html and the curated shell is
+ * never served. `handle: filesystem` must stay AFTER the query rules.
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -23,7 +28,7 @@ const REGISTRY_PATH = path.join(ROOT, 'src/data/seoPages.json');
 const HOTELS_PATH = path.join(ROOT, 'src/data/hotels-ev.index.generated.json');
 const SITE = 'https://ampo.vercel.app';
 const DIST_INDEX = path.join(ROOT, 'dist/index.html');
-const REWRITES_OUT = path.join(os.tmpdir(), 'ampo-seo-vercel-rewrites.json');
+const ROUTES_OUT = path.join(os.tmpdir(), 'ampo-seo-vercel-routes.json');
 
 const args = new Set(process.argv.slice(2));
 const validateOnly = args.has('--validate');
@@ -297,21 +302,22 @@ function hotelLinks(hotel, canonical) {
   return links;
 }
 
-function rewriteRules(registry) {
+function routeRules(registry) {
   const search = registry.searchPages.map(page => ({
-    source: '/',
+    src: '/',
+    dest: `/seo/search/${page.slug}.html`,
     has: [{ type: 'query', key: 'q', value: page.q }],
-    destination: `/seo/search/${page.slug}.html`,
   }));
   const routes = registry.routePages.map(page => ({
-    source: '/',
+    src: '/',
+    dest: `/seo/route/${page.slug}.html`,
     has: [
       { type: 'query', key: 'from', value: page.from },
       { type: 'query', key: 'to', value: page.to },
     ],
-    destination: `/seo/route/${page.slug}.html`,
   }));
-  return [...search, ...routes];
+  // Filesystem first would serve /index.html for every curated query URL.
+  return [...search, ...routes, { handle: 'filesystem' }, { src: '/(.*)', dest: '/index.html' }];
 }
 
 function sitemapXml(entries) {
@@ -394,8 +400,8 @@ async function main() {
   await validate(registry, hotels.hotels);
   if (validateOnly) return;
 
-  const rewrites = rewriteRules(registry);
-  await fs.writeFile(REWRITES_OUT, JSON.stringify(rewrites, null, 2), 'utf8');
+  const routes = routeRules(registry);
+  await fs.writeFile(ROUTES_OUT, JSON.stringify(routes, null, 2), 'utf8');
 
   for (const page of registry.searchPages) {
     const canonical = searchUrl(page);
@@ -502,8 +508,9 @@ async function main() {
   await write('sitemap.xml', sitemapXml(sitemapEntries));
   await write('llms.txt', llmsTxt(registry, hotels.hotels));
 
-  console.log(`${distMode ? 'dist' : 'public'} SEO pages generated: ${sitemapEntries.length} sitemap URLs, ${rewrites.length} query rewrites`);
-  console.log(`Vercel rewrite snippet: ${REWRITES_OUT}`);
+  const queryRoutes = routes.filter(route => route.has?.length).length;
+  console.log(`${distMode ? 'dist' : 'public'} SEO pages generated: ${sitemapEntries.length} sitemap URLs, ${queryRoutes} query routes`);
+  console.log(`Vercel routes snippet: ${ROUTES_OUT}`);
 }
 
 await main();
