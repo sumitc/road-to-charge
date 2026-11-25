@@ -296,6 +296,28 @@ async function checkHotels() {
   check('picked Goa anchors distances to the searched place, not the device',
     goaCount > 0 && goaCount < TOTAL_STAYS && goaBody.includes('distances from Goa, India'),
     `${goaCount} stays`);
+
+  // Hotel-detail chargers must use the same card/actions/click-through as the
+  // station search list, scoped to the hotel as the distance origin.
+  const detailHref = await page.locator('a[href^="/hotels/"]').first().getAttribute('href');
+  if (detailHref) {
+    await page.goto(new URL(detailHref, BASE_URL).toString(), { waitUntil: 'domcontentloaded' });
+    const chargerRow = page.locator('#chargers button[aria-label^="View details for"], #chargers button[aria-label^="Open charger source for"]').first();
+    await chargerRow.waitFor({ timeout: 20000 });
+    check('hotel charger list uses the same station cards as search',
+      (await chargerRow.count()) > 0,
+      await chargerRow.getAttribute('aria-label') ?? '');
+    check('hotel charger cards expose the search-list actions',
+      (await page.locator('#chargers button:has-text("Directions")').count()) > 0
+        && (await page.locator('#chargers button:has-text("App")').count()) > 0);
+    const detailLabel = await chargerRow.getAttribute('aria-label');
+    if (detailLabel?.startsWith('View details for')) {
+      await chargerRow.click();
+      await page.waitForURL(/\/station\/[0-9a-f-]{36}/, { timeout: 15000 });
+      check('hotel charger row click-out opens the Ampo station detail',
+        /\/station\//.test(page.url()), page.url());
+    }
+  }
   await context.close();
 }
 

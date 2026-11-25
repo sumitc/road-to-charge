@@ -7,15 +7,49 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BrandTitle } from '@/components/BrandTitle';
 import { ContributionButton } from '@/components/ContributionButton';
 import { SiteFooter } from '@/components/SiteFooter';
-import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex } from '@/lib/hotelIndex';
+import { StationCard } from '@/components/StationCard';
+import { useDrivingDistances } from '@/hooks/useDrivingDistances';
+import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex, type Charger } from '@/lib/hotelIndex';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
+import type { ChargingStation } from '@/types/station';
 
 const HOTEL_PHOTO = '/hotels/placeholder.svg';
 const VISIBLE_CHARGER_LIMIT = 8;
 
 function formatDistance(meters: number) {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`;
+}
+
+const AMPO_STATION_URL = /\/station\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+function ampoStationId(charger: Charger) {
+  return charger.sourceUrl?.match(AMPO_STATION_URL)?.[1] ?? null;
+}
+
+/** Stable key for sourced rows that have no Ampo station page of their own. */
+function sourceStationId(charger: Charger) {
+  return ampoStationId(charger)
+    ?? `source-${[charger.sourceKind, charger.placeId, charger.name, charger.location.lat, charger.location.lng].join('|')}`;
+}
+
+/** Reuse the search-list card for hotel-scoped chargers without inventing a station page. */
+function chargerToStation(charger: Charger): ChargingStation {
+  return {
+    id: sourceStationId(charger),
+    name: charger.name,
+    provider: charger.provider || 'Unlisted network',
+    address: '',
+    lat: charger.location.lat,
+    lng: charger.location.lng,
+    distance: charger.distanceMeters / 1000,
+    status: 'unknown',
+    connectorTypes: charger.connectors ?? [],
+    googlePlaceId: charger.placeId || undefined,
+    sourceName: charger.source || charger.sourceKind || 'mapped source',
+    sourceUrl: charger.sourceUrl,
+    mapsLink: charger.sourceUrl,
+  };
 }
 
 export function HotelDetailPage() {
@@ -39,9 +73,21 @@ export function HotelDetailPage() {
       return true;
     });
   }, [hotel]);
+  const chargerRows = useMemo(() => nearbyChargers.map(charger => ({
+    station: chargerToStation(charger),
+    hasDetailPage: Boolean(ampoStationId(charger)),
+  })), [nearbyChargers]);
+  const drivingDistances = useDrivingDistances(
+    hotel?.location ?? null,
+    chargerRows.map(row => ({
+      id: row.station.id,
+      lat: row.station.lat,
+      lng: row.station.lng,
+    })),
+  );
   const visibleChargers = showAllChargers
-    ? nearbyChargers
-    : nearbyChargers.slice(0, VISIBLE_CHARGER_LIMIT);
+    ? chargerRows
+    : chargerRows.slice(0, VISIBLE_CHARGER_LIMIT);
 
   useDynamicSeo({
     title: hotel
@@ -161,38 +207,18 @@ export function HotelDetailPage() {
                     rows from OpenStreetMap and the Ampo catalogue. These are chargers near the
                     hotel, not chargers owned by the property.
                   </p>
-                  {nearbyChargers.length > 0 ? (
-                    <ul className="mt-2 space-y-2">
-                      {visibleChargers.map((charger, index) => (
-                        <li
-                          key={`${charger.sourceKind}-${charger.placeId || charger.name}-${index}`}
-                          className="flex items-start justify-between gap-2 border-t pt-2 text-xs first:border-t-0 first:pt-0"
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{charger.name}</span>
-                            <span className="block text-muted-foreground">
-                              {charger.provider || 'Unlisted network'} · {formatDistance(charger.distanceMeters)}
-                              {charger.mentionsHotel && ' · names this property'}
-                            </span>
-                          </span>
-                          <span className="flex shrink-0 flex-col items-end gap-1">
-                            <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
-                              {charger.sourceKind || 'source'}
-                            </span>
-                            {charger.sourceUrl && (
-                              <a
-                                href={charger.sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="whitespace-nowrap text-primary underline underline-offset-2"
-                              >
-                                Source <ExternalLink className="inline h-2.5 w-2.5" />
-                              </a>
-                            )}
-                          </span>
-                        </li>
+                  {chargerRows.length > 0 ? (
+                    <div className="mt-3 space-y-3">
+                      {visibleChargers.map(({ station, hasDetailPage }) => (
+                        <StationCard
+                          key={station.id}
+                          station={station}
+                          userLocation={hotel.location}
+                          drivingDistanceKm={drivingDistances[station.id]}
+                          hasDetailPage={hasDetailPage}
+                        />
                       ))}
-                    </ul>
+                    </div>
                   ) : (
                     <p className="mt-2 text-xs text-muted-foreground">
                       No individual charger rows are cached for this property yet.

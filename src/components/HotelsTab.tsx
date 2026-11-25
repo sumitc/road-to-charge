@@ -184,7 +184,13 @@ export function HotelsTab() {
       }] as const),
   ), []);
   const hotelByPlaceId = useMemo(() => new Map(
-    index.hotels.map(hotel => [hotel.provenance.placeId, { lat: hotel.location.lat, lng: hotel.location.lng, id: hotel.id }] as const),
+    index.hotels.map(hotel => [hotel.provenance.placeId, {
+      lat: hotel.location.lat,
+      lng: hotel.location.lng,
+      id: hotel.id,
+      label: hotel.name,
+      source: 'indexed' as const,
+    }] as const),
   ), []);
 
   const searchNeedle = useMemo(

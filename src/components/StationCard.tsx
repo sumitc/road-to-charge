@@ -32,6 +32,11 @@ interface StationCardProps {
   onPrefetch?: () => void;
   /** Road distance fetched after render; falls back to straight-line distance. */
   drivingDistanceKm?: number;
+  /**
+   * Hotel-detail rows sourced from Google/OSM may not have an Ampo station
+   * page. Those rows open their mapped source instead of a broken detail URL.
+   */
+  hasDetailPage?: boolean;
 }
 
 const SPEED_TONE: Record<string, string> = {
@@ -52,6 +57,7 @@ const StationCardComponent: React.FC<StationCardProps> = ({
   onFavouriteToggle,
   onPrefetch,
   drivingDistanceKm,
+  hasDetailPage = true,
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -97,14 +103,21 @@ const StationCardComponent: React.FC<StationCardProps> = ({
         <button
           type="button"
           onClick={() => {
+            if (!hasDetailPage) {
+              const sourceUrl = station.sourceUrl || station.mapsLink;
+              if (sourceUrl) window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+              return;
+            }
             trackAmpo('detail_open', { station_id: station.id, source: 'card' });
             navigate(`/station/${station.id}`);
           }}
-          onPointerEnter={onPrefetch}
-          onTouchStart={onPrefetch}
-          onFocus={onPrefetch}
+          onPointerEnter={hasDetailPage ? onPrefetch : undefined}
+          onTouchStart={hasDetailPage ? onPrefetch : undefined}
+          onFocus={hasDetailPage ? onPrefetch : undefined}
           className="flex w-full min-w-0 gap-3 text-left"
-          aria-label={`View details for ${station.name}`}
+          aria-label={hasDetailPage
+            ? `View details for ${station.name}`
+            : `Open charger source for ${station.name}`}
         >
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary/15 to-emerald-500/15 sm:h-28 sm:w-32">
             {photoRef ? (
@@ -224,27 +237,41 @@ const StationCardComponent: React.FC<StationCardProps> = ({
             App
             <ExternalLink className="h-3 w-3 opacity-60" />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/station/${station.id}#reviews`)}
-            className="h-10 rounded-xl"
-          >
-            Review
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
-            onClick={handleFavouriteToggle}
-            className={cn(
-              'ml-auto h-10 w-10 rounded-xl',
-              isFavourite ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground hover:text-amber-500'
-            )}
-          >
-            <Star className={cn('h-5 w-5', isFavourite && 'fill-current')} />
-          </Button>
+          {hasDetailPage ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/station/${station.id}#reviews`)}
+              className="h-10 rounded-xl"
+            >
+              Review
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : station.sourceUrl ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(station.sourceUrl, '_blank', 'noopener,noreferrer')}
+              className="h-10 rounded-xl"
+            >
+              Source
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          ) : null}
+          {hasDetailPage && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+              onClick={handleFavouriteToggle}
+              className={cn(
+                'ml-auto h-10 w-10 rounded-xl',
+                isFavourite ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground hover:text-amber-500'
+              )}
+            >
+              <Star className={cn('h-5 w-5', isFavourite && 'fill-current')} />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

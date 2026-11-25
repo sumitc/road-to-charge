@@ -11,6 +11,7 @@ const LABEL: Record<string, string> = {
   operational: 'Live',
   maintenance: 'Maintenance',
   'out-of-service': 'Offline',
+  unknown: 'Status unknown',
 };
 
 /** Status pill. "Available" gets a radiating green dot like a live indicator. */

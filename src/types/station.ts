@@ -1,4 +1,4 @@
-export type StationStatus = 'operational' | 'maintenance' | 'out-of-service';
+export type StationStatus = 'operational' | 'maintenance' | 'out-of-service' | 'unknown';
 export type VehicleClass = 'car' | 'two_three_wheeler';
 export type ChargingCurrent = 'AC' | 'DC';
 export type Ownership = 'govt' | 'private';
