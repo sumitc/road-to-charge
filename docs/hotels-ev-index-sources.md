@@ -1,6 +1,6 @@
 # Hotels EV index — local source note
 
-**Source/provenance note, updated 2026-11-25.** The locally generated hotel index is used by Ampo's Hotels tab; this document records how the target list, chargers and on-site evidence were assembled. The Hotels tab is on by default (`VITE_ENABLE_HOTELS_TAB !== 'false'`); setting the flag to `false` hides it.
+**Source/provenance note, updated 2026-11-25.** The published hotel index is used by Ampo's Hotels tab; this document records how the target list, chargers and on-site evidence were assembled. The Hotels tab is on by default (`VITE_ENABLE_HOTELS_TAB !== 'false'`); setting the flag to `false` hides it.
 
 **Current snapshot:** 32 areas, 370 hotels; 365 rows are `Charger nearby` and 5 have an exact, property-specific official-page on-site source. 193 of the nearby rows have a charger within 250 m, but proximity alone never upgrades them to `EV on site`. Open Charge Map enrichment is optional and was skipped locally because no `OPEN_CHARGE_MAP_API_KEY` is configured; the script supports it without adding a runtime function.
 
