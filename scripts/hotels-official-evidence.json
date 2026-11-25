@@ -1,0 +1,61 @@
+{
+  "note": "Exact, property-specific on-site EV charging claims from official hotel/brand pages. Used at build time only. No OTA, review-site, price or rating data is copied. A row is marked on-site only when one of these entries matches the hotel by Google Place ID or canonical name.",
+  "reviewedOn": "2026-11-25",
+  "entries": [
+    {
+      "id": "taj-malabar-cochin",
+      "placeId": "ChIJoa1FvU1tCDsR0XkVsrehmd4",
+      "name": "Taj Malabar Resort & Spa, Cochin",
+      "sourceName": "Taj Hotels official property page",
+      "sourceUrl": "https://www.tajhotels.com/en-in/hotels/taj-malabar-cochin",
+      "quote": "Yes, Taj Malabar Resort & Spa, Cochin has an EV charging station to conveniently charge your electric vehicle during your stay.",
+      "verifiedAt": "2026-11-25",
+      "verificationMethod": "official_property_page"
+    },
+    {
+      "id": "jaipur-marriott",
+      "placeId": "ChIJM2amkeW1bTkRia3J5eg9QO8",
+      "name": "Jaipur Marriott Hotel",
+      "sourceName": "Marriott Bonvoy official property page",
+      "sourceUrl": "https://www.marriott.com/en-us/hotels/jaimc-jaipur-marriott-hotel/overview",
+      "quote": "Electric Car Charging Station",
+      "verifiedAt": "2026-11-25",
+      "verificationMethod": "official_property_page"
+    },
+    {
+      "id": "itc-windsor-bengaluru",
+      "placeId": "ChIJs3wvuUAWrjsRMh9IJ0XURTM",
+      "name": "ITC Windsor, a Luxury Collection Hotel, Bengaluru",
+      "searchQuery": "ITC Windsor Bengaluru hotel",
+      "areaId": "bengaluru",
+      "sourceName": "ITC Hotels official property page",
+      "sourceUrl": "https://www.itchotels.com/in/en/itcwindsor-bengaluru",
+      "quote": "Yes, ITC Windsor provides a dedicated electric vehicle charging station within the hotel premises.",
+      "verifiedAt": "2026-11-25",
+      "verificationMethod": "official_property_page"
+    },
+    {
+      "id": "itc-gardenia-bengaluru",
+      "placeId": "ChIJ0xbyLN12AjoR8oTQ7QgMPlI",
+      "name": "ITC Gardenia, a Luxury Collection Hotel, Bengaluru",
+      "searchQuery": "ITC Gardenia Bengaluru hotel",
+      "areaId": "bengaluru",
+      "sourceName": "ITC Hotels official property page",
+      "sourceUrl": "https://www.itchotels.com/in/en/itcgardenia-bengaluru",
+      "quote": "For those traveling with electric vehicles, we provide a paid EV charging station facility to keep your vehicle powered throughout your stay.",
+      "verifiedAt": "2026-11-25",
+      "verificationMethod": "official_property_page"
+    },
+    {
+      "id": "radisson-blu-plaza-delhi-airport",
+      "name": "Radisson Blu Plaza Hotel, Delhi Airport",
+      "searchQuery": "Radisson Blu Plaza Hotel Delhi Airport",
+      "areaId": "delhi",
+      "sourceName": "Radisson Hotels official property services page",
+      "sourceUrl": "https://www.radissonhotels.com/en-us/hotels/radisson-blu-new-delhi-airport/services",
+      "quote": "Electric vehicle charging stations are available on site for guests traveling by car.",
+      "verifiedAt": "2026-11-25",
+      "verificationMethod": "official_property_page"
+    }
+  ]
+}

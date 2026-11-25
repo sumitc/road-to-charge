@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const TARGETS = path.join(ROOT, 'scripts/hotels-ev-targets.json');
+const OFFICIAL_EVIDENCE = path.join(ROOT, 'scripts/hotels-official-evidence.json');
 const OUT = path.join(ROOT, 'src/data/hotels-ev.index.generated.json');
 const PHOTO_DIR = path.join(ROOT, 'public/hotels/google');
 const CACHE_DIR = path.join(os.tmpdir(), 'ampo-hotels-ev-index-cache-v1');
@@ -36,7 +37,7 @@ const opt = (name, fallback) => {
   return hit ? hit.slice(name.length + 3) : fallback;
 };
 
-const limit = Math.max(1, Math.min(12, Number(opt('limit', '6')) || 6));
+const limit = Math.max(1, Math.min(20, Number(opt('limit', '12')) || 12));
 const radiusMeters = Math.max(500, Math.min(3000, Number(opt('radius', '2500')) || 2500));
 const chargerLimit = Math.max(1, Math.min(20, Number(opt('chargers', '10')) || 10));
 const delayMs = Math.max(0, Number(opt('delay', '250')) || 250);
@@ -109,6 +110,21 @@ const PROVIDERS = [
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
 const slug = value => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const normalizeName = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/**
+ * Match a Google place to an exact, property-specific official EV claim.
+ * Never use fuzzy/partial matching on generic words like "hotel": an on-site
+ * claim needs the exact place ID or the property's full canonical name.
+ */
+function officialEvidenceFor(place, name, evidence) {
+  const placeId = place?.id || '';
+  const normalized = normalizeName(name);
+  return evidence.entries.find(entry =>
+    (entry.placeId && entry.placeId === placeId)
+    || normalizeName(entry.name) === normalized
+  ) || null;
+}
 
 const stats = {
   googleRequests: 0,
@@ -257,7 +273,154 @@ async function maybeDownloadPhoto(photo, hotelId, name, key) {
   }
 }
 
-async function collectArea(area, key, resolvePlaceByText, retrievedAt) {
+/**
+ * Build one hotel row from a Google Place. Shared by the area sweep and by the
+ * exact official-evidence pass so both use identical charger/evidence rules.
+ */
+async function buildHotel(place, area, { key, retrievedAt, officialEvidence }) {
+  const placeId = place.id;
+  const name = place.displayName?.text || '';
+  if (!placeId || !name) return null;
+  const position = place.location || {};
+  const city = addressPart(place, ['locality', 'administrative_area_level_3'], area.city);
+  const state = addressPart(place, ['administrative_area_level_1'], area.state);
+  const locality = addressPart(place, ['sublocality_level_1', 'sublocality', 'neighborhood'], '');
+
+  let chargerData;
+  try {
+    chargerData = await cachedJson(
+      `searchNearby:v1:${Number(position.latitude).toFixed(5)},${Number(position.longitude).toFixed(5)}:${radiusMeters}:${chargerLimit}`,
+      () => googlePost('places:searchNearby', {
+        includedTypes: ['electric_vehicle_charging_station'],
+        maxResultCount: chargerLimit,
+        rankPreference: 'DISTANCE',
+        locationRestriction: {
+          circle: {
+            center: { latitude: Number(position.latitude), longitude: Number(position.longitude) },
+            radius: radiusMeters,
+          },
+        },
+      }, CHARGER_MASK, key)
+    );
+  } catch (error) {
+    stats.errors.push(`chargers ${placeId}: ${String(error).slice(0, 140)}`);
+    chargerData = { places: [] };
+  }
+
+  const chargers = (chargerData.places || [])
+    .map(charger => ({
+      placeId: charger.id || '',
+      name: charger.displayName?.text || 'EV charging station',
+      provider: providerFromName(charger.displayName?.text),
+      location: {
+        lat: Number(charger.location?.latitude),
+        lng: Number(charger.location?.longitude),
+      },
+      distanceMeters: haversineMeters(position, charger.location),
+      sourceUrl: mapsUrl(charger),
+    }))
+    .filter(charger => charger.placeId && Number.isFinite(charger.distanceMeters) && charger.distanceMeters <= radiusMeters)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+  const official = officialEvidenceFor(place, name, officialEvidence);
+  const googleOnSite = onSiteEvidence(place);
+  const onSiteText = official?.quote || googleOnSite;
+  const nearest = chargers[0] || null;
+  if (!onSiteText && !nearest) return null;
+
+  const evSignal = onSiteText && nearest
+    ? 'both'
+    : onSiteText
+      ? official ? 'on_site_official_source' : 'on_site_google_place'
+      : 'ev_charger_nearby';
+  const providers = [...new Set(chargers.map(charger => charger.provider))];
+  const photo = place.photos?.[0]?.name ? {
+    reference: place.photos[0].name,
+    sourceUrl: mapsUrl(place, `${name}, ${city}, ${state}`),
+    localPath: null,
+  } : null;
+  const hotelId = `google-${slug(placeId).slice(0, 48)}`;
+
+  await maybeDownloadPhoto(photo, hotelId, name, key);
+
+  const label = official
+    ? nearest
+      ? `EV charging confirmed by ${official.sourceName} · charger ${(nearest.distanceMeters / 1000).toFixed(1)} km away`
+      : `EV charging confirmed by ${official.sourceName}`
+    : googleOnSite && nearest
+      ? `EV charging listed by Google · charger ${(nearest.distanceMeters / 1000).toFixed(1)} km away`
+      : googleOnSite
+        ? 'EV charging listed by Google Place'
+        : `EV charger ${(nearest.distanceMeters / 1000).toFixed(1)} km away`;
+
+  const sources = [{
+    kind: 'google',
+    label: 'Google Maps place',
+    url: mapsUrl(place, `${name}, ${city}, ${state}`),
+    verifiedAt: retrievedAt,
+    verificationMethod: 'google_places_place_id',
+  }];
+  if (official) {
+    sources.push({
+      kind: 'hotel_website',
+      label: official.sourceName,
+      url: official.sourceUrl,
+      verifiedAt: official.verifiedAt,
+      verificationMethod: official.verificationMethod,
+    });
+  }
+
+  return {
+    id: hotelId,
+    name,
+    area: area.name,
+    city,
+    state,
+    locality,
+    formattedAddress: place.formattedAddress || '',
+    location: { lat: Number(position.latitude), lng: Number(position.longitude) },
+    interestTags: area.interestTags || [],
+    rating: Number.isFinite(Number(place.rating)) ? Number(place.rating) : null,
+    priceBand: PRICE_LABELS[place.priceLevel] || null,
+    source: official ? official.sourceName : 'Google Places API (New)',
+    sourceUrl: mapsUrl(place, `${name}, ${city}, ${state}`),
+    websiteUrl: place.websiteUri || official?.sourceUrl || null,
+    photo,
+    sources,
+    evSignal,
+    onSiteEvidence: onSiteText,
+    onSiteEvidenceSource: official ? {
+      label: official.sourceName,
+      url: official.sourceUrl,
+      quote: official.quote,
+      verifiedAt: official.verifiedAt,
+      verificationMethod: official.verificationMethod,
+    } : googleOnSite ? {
+      label: 'Google Places place details',
+      url: mapsUrl(place, `${name}, ${city}, ${state}`),
+      quote: googleOnSite,
+      verifiedAt: retrievedAt,
+      verificationMethod: 'google_places_place_id',
+    } : null,
+    ev: {
+      label,
+      nearestCharger: nearest,
+      chargerCountWithinRadius: chargers.length,
+      providers,
+      radiusMeters,
+    },
+    provenance: {
+      placeId,
+      retrievedAt,
+      hotelLookup: 'Google Places API (New) places:searchText',
+      chargerLookup: 'Google Places API (New) places:searchNearby',
+      demandUrl: area.demandUrl,
+      coordinatesAsOf: retrievedAt,
+    },
+  };
+}
+
+async function collectArea(area, key, resolvePlaceByText, retrievedAt, officialEvidence) {
   const areaStats = { candidates: 0, indexed: 0, error: null };
   let resolved;
   try {
@@ -301,105 +464,8 @@ async function collectArea(area, key, resolvePlaceByText, retrievedAt) {
 
   const hotels = [];
   for (const place of lodging) {
-    const placeId = place.id;
-    const name = place.displayName?.text || '';
-    if (!placeId || !name) continue;
-    const position = place.location || {};
-    const city = addressPart(place, ['locality', 'administrative_area_level_3'], area.city);
-    const state = addressPart(place, ['administrative_area_level_1'], area.state);
-    const locality = addressPart(place, ['sublocality_level_1', 'sublocality', 'neighborhood'], '');
-
-    let chargerData;
-    try {
-      chargerData = await cachedJson(
-        `searchNearby:v1:${Number(position.latitude).toFixed(5)},${Number(position.longitude).toFixed(5)}:${radiusMeters}:${chargerLimit}`,
-        () => googlePost('places:searchNearby', {
-          includedTypes: ['electric_vehicle_charging_station'],
-          maxResultCount: chargerLimit,
-          rankPreference: 'DISTANCE',
-          locationRestriction: {
-            circle: {
-              center: { latitude: Number(position.latitude), longitude: Number(position.longitude) },
-              radius: radiusMeters,
-            },
-          },
-        }, CHARGER_MASK, key)
-      );
-    } catch (error) {
-      stats.errors.push(`chargers ${placeId}: ${String(error).slice(0, 140)}`);
-      chargerData = { places: [] };
-    }
-
-    const chargers = (chargerData.places || [])
-      .map(charger => ({
-        placeId: charger.id || '',
-        name: charger.displayName?.text || 'EV charging station',
-        provider: providerFromName(charger.displayName?.text),
-        location: {
-          lat: Number(charger.location?.latitude),
-          lng: Number(charger.location?.longitude),
-        },
-        distanceMeters: haversineMeters(position, charger.location),
-        sourceUrl: mapsUrl(charger),
-      }))
-      .filter(charger => charger.placeId && Number.isFinite(charger.distanceMeters) && charger.distanceMeters <= radiusMeters)
-      .sort((a, b) => a.distanceMeters - b.distanceMeters);
-
-    const onSite = onSiteEvidence(place);
-    const nearest = chargers[0] || null;
-    if (!onSite && !nearest) continue;
-
-    const evSignal = onSite && nearest ? 'both' : onSite ? 'on_site_google_place' : 'ev_charger_nearby';
-    const providers = [...new Set(chargers.map(charger => charger.provider))];
-    const photo = place.photos?.[0]?.name ? {
-      reference: place.photos[0].name,
-      sourceUrl: mapsUrl(place, `${name}, ${city}, ${state}`),
-      localPath: null,
-    } : null;
-    const hotelId = `google-${slug(placeId).slice(0, 48)}`;
-
-    await maybeDownloadPhoto(photo, hotelId, name, key);
-
-    const label = onSite && nearest
-      ? `EV charging listed by Google · charger ${(nearest.distanceMeters / 1000).toFixed(1)} km away`
-      : onSite
-        ? 'EV charging listed by Google Place'
-        : `EV charger ${(nearest.distanceMeters / 1000).toFixed(1)} km away`;
-
-    hotels.push({
-      id: hotelId,
-      name,
-      area: area.name,
-      city,
-      state,
-      locality,
-      formattedAddress: place.formattedAddress || '',
-      location: { lat: Number(position.latitude), lng: Number(position.longitude) },
-      interestTags: area.interestTags || [],
-      rating: Number.isFinite(Number(place.rating)) ? Number(place.rating) : null,
-      priceBand: PRICE_LABELS[place.priceLevel] || null,
-      source: 'Google Places API (New)',
-      sourceUrl: mapsUrl(place, `${name}, ${city}, ${state}`),
-      websiteUrl: place.websiteUri || null,
-      photo,
-      evSignal,
-      onSiteEvidence: onSite,
-      ev: {
-        label,
-        nearestCharger: nearest,
-        chargerCountWithinRadius: chargers.length,
-        providers,
-        radiusMeters,
-      },
-      provenance: {
-        placeId,
-        retrievedAt,
-        hotelLookup: 'Google Places API (New) places:searchText',
-        chargerLookup: 'Google Places API (New) places:searchNearby',
-        demandUrl: area.demandUrl,
-        coordinatesAsOf: retrievedAt,
-      },
-    });
+    const hotel = await buildHotel(place, area, { key, retrievedAt, officialEvidence });
+    if (hotel) hotels.push(hotel);
   }
 
   areaStats.indexed = hotels.length;
@@ -419,7 +485,7 @@ async function collectArea(area, key, resolvePlaceByText, retrievedAt) {
 
 function validate(index) {
   if (!Array.isArray(index.hotels) || !Array.isArray(index.areas)) throw new Error('missing hotels/areas arrays');
-  const allowed = new Set(['on_site_google_place', 'ev_charger_nearby', 'both']);
+  const allowed = new Set(['on_site_google_place', 'on_site_official_source', 'ev_charger_nearby', 'both']);
   for (const hotel of index.hotels) {
     if (!allowed.has(hotel.evSignal)) throw new Error(`bad evSignal ${hotel.evSignal}`);
     if (!hotel.provenance?.placeId || !hotel.sourceUrl) throw new Error(`missing provenance ${hotel.id}`);
@@ -429,8 +495,11 @@ function validate(index) {
     if (hotel.evSignal === 'ev_charger_nearby' && !hotel.ev?.nearestCharger) {
       throw new Error(`nearby signal without a charger ${hotel.id}`);
     }
-    if ((hotel.evSignal === 'on_site_google_place' || hotel.evSignal === 'both') && !hotel.onSiteEvidence) {
+    if ((hotel.evSignal === 'on_site_google_place' || hotel.evSignal === 'on_site_official_source' || hotel.evSignal === 'both') && !hotel.onSiteEvidence) {
       throw new Error(`on-site signal without source text ${hotel.id}`);
+    }
+    if (hotel.evSignal !== 'ev_charger_nearby' && !hotel.onSiteEvidenceSource?.url) {
+      throw new Error(`on-site signal without source URL ${hotel.id}`);
     }
   }
   const scanKeys = value => {
@@ -464,6 +533,7 @@ async function main() {
   // Node 24 strips TypeScript types; this is the same helper used by /api/stations.
   const { searchPlaceByText } = await import('../server/lib/googlePlaces.ts');
   const targets = JSON.parse(await fs.readFile(TARGETS, 'utf8'));
+  const officialEvidence = JSON.parse(await fs.readFile(OFFICIAL_EVIDENCE, 'utf8'));
   const areas = onlyArea
     ? targets.areas.filter(area => area.id === onlyArea || slug(area.name) === onlyArea)
     : targets.areas;
@@ -476,10 +546,66 @@ async function main() {
 
   for (let i = 0; i < areas.length; i++) {
     const area = areas[i];
-    const result = await collectArea(area, key, searchPlaceByText, retrievedAt);
+    const result = await collectArea(area, key, searchPlaceByText, retrievedAt, officialEvidence);
     results.push(result.area);
     hotels.push(...result.hotels);
     console.log(`[${i + 1}/${areas.length}] ${area.name}: ${result.hotels.length}/${result.stats.candidates} indexed${result.stats.error ? ` — ${result.stats.error.slice(0, 90)}` : ''}`);
+  }
+
+  // Exact official properties that Google's area search did not surface still
+  // belong in the index when their own site confirms on-site charging.
+  let officialAdded = 0;
+  for (const entry of officialEvidence.entries) {
+    if (!entry.searchQuery || onlyArea) continue;
+    const already = hotels.some(hotel =>
+      (entry.placeId && hotel.provenance.placeId === entry.placeId)
+      || normalizeName(hotel.name) === normalizeName(entry.name)
+    );
+    if (already) continue;
+    const area = targets.areas.find(item => item.id === entry.areaId) || {
+      id: 'official', name: entry.name, city: '', state: '', interestTags: [], demandUrl: null,
+    };
+    const resolvedArea = results.find(item => item.id === area.id);
+    const body = { textQuery: entry.searchQuery, maxResultCount: 1 };
+    if (resolvedArea?.coordinates) {
+      body.locationBias = {
+        circle: {
+          center: {
+            latitude: resolvedArea.coordinates.lat,
+            longitude: resolvedArea.coordinates.lng,
+          },
+          radius: 15000,
+        },
+      };
+    }
+    let placeData;
+    try {
+      placeData = await cachedJson(
+        `officialPlace:v2:${entry.searchQuery}`,
+        () => googlePost('places:searchText', body, HOTEL_MASK, key)
+      );
+    } catch (error) {
+      stats.errors.push(`official ${entry.id}: ${String(error).slice(0, 140)}`);
+      continue;
+    }
+    const place = (placeData.places || []).find(item =>
+      item.types?.some(type => LODGING_TYPES.has(type))
+    ) || placeData.places?.[0];
+    if (!place) {
+      stats.errors.push(`official ${entry.id}: Google returned no place`);
+      continue;
+    }
+    const matched = officialEvidenceFor(place, place.displayName?.text || entry.name, officialEvidence);
+    if (!matched || matched.id !== entry.id) {
+      stats.errors.push(`official ${entry.id}: Google place did not match the official property name`);
+      continue;
+    }
+    const hotel = await buildHotel(place, area, { key, retrievedAt, officialEvidence });
+    if (hotel) {
+      hotels.push(hotel);
+      if (resolvedArea) resolvedArea.indexed = (resolvedArea.indexed || 0) + 1;
+      officialAdded++;
+    }
   }
 
   const evSignalCounts = {};
@@ -493,25 +619,29 @@ async function main() {
 
   const index = {
     generatedAt: new Date().toISOString(),
-    indexVersion: 1,
+    indexVersion: 2,
     method: {
-      source: 'Google Places API (New)',
-      hotels: 'places:searchText with a 15 km location bias; lodging types only',
+      source: 'Google Places API (New) + official hotel/brand pages',
+      hotels: `places:searchText with a 15 km location bias; lodging types only; up to ${limit} per curated area`,
       chargers: `places:searchNearby includedTypes=electric_vehicle_charging_station within ${radiusMeters} m`,
       areaResolution: 'existing server/lib/googlePlaces.ts searchPlaceByText helper',
+      onSiteEvidence: 'Exact property-specific official page quote, or Google place name/summary. Never proximity alone.',
       radiusMeters,
       perAreaLimit: limit,
       chargersPerHotel: chargerLimit,
       demandSource: targets.demandSource,
       demandCheckedOn: targets.reviewedOn,
+      officialEvidenceCheckedOn: officialEvidence.reviewedOn,
       cacheTtlDays: 30,
-      note: 'Point-in-time local seed. proximity is not an on-site claim. No social reviews are collected.',
+      note: 'Point-in-time local seed. Proximity stays "Charger nearby"; only sourced text can claim on-site EV charging. No social reviews are collected.',
     },
     coverage: {
       areasRequested: areas.length,
       areasResolved: results.filter(area => area.placeId).length,
       candidateHotels: results.reduce((sum, area) => sum + (area.candidates || 0), 0),
       hotelsIndexed: hotels.length,
+      officialEvidenceEntries: officialEvidence.entries.length,
+      officialExactAdditions: officialAdded,
       evSignalCounts,
       providers: [...providers].sort(),
       priceBands: [...priceBands].sort(),
@@ -532,7 +662,7 @@ async function main() {
   } else {
     console.log(`Dry run: ${hotels.length} hotels across ${results.length} areas (no file written)`);
   }
-  console.log(`Google calls: ${stats.googleRequests}; cache hits: ${stats.cacheHits}; photo downloads: ${stats.photoDownloads}`);
+  console.log(`Google calls: ${stats.googleRequests}; cache hits: ${stats.cacheHits}; photo downloads: ${stats.photoDownloads}; official exact additions: ${officialAdded}`);
 }
 
 main().catch(error => { console.error(error); process.exit(1); });

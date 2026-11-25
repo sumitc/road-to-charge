@@ -5,9 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BatteryCharging, ExternalLink, Loader2, MapPin, RotateCcw, Search, Star } from 'lucide-react';
 import affiliateLinks from '@/data/affiliateLinks.json';
-import { hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
+import { hasAuthenticOnSiteEvidence, hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
 import { ConnectorFilter } from '@/components/ConnectorFilter';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
+import { matchesPlaceQuery } from '@/lib/placeAliases';
 import { cn } from '@/lib/utils';
 import { trackAmpo } from '@/lib/analytics';
 import { trackEmptyResult } from '@/lib/emptyResults';
@@ -44,9 +45,9 @@ function formatKm(km?: number | null) {
   return km! < 1 ? `${Math.round(km! * 1000)} m` : `${km!.toFixed(1)} km`;
 }
 
-/** Small search-results-style pill; only claim on-site charging when sourced. */
+/** Small search-results-style pill; proximity never upgrades to on-site. */
 function evEvidenceTag(hotel: Hotel) {
-  const onSite = hotel.evSignal === 'both' || hotel.evSignal === 'on_site_google_place';
+  const onSite = hasAuthenticOnSiteEvidence(hotel);
   return {
     label: onSite ? 'EV on site' : 'Charger nearby',
     tone: onSite
@@ -152,9 +153,17 @@ function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
             )}
           </div>
         </div>
-        {hotel.onSiteEvidence && (
+        {hasAuthenticOnSiteEvidence(hotel) && (
           <p className="mt-2 rounded-lg bg-muted/60 p-2 text-[11px] leading-snug text-muted-foreground">
-            Google place text: &ldquo;{hotel.onSiteEvidence}&rdquo;
+            {hotel.onSiteEvidenceSource?.label}: &ldquo;{hotel.onSiteEvidenceSource?.quote}&rdquo;{' '}
+            <a
+              href={hotel.onSiteEvidenceSource?.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              Source <ExternalLink className="inline h-2.5 w-2.5" />
+            </a>
           </p>
         )}
         <div className="mt-2 flex items-center justify-between gap-2">
@@ -244,11 +253,12 @@ export function HotelsTab() {
       if (focusedHotelId && hotel.id !== focusedHotelId) return false;
       if (needle) {
         // Hotel-only search: name, locality, city, state or address. Never the
-        // internal EV taxonomy or charger text.
+        // internal EV taxonomy or charger text. Aliases let "bangalore" find
+        // rows indexed as "Bengaluru".
         const haystack = [
           hotel.name, hotel.area, hotel.city, hotel.state, hotel.locality, hotel.formattedAddress,
-        ].filter(Boolean).join(' ').toLowerCase();
-        if (!haystack.includes(needle)) return false;
+        ].filter(Boolean).join(' ');
+        if (!matchesPlaceQuery(haystack, needle)) return false;
       }
       if (!matchesConnectorFilters(hotel.ev.connectorTypes, connectors)) return false;
       if (minRating > 0 && (hotel.rating ?? 0) < minRating) return false;

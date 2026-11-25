@@ -44,6 +44,15 @@ const esc = value => String(value ?? '')
 
 const abs = target => `${SITE}${target.startsWith('/') ? target : `/${target}`}`;
 
+/** Proximity is never enough for an on-site EV claim in crawler-facing pages. */
+const hasOnSiteEvidence = hotel => Boolean(
+  (hotel.evSignal === 'both'
+    || hotel.evSignal === 'on_site_google_place'
+    || hotel.evSignal === 'on_site_official_source')
+  && hotel.onSiteEvidence
+  && hotel.onSiteEvidenceSource?.url
+);
+
 function queryHref(params) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -240,7 +249,13 @@ function hotelJsonLd(hotel, canonical) {
     geo: { '@type': 'GeoCoordinates', latitude: hotel.location.lat, longitude: hotel.location.lng },
     ...(photoUrl ? { image: photoUrl } : {}),
     additionalProperty: [
-      { '@type': 'PropertyValue', name: 'EV evidence', value: hotel.evSignal === 'ev_charger_nearby' ? 'Public charger nearby' : hotel.evSignal },
+      {
+        '@type': 'PropertyValue',
+        name: 'EV evidence',
+        value: hasOnSiteEvidence(hotel)
+          ? `EV on site, confirmed by ${hotel.onSiteEvidenceSource.label}`
+          : 'Public charger nearby (not an on-site claim)',
+      },
       ...(nearest ? [{ '@type': 'PropertyValue', name: 'Nearest public charger', value: `${nearest.provider} · ${nearest.name} · ${(nearest.distanceMeters / 1000).toFixed(2)} km` }] : []),
     ],
     isPartOf: websiteJsonLd(),
@@ -270,7 +285,7 @@ function hotelIndexJsonLd(hotels) {
 }
 
 function hotelH1(hotel) {
-  return `${hotel.name} — EV charging nearby`;
+  return `${hotel.name} — ${hasOnSiteEvidence(hotel) ? 'hotel with EV charging' : 'EV charging nearby'}`;
 }
 
 function hotelIntro(hotel) {
@@ -279,12 +294,18 @@ function hotelIntro(hotel) {
   const charger = nearest
     ? ` The nearest verified public charger is ${nearest.provider} at ${nearest.name}, about ${(nearest.distanceMeters / 1000).toFixed(2)} km away.`
     : '';
+  if (hasOnSiteEvidence(hotel)) {
+    return `${hotel.name} is in ${place || hotel.area}. On-site EV charging is confirmed by ${hotel.onSiteEvidenceSource.label}: “${hotel.onSiteEvidenceSource.quote}”${charger}`;
+  }
   return `${hotel.name} is in ${place || hotel.area}.${charger} EV charging nearby is not a claim that the property itself provides a charger.`;
 }
 
 function hotelBullets(hotel) {
   const nearest = hotel.ev?.nearestCharger;
   return [
+    ...(hasOnSiteEvidence(hotel)
+      ? [`On-site charging source: ${hotel.onSiteEvidenceSource.label} · ${hotel.onSiteEvidenceSource.url}`]
+      : []),
     `Verified public chargers within ${(hotel.ev?.radiusMeters ?? 2500) / 1000} km: ${hotel.ev?.chargerCountWithinRadius ?? 0}`,
     nearest ? `Nearest charger: ${nearest.provider} · ${(nearest.distanceMeters / 1000).toFixed(2)} km` : 'No nearest charger recorded',
     `Providers seen nearby: ${(hotel.ev?.providers ?? []).join(', ') || 'unlisted network'}`,
@@ -297,6 +318,9 @@ function hotelLinks(hotel, canonical) {
     { href: '/hotels/', label: 'All EV hotels' },
     { href: `/?q=${encodeURIComponent(hotel.city || hotel.area)}`, label: 'Chargers in this city' },
   ];
+  if (hasOnSiteEvidence(hotel)) {
+    links.push({ href: hotel.onSiteEvidenceSource.url, label: `${hotel.onSiteEvidenceSource.label} charging evidence` });
+  }
   if (hotel.tripadvisorUrl) links.push({ href: hotel.tripadvisorUrl, label: 'Tripadvisor listing' });
   if (hotel.sourceUrl) links.push({ href: hotel.sourceUrl, label: 'Google Maps source' });
   return links;
@@ -361,7 +385,7 @@ function llmsTxt(registry, hotels) {
 async function write(relativePath, contents) {
   const target = path.join(OUT_ROOT, relativePath);
   await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.writeFile(target, contents, 'utf8');
+  await fs.writeFile(target, contents.replace(/[ \t]+$/gm, ''), 'utf8');
   return target;
 }
 

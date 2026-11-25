@@ -48,4 +48,4 @@ Station data is point-in-time. Always open Ampo for current details.
 - [EV road trip from Delhi to Jaipur](https://ampo.vercel.app/?from=Delhi&to=Jaipur)
 - [EV road trip from Bengaluru to Mysuru](https://ampo.vercel.app/?from=Bengaluru&to=Mysuru)
 
-The local hotel index contains 183 source-attributed hotels with nearby public chargers.
+The local hotel index contains 370 source-attributed hotels with nearby public chargers.

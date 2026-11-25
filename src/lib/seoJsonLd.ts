@@ -1,4 +1,4 @@
-import type { Hotel } from './hotelIndex';
+import { hasAuthenticOnSiteEvidence, type Hotel } from './hotelIndex';
 import type { HubSeoPage } from './seoPages';
 
 const SITE = 'https://ampo.vercel.app';
@@ -58,7 +58,9 @@ export function hotelJsonLd(hotel: Hotel) {
       {
         '@type': 'PropertyValue',
         name: 'EV evidence',
-        value: hotel.evSignal === 'ev_charger_nearby' ? 'Public charger nearby' : hotel.evSignal,
+        value: hasAuthenticOnSiteEvidence(hotel)
+          ? `EV on site, confirmed by ${hotel.onSiteEvidenceSource!.label}`
+          : 'Public charger nearby (not an on-site claim)',
       },
       ...(nearest
         ? [{

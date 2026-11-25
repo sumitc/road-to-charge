@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrandTitle } from '@/components/BrandTitle';
 import { SiteFooter } from '@/components/SiteFooter';
-import { findHotel, hotelIndex } from '@/lib/hotelIndex';
+import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex } from '@/lib/hotelIndex';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
 
@@ -19,6 +19,7 @@ function formatDistance(meters: number) {
 export function HotelDetailPage() {
   const { id } = useParams();
   const hotel = findHotel(id);
+  const onSite = hotel ? hasAuthenticOnSiteEvidence(hotel) : false;
   const nearest = hotel?.ev.nearestCharger ?? null;
   const place = hotel ? [hotel.city, hotel.state].filter(Boolean).join(', ') : '';
   const jsonLd = useMemo(() => (hotel ? hotelJsonLd(hotel) : null), [hotel]);
@@ -85,8 +86,11 @@ export function HotelDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
-                    <BatteryCharging className="mr-1 h-3 w-3" /> {hotel.ev.label}
+                  <Badge className={onSite
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-600'
+                    : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50'}
+                  >
+                    <BatteryCharging className="mr-1 h-3 w-3" /> {onSite ? 'EV on site' : 'Charger nearby'}
                   </Badge>
                   <Badge variant="outline">
                     {hotel.ev.chargerCountWithinRadius} chargers within {(hotel.ev.radiusMeters / 1000).toFixed(1)} km
@@ -107,6 +111,41 @@ export function HotelDetailPage() {
                         View charger source <ExternalLink className="ml-1 h-3 w-3" />
                       </a>
                     </Button>
+                  </div>
+                )}
+
+                {onSite && hotel.onSiteEvidenceSource && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                      On-site charging confirmed by an authentic source
+                    </p>
+                    <p className="mt-1 text-sm text-emerald-950">
+                      &ldquo;{hotel.onSiteEvidenceSource.quote}&rdquo;
+                    </p>
+                    <Button variant="link" size="sm" asChild className="mt-1 h-7 px-0 text-xs">
+                      <a href={hotel.onSiteEvidenceSource.url} target="_blank" rel="noopener noreferrer">
+                        {hotel.onSiteEvidenceSource.label} <ExternalLink className="ml-1 h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+
+                {(hotel.ev.nearbyChargerSources?.length ?? 0) > 1 && (
+                  <div className="rounded-xl bg-muted/40 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Nearby charger sources
+                    </p>
+                    <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                      {hotel.ev.nearbyChargerSources!.slice(0, 5).map((charger, index) => (
+                        <li key={`${charger.sourceKind}-${charger.placeId || charger.sourceUrl}-${index}`}>
+                          <a href={charger.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                            {charger.source || charger.sourceKind || 'Charger source'}
+                          </a>{' '}
+                          · {charger.provider} · {formatDistance(charger.distanceMeters)}
+                          {charger.mentionsHotel && ' · names this property'}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
@@ -140,8 +179,10 @@ export function HotelDetailPage() {
 
                 <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
                   {hotel.formattedAddress || hotel.area}. Source: {hotel.source} · Retrieved{' '}
-                  {String(hotel.provenance.retrievedAt).slice(0, 10)}. A nearby public charger is not an
-                  on-site charging claim. Confirm charging access with the property before travel.
+                  {String(hotel.provenance.retrievedAt).slice(0, 10)}.{' '}
+                  {onSite
+                    ? 'On-site charging is based on the linked property/brand source above. Confirm access and pricing with the property before travel.'
+                    : 'A nearby public charger is not an on-site charging claim. Confirm charging access with the property before travel.'}
                 </p>
               </CardContent>
             </Card>

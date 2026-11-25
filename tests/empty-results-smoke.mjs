@@ -6,7 +6,10 @@
  *   npm run preview -- --port 4173 --host 127.0.0.1
  *   BASE_URL=http://127.0.0.1:4173 npm run test:empty
  */
+import fs from 'node:fs';
 import { chromium } from 'playwright-core';
+
+const TOTAL_STAYS = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generated.json', 'utf8')).hotels.length;
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/$/, '');
 const CHROME_PATH =
@@ -103,7 +106,11 @@ const zeroEvents = async page => (await page.evaluate(() => window.__ampoEvents 
 async function checkHotels() {
   const { page, context } = await newPage();
   await page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 30000 });
+  await page.waitForFunction(
+    total => document.body.innerText.includes(`${total} of ${total} stays`),
+    TOTAL_STAYS,
+    { timeout: 30000 },
+  );
 
   check('EV evidence and provider filters are gone',
     (await page.locator('select[aria-label="EV signal"]').count()) === 0
@@ -112,6 +119,10 @@ async function checkHotels() {
   const initialBody = await page.locator('body').innerText();
   check('EV index badge is gone but honest per-hotel evidence tags remain',
     !initialBody.includes('EV INDEX') && initialBody.includes('Charger nearby'));
+  check('on-site badges only appear for source-backed hotels',
+    initialBody.includes('EV on site')
+      && initialBody.includes('Marriott Bonvoy official property page')
+      && !initialBody.includes('Google place text'));
   const evidenceTag = page.getByText('Charger nearby', { exact: true }).first();
   const evidenceClass = await evidenceTag.getAttribute('class');
   check('evidence tag is a small search-results-style pill',
@@ -133,15 +144,19 @@ async function checkHotels() {
   await connectorButton.click();
   await page.getByRole('button', { name: /Super-fast · CCS/ }).click();
   await page.getByRole('button', { name: 'Done' }).click();
-  await page.waitForFunction(() => {
-    const match = document.body.innerText.match(/(\d+) of 183 stays/);
-    return match && Number(match[1]) > 0 && Number(match[1]) < 183;
-  }, null, { timeout: 15000 });
-  const ccsCount = Number(((await page.locator('body').innerText()).match(/(\d+) of 183 stays/) ?? [])[1] ?? 183);
+  await page.waitForFunction(total => {
+    const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
+    return match && Number(match[1]) > 0 && Number(match[1]) < total;
+  }, TOTAL_STAYS, { timeout: 15000 });
+  const ccsCount = Number(((await page.locator('body').innerText()).match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? TOTAL_STAYS);
   check('connector filter narrows hotels using real Google connector data',
-    ccsCount > 0 && ccsCount < 183, `${ccsCount} stays`);
+    ccsCount > 0 && ccsCount < TOTAL_STAYS, `${ccsCount} stays`);
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('183 of 183 stays'), null, { timeout: 15000 });
+  await page.waitForFunction(
+    total => document.body.innerText.includes(`${total} of ${total} stays`),
+    TOTAL_STAYS,
+    { timeout: 15000 },
+  );
 
   const input = page.getByLabel('Search hotels by city or hotel name');
   check('hotels title is moved into the grey search placeholder',
@@ -164,21 +179,25 @@ async function checkHotels() {
         && dropdownBox.y <= inputBox.y + inputBox.height + 10,
       `input=${JSON.stringify(inputBox)} dropdown=${JSON.stringify(dropdownBox)}`);
     await listbox.getByRole('option').first().click();
-    await page.waitForFunction(() => {
-      const match = document.body.innerText.match(/(\d+) of 183 stays/);
-      return match && Number(match[1]) > 0 && Number(match[1]) < 183;
-    }, null, { timeout: 15000 });
+    await page.waitForFunction(total => {
+      const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
+      return match && Number(match[1]) > 0 && Number(match[1]) < total;
+    }, TOTAL_STAYS, { timeout: 15000 });
     const pickedText = await page.locator('body').innerText();
-    const pickedCount = Number((pickedText.match(/(\d+) of 183 stays/) ?? [])[1] ?? 183);
+    const pickedCount = Number((pickedText.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? TOTAL_STAYS);
     check('picking a hotel-area suggestion narrows stays',
-      pickedCount > 0 && pickedCount < 183, `${pickedCount} stays`);
+      pickedCount > 0 && pickedCount < TOTAL_STAYS, `${pickedCount} stays`);
   }
 
   await input.fill('Jaipur');
-  await page.waitForFunction(() => document.body.innerText.includes('of 183 stays'), null, { timeout: 15000 });
+  await page.waitForFunction(
+    total => document.body.innerText.includes(`of ${total} stays`),
+    TOTAL_STAYS,
+    { timeout: 15000 },
+  );
   const jaipurText = await page.locator('body').innerText();
-  const jaipurCount = Number((jaipurText.match(/(\d+) of 183 stays/) ?? [])[1] ?? 0);
-  check('hotel list is queryable by city', jaipurCount > 0 && jaipurCount < 183, `${jaipurCount} stays`);
+  const jaipurCount = Number((jaipurText.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? 0);
+  check('hotel list is queryable by city', jaipurCount > 0 && jaipurCount < TOTAL_STAYS, `${jaipurCount} stays`);
 
   await input.fill('zzzz-no-such-place');
   await page.waitForFunction(() => document.body.innerText.includes('No stays found'), null, { timeout: 15000 });
@@ -223,6 +242,15 @@ async function checkHotels() {
   await expectPath('/hotels/', 'Back');
   const activeTab = await page.locator('[role="tab"][data-state="active"]').innerText();
   check('Back restores the Hotels tab', /Hotels/i.test(activeTab), activeTab.replace(/\n/g, ' '));
+
+  await input.fill('bangalore');
+  await page.waitForFunction(total => {
+    const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
+    return match && Number(match[1]) > 0 && Number(match[1]) < total;
+  }, TOTAL_STAYS, { timeout: 15000 });
+  const bengaluruCount = Number((await page.locator('body').innerText()).match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`))?.[1] ?? 0);
+  check('hotel search resolves Bangalore to the indexed Bengaluru stays',
+    bengaluruCount > 0 && bengaluruCount < TOTAL_STAYS, `${bengaluruCount} stays`);
   await context.close();
 }
 

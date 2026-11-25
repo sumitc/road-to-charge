@@ -7,7 +7,10 @@ export type Charger = {
   location: { lat: number; lng: number };
   distanceMeters: number;
   sourceUrl: string;
-  /** Canonical connector filter values from Google evChargeOptions (if available). */
+  source?: string;
+  sourceKind?: 'google' | 'db' | 'osm' | 'ocm';
+  mentionsHotel?: boolean;
+  /** Canonical connector filter values from the source (if available). */
   connectors?: string[];
   googleConnectorTypes?: string[];
 };
@@ -17,8 +20,16 @@ export type SourceLink = {
   label: string;
   url: string;
   verifiedAt?: string;
-  verificationMethod?: 'google_places_place_id' | 'websearch_exact_match' | 'terra_api_supplied_url' | 'affiliate_network_generated';
+  verificationMethod?: 'google_places_place_id' | 'official_property_page' | 'websearch_exact_match' | 'terra_api_supplied_url' | 'affiliate_network_generated';
   affiliate?: boolean;
+};
+
+export type OnSiteEvidence = {
+  label: string;
+  url: string;
+  quote: string;
+  verifiedAt: string;
+  verificationMethod: string;
 };
 
 export type Hotel = {
@@ -44,8 +55,9 @@ export type Hotel = {
     sourceUrl: string;
     localPath?: string | null;
   } | null;
-  evSignal: 'on_site_google_place' | 'ev_charger_nearby' | 'both';
+  evSignal: 'on_site_google_place' | 'on_site_official_source' | 'ev_charger_nearby' | 'both';
   onSiteEvidence?: string | null;
+  onSiteEvidenceSource?: OnSiteEvidence | null;
   ev: {
     label: string;
     nearestCharger: Charger | null;
@@ -54,6 +66,7 @@ export type Hotel = {
     radiusMeters: number;
     connectorTypes?: string[];
     connectorSource?: string;
+    nearbyChargerSources?: Charger[];
   };
   provenance: {
     placeId: string;
@@ -65,14 +78,17 @@ export type Hotel = {
 export type HotelIndex = {
   generatedAt: string;
   connectorEnrichedAt?: string;
+  multiSourceEnrichedAt?: string;
   indexVersion: number;
-  method: { source: string; radiusMeters: number };
+  method: { source: string; radiusMeters: number; [key: string]: unknown };
   coverage: {
     areasRequested: number;
     hotelsIndexed: number;
     evSignalCounts: Record<string, number>;
     providers: string[];
     priceBands: string[];
+    chargerSourceRows?: Record<string, number>;
+    multiSourceErrors?: string[];
   };
   areas: Array<{
     id: string;
@@ -86,6 +102,21 @@ export type HotelIndex = {
 };
 
 export const hotelIndex = evIndex as unknown as HotelIndex;
+
+/**
+ * Only an authentic, property-specific source may produce "EV on site".
+ * A charger within any radius — even 250 m — stays "Charger nearby".
+ */
+export function hasAuthenticOnSiteEvidence(hotel: Hotel): boolean {
+  const sourcedSignal = hotel.evSignal === 'both'
+    || hotel.evSignal === 'on_site_google_place'
+    || hotel.evSignal === 'on_site_official_source';
+  return Boolean(
+    sourcedSignal
+    && hotel.onSiteEvidence
+    && hotel.onSiteEvidenceSource?.url
+  );
+}
 
 export function findHotel(id: string | undefined): Hotel | undefined {
   if (!id) return undefined;

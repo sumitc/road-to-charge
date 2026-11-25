@@ -12,6 +12,7 @@ import {
   searchPlaceByText,
   suggestPlaces,
 } from '../server/lib/googlePlaces.js';
+import { PLACE_ALIASES as SEARCH_ALIASES } from '../src/lib/placeAliases.js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -19,20 +20,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
   'Access-Control-Expose-Headers': 'X-Ampo-Google-Refresh',
-};
-
-const SEARCH_ALIASES: Record<string, string[]> = {
-  bangalore: ['bangalore', 'bengaluru'],
-  bengaluru: ['bengaluru', 'bangalore'],
-  mumbai: ['mumbai', 'bombay'],
-  bombay: ['bombay', 'mumbai'],
-  chennai: ['chennai', 'madras'],
-  madras: ['madras', 'chennai'],
-  nallagandla: ['nallagandla', 'nalagandla'],
-  // First variant is the canonical spelling used for geocoding.
-  nalagandla: ['nallagandla', 'nalagandla'],
-  kolkata: ['kolkata', 'calcutta'],
-  calcutta: ['calcutta', 'kolkata'],
 };
 
 // A searched area is considered covered once it has a handful of rows tied to

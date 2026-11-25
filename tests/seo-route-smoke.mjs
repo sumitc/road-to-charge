@@ -105,7 +105,11 @@ async function checkStaticAssets() {
 
   const sitemap = await fetch(`${BASE_URL}/sitemap.xml`).then(r => r.text());
   const urlCount = (sitemap.match(/<url>/g) ?? []).length;
-  check('sitemap includes all generated pages', urlCount === 237, `${urlCount} URLs`);
+  const registry = JSON.parse(await fs.readFile('src/data/seoPages.json', 'utf8'));
+  const hotels = JSON.parse(await fs.readFile('src/data/hotels-ev.index.generated.json', 'utf8'));
+  const expectedUrls = 2 + registry.searchPages.length + registry.routePages.length
+    + registry.hubPages.length + hotels.hotels.length;
+  check('sitemap includes all generated pages', urlCount === expectedUrls, `${urlCount}/${expectedUrls} URLs`);
   check('sitemap XML-escapes canonical query URLs',
     sitemap.includes('https://ampo.vercel.app/?q=Delhi&amp;place=ChIJL_P_CXMEDTkRw0ZdG-0GVvw'));
   check('sitemap includes hotel detail pages', sitemap.includes('<loc>https://ampo.vercel.app/hotels/google-'));

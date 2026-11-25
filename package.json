@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:experience": "node tests/experience-smoke.mjs",
+    "test:hotel-evidence": "node tests/hotel-evidence-smoke.mjs",
     "test:seo": "node tests/seo-route-smoke.mjs",
     "test:empty": "node tests/empty-results-smoke.mjs"
   },
