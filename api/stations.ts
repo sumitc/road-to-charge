@@ -73,6 +73,35 @@ export async function GET(req: Request): Promise<Response> {
       });
     }
 
+    // Exact coordinates for a picked autocomplete place. This uses the same
+    // server helper as station search, so no new Vercel function or DB call is
+    // needed. The Hotels tab uses it when a pick is not one of the 32 curated
+    // area IDs in the generated index.
+    if (mode === 'resolve') {
+      const placeId = params.get('placeId')?.trim() ?? '';
+      if (!/^[A-Za-z0-9_-]{10,}$/.test(placeId)) {
+        return new Response(JSON.stringify({ error: 'Valid placeId is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const place = await resolvePlaceById(placeId);
+      if (!place) {
+        return new Response(JSON.stringify({ error: 'Place could not be resolved' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify(place), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      });
+    }
+
     const url = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
     if (!url) throw new Error('POSTGRES_URL / POSTGRES_URL_NON_POOLING is not configured');
     const sql = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 20, ssl: 'require', prepare: false });

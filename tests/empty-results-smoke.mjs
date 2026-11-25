@@ -67,8 +67,30 @@ async function newPage({ withRoute = false } = {}) {
           primaryText: 'Jaipur',
           secondaryText: 'Rajasthan, India',
         }]
-        : [];
+        : q.includes('goa')
+          ? [{
+            placeId: 'test-goa-area',
+            label: 'Goa, India',
+            primaryText: 'Goa',
+            secondaryText: 'India',
+          }]
+          : [];
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(suggestions) });
+    }
+    if (url.searchParams.get('mode') === 'resolve') {
+      const place = url.searchParams.get('placeId') === 'test-goa-area'
+        ? {
+          placeId: 'test-goa-area',
+          label: 'Goa, India',
+          lat: 15.3,
+          lng: 73.9,
+        }
+        : null;
+      return route.fulfill({
+        status: place ? 200 : 404,
+        contentType: 'application/json',
+        body: JSON.stringify(place ?? { error: 'Place could not be resolved' }),
+      });
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
@@ -134,10 +156,14 @@ async function checkHotels() {
     (await radiusSelect.inputValue()) === 'all'
       && (await radiusSelect.locator('option[value="5"]').count()) === 1
       && (await radiusSelect.locator('option[value="25"]').count()) === 1);
-  check('hotel search adds a Google rating filter',
-    (await page.getByLabel('Minimum Google rating').count()) === 1);
+  check('hotel search shows the same radius pin icon as station search',
+    (await radiusSelect.locator('xpath=..').locator('svg.lucide-map-pin').count()) === 1);
+  check('hotel search drops the extra Google rating filter',
+    (await page.getByLabel('Minimum Google rating').count()) === 0);
   check('hotel cards show distance from the active origin',
     (await page.locator('span[title="Straight-line distance"]').count()) > 0);
+  check('hotel count names the distance origin',
+    (await page.locator('body').innerText()).includes('distances from your location'));
 
   const connectorButton = page.getByRole('button', { name: /All connectors/ });
   check('connector filter replaces the provider box', (await connectorButton.count()) > 0);
@@ -187,6 +213,8 @@ async function checkHotels() {
     const pickedCount = Number((pickedText.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? TOTAL_STAYS);
     check('picking a hotel-area suggestion narrows stays',
       pickedCount > 0 && pickedCount < TOTAL_STAYS, `${pickedCount} stays`);
+    check('searched hotels hide the radius dropdown like station search',
+      (await radiusSelect.count()) === 0);
   }
 
   await input.fill('Jaipur');
@@ -251,6 +279,23 @@ async function checkHotels() {
   const bengaluruCount = Number((await page.locator('body').innerText()).match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`))?.[1] ?? 0);
   check('hotel search resolves Bangalore to the indexed Bengaluru stays',
     bengaluruCount > 0 && bengaluruCount < TOTAL_STAYS, `${bengaluruCount} stays`);
+
+  await input.fill('goa');
+  const goaListbox = page.getByRole('listbox', { name: 'Matching hotel areas and places' });
+  await goaListbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  check('hotel autocomplete offers an Indian Goa suggestion',
+    (await goaListbox.innerText().catch(() => '')).includes('India'));
+  await goaListbox.getByRole('option').first().click();
+  await page.waitForFunction(
+    () => document.body.innerText.includes('distances from Goa, India'),
+    null,
+    { timeout: 15000 },
+  );
+  const goaBody = await page.locator('body').innerText();
+  const goaCount = Number((goaBody.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? 0);
+  check('picked Goa anchors distances to the searched place, not the device',
+    goaCount > 0 && goaCount < TOTAL_STAYS && goaBody.includes('distances from Goa, India'),
+    `${goaCount} stays`);
   await context.close();
 }
 

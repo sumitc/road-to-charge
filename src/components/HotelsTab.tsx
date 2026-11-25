@@ -12,7 +12,7 @@ import { matchesPlaceQuery } from '@/lib/placeAliases';
 import { cn } from '@/lib/utils';
 import { trackAmpo } from '@/lib/analytics';
 import { trackEmptyResult } from '@/lib/emptyResults';
-import { EVStationService, type PlaceSuggestion } from '@/services/evStationService';
+import { EVStationService, type PlaceSuggestion, type ResolvedPlaceAnchor } from '@/services/evStationService';
 import { useUserLocation } from '@/hooks/useStationQueries';
 import { useDrivingDistances, type DistancePoint } from '@/hooks/useDrivingDistances';
 import { RouteService } from '@/services/routeService';
@@ -29,11 +29,9 @@ const RADIUS_OPTIONS = [
   { value: '50', label: '50 km' },
 ];
 
-const RATING_OPTIONS = [
-  { value: '0', label: 'Any rating' },
-  { value: '4', label: '4+ rated' },
-  { value: '4.5', label: '4.5+ rated' },
-];
+type PlaceAnchor = Omit<ResolvedPlaceAnchor, 'placeId'> & {
+  source: 'indexed' | 'google';
+};
 
 function formatMetres(metres?: number | null) {
   if (!Number.isFinite(metres as number)) return '';
@@ -55,32 +53,6 @@ function evEvidenceTag(hotel: Hotel) {
       : 'border-blue-200 bg-blue-50 text-blue-700',
     dot: onSite ? 'bg-emerald-500' : 'bg-blue-500',
   };
-}
-
-type FilterSelectProps = {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-  className?: string;
-};
-
-function FilterSelect({ label, value, options, onChange, className }: FilterSelectProps) {
-  return (
-    <label className={cn('min-w-0', className)}>
-      <span className="sr-only">{label}</span>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        className="h-9 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
-      >
-        {options.map(option => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    </label>
-  );
 }
 
 type HotelCardProps = {
@@ -141,11 +113,6 @@ function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
                 Nearest: {nearest.provider} · {nearest.name} · {formatMetres(nearest.distanceMeters)}
               </p>
             )}
-            {hotel.ev.chargerCountWithinRadius > 1 && (
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {hotel.ev.chargerCountWithinRadius} chargers within {(hotel.ev.radiusMeters / 1000).toFixed(1)} km
-              </p>
-            )}
             {hotel.rating != null && (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {hotel.rating}
@@ -196,30 +163,64 @@ export function HotelsTab() {
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [connectors, setConnectors] = useState<string[]>([]);
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
-  const [minRating, setMinRating] = useState(0);
+  // A picked Google place can be outside the 32 curated areas. Resolve its
+  // real coordinates once; never fall back to the device for a place search.
+  const [resolvedAnchor, setResolvedAnchor] = useState<PlaceAnchor | null>(null);
 
   const suggestionTimer = useRef<number | null>(null);
   const suggestionRequest = useRef(0);
+  const resolveRequest = useRef(0);
   const loggedEmpty = useRef<string | null>(null);
 
   const { data: userLocation } = useUserLocation();
 
   // The generated index already carries Google place IDs and coordinates for
-  // every curated area and hotel, so a picked suggestion can anchor distance
-  // without a new runtime endpoint or a geocoding guess.
+  // every curated area and hotel, so exact picks need no extra lookup.
   const areaByPlaceId = useMemo(() => new Map(
     index.areas
       .filter(area => area.placeId && area.coordinates)
-      .map(area => [area.placeId!, { ...area.coordinates!, label: area.name }] as const),
+      .map(area => [area.placeId!, {
+        ...area.coordinates!, label: area.name, source: 'indexed' as const,
+      }] as const),
   ), []);
   const hotelByPlaceId = useMemo(() => new Map(
     index.hotels.map(hotel => [hotel.provenance.placeId, { lat: hotel.location.lat, lng: hotel.location.lng, id: hotel.id }] as const),
   ), []);
 
-  const placeAnchor = selectedPlace
+  const searchNeedle = useMemo(
+    () => (selectedPlace?.primaryText || query).trim().replace(/\s+/g, ' ').toLowerCase(),
+    [query, selectedPlace],
+  );
+
+  // A typed or picked place name can still match a curated area even when
+  // Google returns a different Place ID (e.g. "Goa, India" vs "Goa (Panaji)").
+  const textAnchor = useMemo<PlaceAnchor | null>(() => {
+    if (!searchNeedle) return null;
+    const area = index.areas.find(candidate => candidate.coordinates
+      && matchesPlaceQuery(
+        [candidate.name, candidate.city, candidate.state].filter(Boolean).join(' '),
+        searchNeedle,
+      ));
+    if (area?.coordinates) {
+      return { ...area.coordinates, label: area.name, source: 'indexed' };
+    }
+    const hotel = index.hotels.find(candidate => matchesPlaceQuery(
+      [candidate.name, candidate.area, candidate.city, candidate.state, candidate.locality]
+        .filter(Boolean).join(' '),
+      searchNeedle,
+    ));
+    if (hotel) {
+      return { ...hotel.location, label: hotel.name, source: 'indexed' };
+    }
+    return null;
+  }, [searchNeedle]);
+
+  const staticAnchor = selectedPlace
     ? (areaByPlaceId.get(selectedPlace.placeId) ?? hotelByPlaceId.get(selectedPlace.placeId) ?? null)
     : null;
-  const origin = placeAnchor ?? userLocation ?? null;
+  const anchor = resolvedAnchor ?? staticAnchor ?? textAnchor ?? null;
+  const origin = anchor ?? userLocation ?? null;
+  const originLabel = anchor?.label ?? 'your location';
   const focusedHotelId = selectedPlace ? hotelByPlaceId.get(selectedPlace.placeId)?.id : undefined;
 
   const straightKmByHotel = useMemo(() => {
@@ -245,23 +246,18 @@ export function HotelsTab() {
   }, [drivingDistances.data, straightKmByHotel]);
 
   const filtered = useMemo(() => {
-    // A picked Google suggestion carries a long canonical label ("Jaipur,
-    // Rajasthan, India"); match its primary text so the hotel rows still
-    // resolve. Typed queries stay exactly as entered.
-    const needle = (selectedPlace?.primaryText || query).trim().replace(/\s+/g, ' ').toLowerCase();
     const rows = index.hotels.filter(hotel => {
       if (focusedHotelId && hotel.id !== focusedHotelId) return false;
-      if (needle) {
+      if (searchNeedle) {
         // Hotel-only search: name, locality, city, state or address. Never the
         // internal EV taxonomy or charger text. Aliases let "bangalore" find
         // rows indexed as "Bengaluru".
         const haystack = [
           hotel.name, hotel.area, hotel.city, hotel.state, hotel.locality, hotel.formattedAddress,
         ].filter(Boolean).join(' ');
-        if (!matchesPlaceQuery(haystack, needle)) return false;
+        if (!matchesPlaceQuery(haystack, searchNeedle)) return false;
       }
       if (!matchesConnectorFilters(hotel.ev.connectorTypes, connectors)) return false;
-      if (minRating > 0 && (hotel.rating ?? 0) < minRating) return false;
       if (radiusKm !== null) {
         const distance = distanceFor(hotel).km;
         if (!Number.isFinite(distance) || distance! > radiusKm) return false;
@@ -277,7 +273,7 @@ export function HotelsTab() {
       }
       return (right.rating ?? 0) - (left.rating ?? 0);
     });
-  }, [connectors, distanceFor, focusedHotelId, minRating, query, radiusKm, selectedPlace]);
+  }, [connectors, distanceFor, focusedHotelId, radiusKm, searchNeedle]);
 
   // Count each distinct failed query/filter combination once, not on every
   // render. Clearing back to a non-empty list re-arms the same query.
@@ -286,7 +282,6 @@ export function HotelsTab() {
       query.trim().toLowerCase(),
       connectors.join(','),
       radiusKm ?? 'all',
-      minRating,
     ].join('::');
     if (filtered.length > 0) {
       loggedEmpty.current = null;
@@ -297,7 +292,6 @@ export function HotelsTab() {
     const filters = [
       connectors.length ? `connectors=${connectors.join(',')}` : '',
       radiusKm !== null ? `radius=${radiusKm}` : '',
-      minRating > 0 ? `rating=${minRating}` : '',
     ].filter(Boolean).join(',');
     trackEmptyResult({
       surface: 'hotels',
@@ -307,11 +301,12 @@ export function HotelsTab() {
       filter: filters || undefined,
       reason: filters ? 'filters' : 'no_rows',
     });
-  }, [connectors, filtered.length, minRating, query, radiusKm, selectedPlace]);
+  }, [connectors, filtered.length, query, radiusKm, selectedPlace]);
 
   useEffect(() => () => {
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
     suggestionRequest.current++;
+    resolveRequest.current++;
   }, []);
 
   const loadSuggestions = useCallback(async (term: string) => {
@@ -335,6 +330,8 @@ export function HotelsTab() {
   const handleInputChange = (value: string) => {
     setQuery(value);
     setSelectedPlace(null);
+    setResolvedAnchor(null);
+    resolveRequest.current++;
     setHighlightedSuggestion(-1);
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
     const clean = value.trim().replace(/\s+/g, ' ');
@@ -351,8 +348,10 @@ export function HotelsTab() {
   const selectSuggestion = (suggestion: PlaceSuggestion) => {
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
     suggestionRequest.current++;
+    const request = ++resolveRequest.current;
     setQuery(suggestion.label);
     setSelectedPlace(suggestion);
+    setResolvedAnchor(null);
     setSuggestions([]);
     setShowSuggestions(false);
     setHighlightedSuggestion(-1);
@@ -362,6 +361,20 @@ export function HotelsTab() {
       label: suggestion.label.slice(0, 120),
       source: 'hotels',
     });
+
+    // Exact curated IDs already have authoritative coordinates. Any other
+    // Google pick is resolved so the distance origin follows the searched
+    // place instead of the user's GPS.
+    if (areaByPlaceId.has(suggestion.placeId) || hotelByPlaceId.has(suggestion.placeId)) return;
+    void EVStationService.resolvePlace(suggestion.placeId).then(place => {
+      if (request !== resolveRequest.current || !place) return;
+      setResolvedAnchor({
+        lat: place.lat,
+        lng: place.lng,
+        label: place.label,
+        source: 'google',
+      });
+    });
   };
 
   const submitSearch = () => {
@@ -370,6 +383,8 @@ export function HotelsTab() {
     const clean = query.trim().replace(/\s+/g, ' ');
     if (!clean) {
       setSelectedPlace(null);
+      setResolvedAnchor(null);
+      resolveRequest.current++;
       setShowSuggestions(false);
       return;
     }
@@ -383,6 +398,8 @@ export function HotelsTab() {
     }
     setQuery(clean);
     setSelectedPlace(null);
+    setResolvedAnchor(null);
+    resolveRequest.current++;
     setShowSuggestions(false);
     trackAmpo('search_submit', { query: clean, place_id: null, source: 'hotels' });
   };
@@ -411,20 +428,21 @@ export function HotelsTab() {
     }
   };
 
-  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || radiusKm !== null || minRating > 0;
+  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || radiusKm !== null;
   const showSearchResults = Boolean(query.trim()) || Boolean(selectedPlace);
   const reset = () => {
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
     suggestionRequest.current++;
+    resolveRequest.current++;
     setQuery('');
     setSelectedPlace(null);
+    setResolvedAnchor(null);
     setSuggestions([]);
     setShowSuggestions(false);
     setHighlightedSuggestion(-1);
     setIsFetchingSuggestions(false);
     setConnectors([]);
     setRadiusKm(null);
-    setMinRating(0);
   };
 
   const updated = useMemo(() => {
@@ -519,32 +537,37 @@ export function HotelsTab() {
               )}
             </div>
 
+            {/* Same shape as station search: radius only while browsing nearby,
+                connector filter in both modes, no extra rating dropdown. */}
             <div data-testid="hotel-search-controls" className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-none">
-              <label className="w-[84px] shrink-0">
-                <span className="sr-only">Search radius in kilometres</span>
-                <select
-                  aria-label="Search radius in kilometres"
-                  value={radiusKm === null ? 'all' : String(radiusKm)}
-                  onChange={event => setRadiusKm(event.target.value === 'all' ? null : Number(event.target.value))}
-                  className="h-9 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
-                >
-                  {RADIUS_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-              <ConnectorFilter
-                selected={connectors}
-                onChange={setConnectors}
-                className="min-w-0 flex-1 sm:w-56 sm:flex-none"
-              />
-              <FilterSelect
-                label="Minimum Google rating"
-                value={String(minRating)}
-                options={RATING_OPTIONS}
-                onChange={value => setMinRating(Number(value))}
-                className="w-[86px] shrink-0"
-              />
+              {showSearchResults ? (
+                <ConnectorFilter
+                  selected={connectors}
+                  onChange={setConnectors}
+                  className="min-w-0 flex-1 sm:w-56 sm:flex-none"
+                />
+              ) : (
+                <>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:flex-none">
+                    <MapPin className="w-4 h-4 shrink-0 text-primary" />
+                    <select
+                      aria-label="Search radius in kilometres"
+                      value={radiusKm === null ? 'all' : String(radiusKm)}
+                      onChange={event => setRadiusKm(event.target.value === 'all' ? null : Number(event.target.value))}
+                      className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28 sm:flex-none"
+                    >
+                      {RADIUS_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <ConnectorFilter
+                    selected={connectors}
+                    onChange={setConnectors}
+                    className="min-w-0 flex-1 sm:w-56 sm:flex-none"
+                  />
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -552,7 +575,7 @@ export function HotelsTab() {
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          {filtered.length} of {index.hotels.length} stays · chargers within {(index.method.radiusMeters / 1000).toFixed(1)} km
+          {filtered.length} of {index.hotels.length} stays · distances from {originLabel}
         </p>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={reset} className="h-8 shrink-0 px-2 text-xs">
@@ -597,7 +620,7 @@ export function HotelsTab() {
         </p>
       )}
       <p className="px-1 pb-2 text-[10px] leading-snug text-muted-foreground">
-        Google Places index updated {updated}. Connector types come from Google Places where available; stays without connector data are left out when a connector is selected. Distance is to the hotel, while the nearest-charger line is hotel-to-charger. A nearby charger is not an on-site claim — confirm with the property before travel.
+        Google Places index updated {updated}. Distances are from {originLabel} to the hotel; the nearest-charger line is hotel-to-charger. Connector types come from Google Places, OSM and the Ampo catalogue where available; stays without connector data are left out when a connector is selected. Public chargers within {(index.method.radiusMeters / 1000).toFixed(1)} km are not on-site claims — open a hotel page for sources or to contribute a missing charger.
       </p>
     </div>
   );

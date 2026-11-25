@@ -303,8 +303,24 @@ async function checkPlacePicker() {
       (await ampoEventNames(page)).includes('show_nearby'));
   }
 
+  // Ampo only serves India. Google's IP bias used to surface Goa, Florida for
+  // travellers abroad; the server request now pins predictions to India.
+  await input.fill('goa');
+  const goaListbox = page.getByRole('listbox', { name: 'Matching places' });
+  await goaListbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  const goaOptions = await goaListbox.getByRole('option').allInnerTexts();
+  // `regionCode: IN` makes Google omit the country suffix on Indian addresses,
+  // so the reliable regression is: Goa is suggested and no US place leaks in.
+  check('autocomplete keeps Goa in India',
+    goaOptions.some(text => /Goa/i.test(text))
+      && !goaOptions.some(text => /\b(Florida|United States|US)\b/i.test(text)),
+    goaOptions.slice(0, 3).join(' | '));
+
   await input.fill('nalagandla');
-  await page.waitForTimeout(150); // let React observe the typed value
+  // Do not press Enter while the previous Goa dropdown is still highlighted.
+  const correctedOptions = page.getByRole('listbox', { name: 'Matching places' }).getByRole('option');
+  await correctedOptions.filter({ hasText: /nallagandla|nalagandla/i }).first()
+    .waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   await page.keyboard.press('Enter');
   await page.waitForTimeout(1500);
   const corrected = await input.inputValue();

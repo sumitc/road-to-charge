@@ -35,6 +35,13 @@ export interface PlaceSuggestion {
   secondaryText: string;
 }
 
+export interface ResolvedPlaceAnchor {
+  placeId: string;
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 /** Read stations through our direct-SQL API (Supabase REST is unavailable on this plan). */
 const fetchStations = async (
   params: Record<string, string | number | undefined>,
@@ -196,6 +203,32 @@ export class EVStationService {
     } catch (error) {
       console.error('Error in suggestPlaces:', error);
       return [];
+    }
+  }
+
+  /**
+   * Exact coordinates for a picked place. The browser never holds the Google
+   * key; /api/stations resolves the place with Place Details. Used by the
+   * Hotels tab so distances follow the searched place, not the device.
+   */
+  static async resolvePlace(placeId: string): Promise<ResolvedPlaceAnchor | null> {
+    try {
+      if (!/^[A-Za-z0-9_-]{10,}$/.test(placeId)) return null;
+      const response = await fetch(
+        `/api/stations?mode=resolve&placeId=${encodeURIComponent(placeId)}`
+      );
+      if (!response.ok) return null;
+      const place = await response.json() as Partial<ResolvedPlaceAnchor> | null;
+      if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lng)) return null;
+      return {
+        placeId: place.placeId ?? placeId,
+        label: place.label?.trim() || placeId,
+        lat: Number(place.lat),
+        lng: Number(place.lng),
+      };
+    } catch (error) {
+      console.error('Error in resolvePlace:', error);
+      return null;
     }
   }
 

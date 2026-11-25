@@ -53,6 +53,26 @@ async function placesRequest(url: string, init: RequestInit): Promise<Response |
   }
 }
 
+/**
+ * India is the product's only market. Without an explicit bias, Google's IP
+ * heuristics can rank "Goa" in the US above "Goa, India" for users abroad.
+ * `includedRegionCodes` restricts predictions; the rectangle is a ranking
+ * hint for places near the subcontinent.
+ */
+const INDIA_BIAS = {
+  includedRegionCodes: ['IN'],
+  regionCode: 'IN',
+  languageCode: 'en',
+  locationBias: {
+    // Places API (New) Viewport uses low/high (southwest/northeast), not
+    // northeast/southwest keys.
+    rectangle: {
+      low: { latitude: 6.5, longitude: 68.0 },
+      high: { latitude: 35.5, longitude: 97.5 },
+    },
+  },
+};
+
 /** Uber-style place picker data: no coordinates yet, just human-readable choices. */
 export async function suggestPlaces(input: string): Promise<PlaceSuggestion[]> {
   const value = input.trim();
@@ -61,6 +81,7 @@ export async function suggestPlaces(input: string): Promise<PlaceSuggestion[]> {
     method: 'POST',
     body: JSON.stringify({
       input: value,
+      ...INDIA_BIAS,
       includedPrimaryTypes: [
         'locality',
         'sublocality',

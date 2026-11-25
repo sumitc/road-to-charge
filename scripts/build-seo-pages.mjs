@@ -306,7 +306,7 @@ function hotelBullets(hotel) {
     ...(hasOnSiteEvidence(hotel)
       ? [`On-site charging source: ${hotel.onSiteEvidenceSource.label} · ${hotel.onSiteEvidenceSource.url}`]
       : []),
-    `Verified public chargers within ${(hotel.ev?.radiusMeters ?? 2500) / 1000} km: ${hotel.ev?.chargerCountWithinRadius ?? 0}`,
+    `Google Places reports ${hotel.ev?.chargerCountWithinRadius ?? 0} public charging place(s) within ${(hotel.ev?.radiusMeters ?? 2500) / 1000} km — not an on-site claim`,
     nearest ? `Nearest charger: ${nearest.provider} · ${(nearest.distanceMeters / 1000).toFixed(2)} km` : 'No nearest charger recorded',
     `Providers seen nearby: ${(hotel.ev?.providers ?? []).join(', ') || 'unlisted network'}`,
     `Source: ${hotel.source} · Retrieved ${String(hotel.provenance?.retrievedAt ?? '').slice(0, 10)}`,
@@ -317,6 +317,7 @@ function hotelLinks(hotel, canonical) {
   const links = [
     { href: '/hotels/', label: 'All EV hotels' },
     { href: `/?q=${encodeURIComponent(hotel.city || hotel.area)}`, label: 'Chargers in this city' },
+    { href: `${canonical}#contribute`, label: 'Contribute a missing charger' },
   ];
   if (hasOnSiteEvidence(hotel)) {
     links.push({ href: hotel.onSiteEvidenceSource.url, label: `${hotel.onSiteEvidenceSource.label} charging evidence` });

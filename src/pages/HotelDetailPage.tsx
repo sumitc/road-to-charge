@@ -1,16 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, BatteryCharging, ExternalLink, MapPin, Star } from 'lucide-react';
+import { ArrowLeft, BatteryCharging, ExternalLink, Info, MapPin, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrandTitle } from '@/components/BrandTitle';
+import { ContributionButton } from '@/components/ContributionButton';
 import { SiteFooter } from '@/components/SiteFooter';
 import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex } from '@/lib/hotelIndex';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
 
 const HOTEL_PHOTO = '/hotels/placeholder.svg';
+const VISIBLE_CHARGER_LIMIT = 8;
 
 function formatDistance(meters: number) {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`;
@@ -19,10 +21,27 @@ function formatDistance(meters: number) {
 export function HotelDetailPage() {
   const { id } = useParams();
   const hotel = findHotel(id);
+  const [showAllChargers, setShowAllChargers] = useState(false);
   const onSite = hotel ? hasAuthenticOnSiteEvidence(hotel) : false;
   const nearest = hotel?.ev.nearestCharger ?? null;
   const place = hotel ? [hotel.city, hotel.state].filter(Boolean).join(', ') : '';
   const jsonLd = useMemo(() => (hotel ? hotelJsonLd(hotel) : null), [hotel]);
+
+  // The raw index can contain the same charger from Google and the Ampo
+  // catalogue. Merge by name + coordinates before showing sources to users.
+  const nearbyChargers = useMemo(() => {
+    const seen = new Set<string>();
+    return (hotel?.ev.nearbyChargerSources ?? []).filter(charger => {
+      if (!charger?.location || !Number.isFinite(charger.location.lat)) return false;
+      const key = `${charger.name}|${charger.location.lat.toFixed(5)}|${charger.location.lng.toFixed(5)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [hotel]);
+  const visibleChargers = showAllChargers
+    ? nearbyChargers
+    : nearbyChargers.slice(0, VISIBLE_CHARGER_LIMIT);
 
   useDynamicSeo({
     title: hotel
@@ -69,6 +88,7 @@ export function HotelDetailPage() {
                   src={hotel.photo?.localPath || HOTEL_PHOTO}
                   alt={hotel.name}
                   className="h-48 w-full rounded-xl object-cover sm:h-64"
+                  loading="eager"
                 />
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -92,9 +112,7 @@ export function HotelDetailPage() {
                   >
                     <BatteryCharging className="mr-1 h-3 w-3" /> {onSite ? 'EV on site' : 'Charger nearby'}
                   </Badge>
-                  <Badge variant="outline">
-                    {hotel.ev.chargerCountWithinRadius} chargers within {(hotel.ev.radiusMeters / 1000).toFixed(1)} km
-                  </Badge>
+                  <Badge variant="outline">Nearby public chargers, not an on-site claim</Badge>
                 </div>
 
                 {nearest && (
@@ -104,13 +122,15 @@ export function HotelDetailPage() {
                     </p>
                     <p className="mt-1 text-sm font-medium">{nearest.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {nearest.provider} · {formatDistance(nearest.distanceMeters)}
+                      {nearest.provider} · {formatDistance(nearest.distanceMeters)} · {nearest.source || nearest.sourceKind || 'mapped source'}
                     </p>
-                    <Button variant="link" size="sm" asChild className="mt-1 h-7 px-0 text-xs">
-                      <a href={nearest.sourceUrl} target="_blank" rel="noopener noreferrer">
-                        View charger source <ExternalLink className="ml-1 h-3 w-3" />
-                      </a>
-                    </Button>
+                    {nearest.sourceUrl && (
+                      <Button variant="link" size="sm" asChild className="mt-1 h-7 px-0 text-xs">
+                        <a href={nearest.sourceUrl} target="_blank" rel="noopener noreferrer">
+                          View charger source <ExternalLink className="ml-1 h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -130,24 +150,75 @@ export function HotelDetailPage() {
                   </div>
                 )}
 
-                {(hotel.ev.nearbyChargerSources?.length ?? 0) > 1 && (
-                  <div className="rounded-xl bg-muted/40 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Nearby charger sources
-                    </p>
-                    <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
-                      {hotel.ev.nearbyChargerSources!.slice(0, 5).map((charger, index) => (
-                        <li key={`${charger.sourceKind}-${charger.placeId || charger.sourceUrl}-${index}`}>
-                          <a href={charger.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                            {charger.source || charger.sourceKind || 'Charger source'}
-                          </a>{' '}
-                          · {charger.provider} · {formatDistance(charger.distanceMeters)}
-                          {charger.mentionsHotel && ' · names this property'}
+                <div id="chargers" className="rounded-xl bg-muted/40 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Public chargers near this property
+                  </p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                    Google Places reports {hotel.ev.chargerCountWithinRadius} public charging
+                    place{hotel.ev.chargerCountWithinRadius === 1 ? '' : 's'} within{' '}
+                    {(hotel.ev.radiusMeters / 1000).toFixed(1)} km. The list also includes real
+                    rows from OpenStreetMap and the Ampo catalogue. These are chargers near the
+                    hotel, not chargers owned by the property.
+                  </p>
+                  {nearbyChargers.length > 0 ? (
+                    <ul className="mt-2 space-y-2">
+                      {visibleChargers.map((charger, index) => (
+                        <li
+                          key={`${charger.sourceKind}-${charger.placeId || charger.name}-${index}`}
+                          className="flex items-start justify-between gap-2 border-t pt-2 text-xs first:border-t-0 first:pt-0"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{charger.name}</span>
+                            <span className="block text-muted-foreground">
+                              {charger.provider || 'Unlisted network'} · {formatDistance(charger.distanceMeters)}
+                              {charger.mentionsHotel && ' · names this property'}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                              {charger.sourceKind || 'source'}
+                            </span>
+                            {charger.sourceUrl && (
+                              <a
+                                href={charger.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="whitespace-nowrap text-primary underline underline-offset-2"
+                              >
+                                Source <ExternalLink className="inline h-2.5 w-2.5" />
+                              </a>
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      No individual charger rows are cached for this property yet.
+                    </p>
+                  )}
+                  {nearbyChargers.length > VISIBLE_CHARGER_LIMIT && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => setShowAllChargers(value => !value)}
+                      className="mt-2 h-7 px-0 text-xs"
+                    >
+                      {showAllChargers
+                        ? 'Show fewer chargers'
+                        : `Show all ${nearbyChargers.length} mapped rows`}
+                    </Button>
+                  )}
+                  <div id="contribute" className="mt-2 flex items-start gap-2 rounded-lg bg-background p-2 text-xs text-muted-foreground">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>
+                      Missing a charger or an on-site update? Use the + button to submit a location
+                      with a photo; we verify it on the map before publishing. Proximity alone never
+                      becomes an on-site claim.
+                    </span>
                   </div>
-                )}
+                </div>
 
                 {hotel.interestTags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -188,6 +259,7 @@ export function HotelDetailPage() {
             </Card>
           </div>
         )}
+        {hotel && <ContributionButton location={hotel.location} />}
         <SiteFooter />
       </main>
     </div>

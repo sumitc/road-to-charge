@@ -233,6 +233,10 @@ async function checkHubsAndHotels() {
       ? !/on-site EV charging/i.test(detailText)
       : /Google Maps source/.test(detailText),
     detailText.slice(0, 140).replace(/\n/g, ' '));
+  check('hotel detail exposes charger sources and a contribution path',
+    /Public chargers near this property/i.test(detailText)
+      && detailText.includes('submit a location')
+      && (await detail.page.getByRole('button', { name: 'Add a charging station' }).count()) === 1);
   if (hotel.tripadvisorUrl) {
     check('verified Tripadvisor link is present only when sourced',
       (await detail.page.locator(`a[href="${hotel.tripadvisorUrl}"]`).count()) > 0);
