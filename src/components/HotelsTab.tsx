@@ -425,7 +425,7 @@ export function HotelsTab() {
   }, []);
 
   return (
-    <div className="space-y-3 px-3 pb-24 pt-3" aria-label="Hotels with EV charging">
+    <div className="space-y-3" aria-label="Hotels with EV charging">
       <Card className="relative z-20 rounded-2xl">
         <CardContent className="p-3 sm:p-4">
           <form className="flex gap-2" onSubmit={event => { event.preventDefault(); submitSearch(); }}>

@@ -192,6 +192,19 @@ async function checkHotels() {
   check('hotel zero-results event carries the query',
     events.some(event => event.data?.surface === 'hotels' && event.data?.query === 'zzzz-no-such-place'),
     JSON.stringify(events.slice(-3)));
+
+  // Hotels must not add a second horizontal padding layer on top of EVApp's
+  // main container — that squeezed cards versus the station search page.
+  const hotelInputBox = await input.boundingBox();
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  const stationInput = page.getByLabel('Search for charging stations by area or city');
+  await stationInput.waitFor({ timeout: 20000 });
+  const stationInputBox = await stationInput.boundingBox();
+  check('hotel sections use the same content width as station search',
+    Boolean(hotelInputBox && stationInputBox)
+      && Math.abs(hotelInputBox.x - stationInputBox.x) <= 1
+      && Math.abs(hotelInputBox.width - stationInputBox.width) <= 1,
+    `hotels=${JSON.stringify(hotelInputBox)} stations=${JSON.stringify(stationInputBox)}`);
   await context.close();
 }
 

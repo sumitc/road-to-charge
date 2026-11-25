@@ -40,7 +40,7 @@ function TripPlannerSkeleton() {
 
 function HotelsSkeleton() {
   return (
-    <div className="space-y-3 px-3 pt-3" aria-label="Loading hotels">
+    <div className="space-y-3" aria-label="Loading hotels">
       <div className="h-9 animate-pulse rounded-lg bg-muted/60" />
       <div className="h-9 animate-pulse rounded-lg bg-muted/60" />
       <div className="h-28 animate-pulse rounded-2xl bg-muted/60" />
