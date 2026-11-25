@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdBanner } from "./components/AdBanner";
 import { WebAdBanner } from "./components/WebAdBanner";
 import Index from "./pages/Index";
+import AppTabPage from "./pages/AppTabPage";
 import NotFound from "./pages/NotFound";
 
 // Detail and SEO pages are separate route chunks so the list (the default view)
@@ -36,6 +37,14 @@ const App = () => (
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route
+              path="/trips"
+              element={<AppTabPage tab="trip" title="Trip Planner | Ampo" />}
+            />
+            <Route
+              path="/saved"
+              element={<AppTabPage tab="favourites" title="Saved charging stations | Ampo" />}
+            />
             <Route path="/station/:id" element={<StationDetail />} />
             <Route path="/ev-charging/:slug" element={<SeoHubPage />} />
             <Route path="/hotels" element={<HotelsPage />} />

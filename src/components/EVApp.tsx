@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BedDouble, MapPin, Share2, Star, Zap, Route } from 'lucide-react';
@@ -29,6 +29,16 @@ const HotelsTab = lazy(loadHotelsTab);
 // set to "false".
 const SHOW_HOTELS_TAB = import.meta.env.VITE_ENABLE_HOTELS_TAB !== 'false';
 
+// Each tab gets a stable URL so refresh, share, and browser history match what
+// is on screen. Search params are filtered when tabs change so a station query
+// cannot reopen Trips and a planned route cannot reopen the station search.
+const TAB_PATHS: Record<string, string> = {
+  nearby: '/',
+  trip: '/trips/',
+  favourites: '/saved/',
+  hotels: '/hotels/',
+};
+
 function TripPlannerSkeleton() {
   return (
     <div className="space-y-3" aria-label="Loading trip planner">
@@ -50,6 +60,7 @@ function HotelsSkeleton() {
 
 export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const hasRouteParams = Boolean(searchParams.get('from')?.trim() && searchParams.get('to')?.trim());
   const [activeTab, setActiveTab] = useState(initialTab ?? (hasRouteParams ? 'trip' : 'nearby'));
@@ -84,6 +95,27 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
   const handleHomeClick = () => {
     void goToCurrentLocation();
     trackAmpo('show_nearby', { source: 'header' });
+  };
+
+  const handleTabChange = (next: string) => {
+    if (next === activeTab) return;
+
+    // Only carry params that belong to the destination tab. This prevents a
+    // station query from reopening Trips or a planned route from reopening the
+    // station search after refresh/back/forward.
+    const nextParams = new URLSearchParams();
+    const keys = next === 'nearby' ? ['q', 'place']
+      : next === 'trip' ? ['from', 'to']
+        : [];
+    for (const key of keys) {
+      const value = searchParams.get(key);
+      if (value) nextParams.set(key, value);
+    }
+
+    const path = TAB_PATHS[next] ?? '/';
+    const search = nextParams.toString();
+    navigate(search ? `${path}?${search}` : path);
+    setActiveTab(next);
   };
 
   // Header share follows the active tab: the current search, planned route or
@@ -170,7 +202,7 @@ export const EVApp = ({ initialTab }: { initialTab?: string } = {}) => {
         className="max-w-4xl mx-auto px-3 pt-2 pb-8 sm:p-4"
         style={{ paddingBottom: 'calc(2rem + var(--ampo-banner-height, 0px))' }}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-3 sm:space-y-6">
           <TabsList className={`grid !h-auto w-full ${SHOW_HOTELS_TAB ? 'grid-cols-4' : 'grid-cols-3'} bg-card shadow-sm sm:!h-10`}>
             <TabsTrigger
               value="nearby"

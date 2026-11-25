@@ -205,6 +205,24 @@ async function checkHotels() {
       && Math.abs(hotelInputBox.x - stationInputBox.x) <= 1
       && Math.abs(hotelInputBox.width - stationInputBox.width) <= 1,
     `hotels=${JSON.stringify(hotelInputBox)} stations=${JSON.stringify(stationInputBox)}`);
+
+  // Every tab gets its own URL, and browser history must follow the tabs.
+  const expectPath = async (path, label) => {
+    await page.waitForURL(url => new URL(url).pathname === path, { timeout: 15000 });
+    check(`${label} tab changes the URL`, new URL(page.url()).pathname === path, page.url());
+  };
+  await page.getByRole('tab', { name: /Trip/i }).click();
+  await expectPath('/trips/', 'Trips');
+  await page.getByRole('tab', { name: /Saved/i }).click();
+  await expectPath('/saved/', 'Saved');
+  await page.getByRole('tab', { name: /Hotels/i }).click();
+  await expectPath('/hotels/', 'Hotels');
+  await page.getByRole('tab', { name: /Stations/i }).click();
+  await expectPath('/', 'Stations');
+  await page.goBack();
+  await expectPath('/hotels/', 'Back');
+  const activeTab = await page.locator('[role="tab"][data-state="active"]').innerText();
+  check('Back restores the Hotels tab', /Hotels/i.test(activeTab), activeTab.replace(/\n/g, ' '));
   await context.close();
 }
 
