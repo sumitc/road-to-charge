@@ -14,6 +14,7 @@
     "build:dev": "vite build --mode development",
     "seo:build": "node scripts/build-seo-pages.mjs",
     "seo:validate": "node scripts/build-seo-pages.mjs --validate",
+    "seo:stations": "node scripts/refresh-station-seo-snapshot.mjs",
     "mobile:sync": "npm run build && cap sync android",
     "lint": "eslint .",
     "preview": "vite preview",

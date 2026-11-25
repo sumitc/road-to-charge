@@ -29,6 +29,9 @@ dist-ssr
 *.sw?
 .vercel
 
+# Generated SEO shells (rebuilt by `npm run build` from committed indexes)
+public/station/
+
 # Local deploy artifacts
 local-review-screenshots/
 .sync-secret.tmp

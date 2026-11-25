@@ -1,5 +1,7 @@
 import { hasAuthenticOnSiteEvidence, type Hotel } from './hotelIndex';
+import { placePhotoUrl } from './placePhotos';
 import type { HubSeoPage } from './seoPages';
+import type { ChargingStation } from '@/types/station';
 
 const SITE = 'https://ampo.vercel.app';
 
@@ -72,5 +74,55 @@ export function hotelJsonLd(hotel: Hotel) {
     ],
     isPartOf: websiteJsonLd(),
     breadcrumb: breadcrumbJsonLd(hotel.name, canonical),
+  };
+}
+
+const clip = (value: string | undefined, max: number) => {
+  const text = (value ?? '').replace(/\s+/g, ' ').trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+};
+
+/** Central metadata for /station/:id so static shells and live hydration agree. */
+export function stationSeoMeta(station: ChargingStation) {
+  const canonical = `/station/${station.id}`;
+  const place = [station.city, station.state].filter(Boolean).join(', ');
+  const h1 = `${station.name} — EV charging station${place ? ` in ${place}` : ''}`;
+  const intro = `Public EV charging station in ${place || [station.district, station.state].filter(Boolean).join(', ') || 'India'}. ${station.provider} · data from ${station.sourceName ?? 'the Ampo station catalogue'}. This is a point-in-time catalogue entry; open Ampo for live availability and driver reports.`;
+  const connectors = station.connectorTypes ?? [];
+  const photoRef = station.photoRefs?.[0];
+  return {
+    title: `${clip(h1, 80)} | Ampo`,
+    description: clip(intro, 220),
+    canonical,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Place',
+      additionalType: 'https://schema.org/ChargingStation',
+      name: station.name,
+      description: clip(intro, 280),
+      url: `${SITE}${canonical}`,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: station.address || undefined,
+        addressLocality: station.city || undefined,
+        addressRegion: station.state || undefined,
+        addressCountry: 'IN',
+      },
+      geo: { '@type': 'GeoCoordinates', latitude: station.lat, longitude: station.lng },
+      ...(photoRef ? { image: `${SITE}${placePhotoUrl(photoRef)}` } : {}),
+      additionalProperty: [
+        { '@type': 'PropertyValue', name: 'Network', value: station.provider },
+        ...(connectors.length
+          ? [{ '@type': 'PropertyValue', name: 'Connectors', value: connectors.join(', ') }]
+          : []),
+        ...(Number(station.maxPowerKw) > 0
+          ? [{ '@type': 'PropertyValue', name: 'Max power', value: `${station.maxPowerKw} kW` }]
+          : []),
+        { '@type': 'PropertyValue', name: 'Data source', value: station.sourceName ?? 'Ampo station catalogue' },
+        { '@type': 'PropertyValue', name: 'Data freshness', value: 'Point-in-time catalogue entry; open Ampo for live status' },
+      ],
+      isPartOf: websiteJsonLd(),
+      breadcrumb: breadcrumbJsonLd(station.name, canonical),
+    },
   };
 }

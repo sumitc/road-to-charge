@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -39,6 +39,8 @@ import { connectorBadgeLabel, connectorSpeed } from '@/lib/connectorLabels';
 import { chargingAppUrl, directionsUrl, mapsPlaceUrl } from '@/lib/appLinks';
 import { trackAmpo } from '@/lib/analytics';
 import { photoSourceLabel, placePhotoUrl } from '@/lib/placePhotos';
+import { useDynamicSeo } from '@/lib/dynamicSeo';
+import { stationSeoMeta } from '@/lib/seoJsonLd';
 import { EVStationService } from '@/services/evStationService';
 import {
   stationKeys,
@@ -120,6 +122,16 @@ const StationDetail: React.FC = () => {
   const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleMapsUri, setGoogleMapsUri] = useState<string>();
+  const stationSeo = useMemo(() => (station ? stationSeoMeta(station) : null), [station]);
+
+  useDynamicSeo({
+    title: stationSeo?.title ?? 'EV charging station | Ampo',
+    description: stationSeo?.description ?? 'View public EV charging station details on Ampo.',
+    canonical: stationSeo?.canonical ?? `/station/${id}`,
+    jsonLd: stationSeo?.jsonLd ?? null,
+    // Unshelled/removed rows should not compete with the quality-gated index.
+    robots: station ? null : 'noindex,follow',
+  });
 
   useEffect(() => {
     if (!id) return;

@@ -3,7 +3,8 @@
  * Build static, crawler-visible shells for Ampo's curated SEO pages.
  *
  * No serverless functions, no network calls, no DB writes. The registry is
- * src/data/seoPages.json; hotel pages come from the local Google Places index.
+ * src/data/seoPages.json; hotel pages come from the local Google Places index;
+ * quality-gated station pages come from the manual stations-seo snapshot.
  *
  *   node scripts/build-seo-pages.mjs              # write dev shells into public/
  *   node scripts/build-seo-pages.mjs --dist       # write prod shells into dist/
@@ -26,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const REGISTRY_PATH = path.join(ROOT, 'src/data/seoPages.json');
 const HOTELS_PATH = path.join(ROOT, 'src/data/hotels-ev.index.generated.json');
+const STATIONS_PATH = path.join(ROOT, 'src/data/stations-seo.generated.json');
 const SITE = 'https://ampo.vercel.app';
 const DIST_INDEX = path.join(ROOT, 'dist/index.html');
 const ROUTES_OUT = path.join(os.tmpdir(), 'ampo-seo-vercel-routes.json');
@@ -94,6 +96,8 @@ function shell({
   intro,
   bullets = [],
   links = [],
+  queryMap = [],
+  photo = null,
   jsonLd,
   assets,
 }) {
@@ -106,6 +110,13 @@ function shell({
     ? `<p class="ampo-links">${links.map(link =>
         `<a href="${esc(link.href)}">${esc(link.label)}</a>`
       ).join('<span aria-hidden="true"> · </span>')}</p>`
+    : '';
+  const queryMapHtml = queryMap.length
+    ? `<section class="ampo-query-map" style="margin-top:22px;padding:16px;background:#f0f9ff;border-radius:14px;font-size:14px;color:#334155"><h2 style="font-size:17px;margin:0 0 10px;color:#0f172a">Explore EV charging</h2>${queryMap.map(group =>
+        `<div style="margin-top:6px"><strong style="color:#0f172a">${esc(group.label)}:</strong> ${group.links.map(link =>
+          `<a href="${esc(link.href)}" style="color:#0284c7;text-decoration:underline">${esc(link.label)}</a>`
+        ).join('<span aria-hidden="true"> · </span>')}</div>`
+      ).join('')}</section>`
     : '';
   const json = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
@@ -156,11 +167,11 @@ function shell({
       <div class="ampo-shell">
         <div class="ampo-brand">Ampo <span>EV station finder</span></div>
         <main>
-          <h1>${esc(h1)}</h1>
+          ${photo ? `<img class="ampo-photo" src="${esc(photo.src)}" alt="${esc(photo.alt)}" width="640" height="360" />\n          ` : ''}<h1>${esc(h1)}</h1>
           <p>${esc(intro)}</p>
           ${bulletHtml}
           ${linkHtml}
-          <p class="ampo-note">Ampo uses real public charging-station data from BEE, OpenStreetMap and Google Places. Live results load when JavaScript is enabled.</p>
+          ${queryMapHtml ? `${queryMapHtml}\n          ` : ''}<p class="ampo-note">Ampo uses real public charging-station data from BEE, OpenStreetMap and Google Places. Live results load when JavaScript is enabled.</p>
         </main>
       </div>
     </div>
@@ -327,6 +338,147 @@ function hotelLinks(hotel, canonical) {
   return links;
 }
 
+const clip = (value, max) => {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+};
+
+function hubLink(registry, slug, label) {
+  const page = registry.hubPages.find(item => item.slug === slug);
+  return page ? { href: page.path, label: label || page.h1 } : null;
+}
+
+function stationPhotoUrl(station, width = 640) {
+  return station.photoRef
+    ? abs(`/api/place-photo?ref=${encodeURIComponent(station.photoRef)}&width=${width}`)
+    : null;
+}
+
+function stationAreaLink(station, registry) {
+  const text = [station.city, station.district, station.name, station.address]
+    .filter(Boolean).join(' ').toLowerCase();
+  const match = [...registry.searchPages]
+    .sort((a, b) => b.q.length - a.q.length)
+    .find(page => text.includes(page.q.toLowerCase()));
+  return match
+    ? { href: searchUrl(match), label: `EV chargers in ${match.q}` }
+    : hubLink(registry, 'near-me', 'Find EV chargers near you');
+}
+
+function stationQueryMap(station, registry) {
+  const connectorHubs = [
+    { re: /ccs\s*2|ccs2|\bccs\b/i, slug: 'ccs2-charging', label: 'CCS2 charging stations' },
+    { re: /bharat|is\s*17077/i, slug: 'bharat-ac-charging', label: 'Bharat AC charging stations' },
+    { re: /type\s*2/i, slug: 'type-2-charging', label: 'Type 2 charging stations' },
+    { re: /chademo/i, slug: 'chademo-charging', label: 'CHAdeMO charging stations' },
+  ];
+  const providerHubs = [
+    { re: /tata[\s.-]*power/i, slug: 'tata-power-charging', label: 'Tata Power EV charging' },
+    { re: /jio[\s.-]*bp|reliance\s+bp|bp\s+pulse/i, slug: 'jio-bp-charging', label: 'Jio-bp Pulse EV charging' },
+    { re: /bolt[\s.-]*earth/i, slug: 'bolt-earth-charging', label: 'Bolt.Earth EV charging' },
+    { re: /ather/i, slug: 'ather-grid-charging', label: 'Ather Grid charging' },
+    { re: /charge[\s.-]*zone/i, slug: 'chargezone-charging', label: 'ChargeZone EV charging' },
+  ];
+  const connectorText = (station.connectorTypes ?? []).join(' ');
+  const connectors = connectorHubs
+    .filter(item => item.re.test(connectorText))
+    .slice(0, 2)
+    .map(item => hubLink(registry, item.slug, item.label))
+    .filter(Boolean);
+  if (!connectors.length) {
+    const fallback = hubLink(registry, 'near-me', 'EV chargers near you');
+    if (fallback) connectors.push(fallback);
+  }
+  if (Number(station.maxPowerKw) >= 50) {
+    const fast = hubLink(registry, 'fast-charging-near-me', 'Fast EV charging near me');
+    if (fast) connectors.push(fast);
+  }
+  const provider = providerHubs
+    .filter(item => item.re.test(station.provider ?? ''))
+    .map(item => hubLink(registry, item.slug, item.label))
+    .filter(Boolean)
+    .slice(0, 1);
+  if (!provider.length) {
+    const fallback = hubLink(registry, 'near-me', 'Compare public chargers');
+    if (fallback) provider.push(fallback);
+  }
+  const map = hubLink(registry, 'india-ev-charging-map', 'India EV charging map');
+  const planner = hubLink(registry, 'ev-road-trip-planner', 'EV road trip planner');
+  const hotels = hubLink(registry, 'hotels-with-ev-charging', 'Hotels with EV charging');
+  return [
+    { label: 'Area', links: [stationAreaLink(station, registry), ...(map ? [map] : [])].filter(Boolean) },
+    { label: 'Connector', links: connectors },
+    { label: 'Network', links: provider },
+    { label: 'Plan', links: [planner, hotels].filter(Boolean) },
+  ].filter(group => group.links.length > 0);
+}
+
+function stationH1(station) {
+  const place = [station.city, station.state].filter(Boolean).join(', ');
+  return `${station.name} — EV charging station${place ? ` in ${place}` : ''}`;
+}
+
+function stationIntro(station) {
+  const place = [station.city, station.state].filter(Boolean).join(', ')
+    || [station.district, station.state].filter(Boolean).join(', ')
+    || 'India';
+  return `Public EV charging station in ${place}. ${station.provider} · data from ${station.sourceName}. This is a point-in-time catalogue entry; open Ampo for live availability and driver reports.`;
+}
+
+function stationBullets(station) {
+  const connectors = station.connectorTypes?.length ? station.connectorTypes.join(', ') : 'not listed';
+  return [
+    `Network: ${station.provider}`,
+    `Connectors: ${connectors}`,
+    ...(Number(station.maxPowerKw) > 0 ? [`Max power: ${station.maxPowerKw} kW`] : []),
+    ...(Number(station.totalConnectors) > 0 ? [`Total connectors: ${station.totalConnectors}`] : []),
+    ...(station.address ? [`Address: ${station.address}`] : []),
+    `Source: ${station.sourceName}${station.sourceUrl ? ` · ${station.sourceUrl}` : ''}`,
+    ...(station.updatedAt ? [`Catalogue updated: ${String(station.updatedAt).slice(0, 10)}`] : []),
+  ];
+}
+
+function stationLinks(station) {
+  return [
+    { href: `/station/${station.id}`, label: 'Open live station details' },
+    ...(station.mapsLink ? [{ href: station.mapsLink, label: 'View on Google Maps' }] : []),
+    ...(station.sourceUrl ? [{ href: station.sourceUrl, label: `Source: ${clip(station.sourceName, 40)}` }] : []),
+  ];
+}
+
+function stationJsonLd(station, canonical) {
+  const photoUrl = stationPhotoUrl(station);
+  const connectors = station.connectorTypes ?? [];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Place',
+    additionalType: 'https://schema.org/ChargingStation',
+    name: station.name,
+    description: clip(stationIntro(station), 280),
+    url: abs(canonical),
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: station.address || undefined,
+      addressLocality: station.city || undefined,
+      addressRegion: station.state || undefined,
+      addressCountry: 'IN',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: station.lat, longitude: station.lng },
+    ...(photoUrl ? { image: photoUrl } : {}),
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'Network', value: station.provider },
+      ...(connectors.length ? [{ '@type': 'PropertyValue', name: 'Connectors', value: connectors.join(', ') }] : []),
+      ...(Number(station.maxPowerKw) > 0
+        ? [{ '@type': 'PropertyValue', name: 'Max power', value: `${station.maxPowerKw} kW` }]
+        : []),
+      { '@type': 'PropertyValue', name: 'Data source', value: station.sourceName },
+      { '@type': 'PropertyValue', name: 'Data freshness', value: 'Point-in-time catalogue entry; open Ampo for live status' },
+    ],
+    isPartOf: websiteJsonLd(),
+    breadcrumb: breadcrumbJsonLd(station.name, canonical),
+  };
+}
+
 function routeRules(registry) {
   const search = registry.searchPages.map(page => ({
     src: '/',
@@ -353,7 +505,7 @@ function sitemapXml(entries) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
-function llmsTxt(registry, hotels) {
+function llmsTxt(registry, hotels, stations) {
   const lines = [
     '# Ampo',
     '',
@@ -378,6 +530,11 @@ function llmsTxt(registry, hotels) {
     ...registry.routePages.slice(0, 5).map(page => `- [${page.h1}](${SITE}${routeUrl(page)})`),
     '',
     `The local hotel index contains ${hotels.length} source-attributed hotels with nearby public chargers.`,
+    `The quality-gated station index contains ${stations.length} source-attributed public chargers with their own canonical /station/<id> pages.`,
+    '',
+    '## Example station pages',
+    '',
+    ...stations.slice(0, 3).map(station => `- [${clip(station.name, 70)}](${SITE}/station/${station.id})`),
     '',
   ];
   return lines.join('\n');
@@ -390,12 +547,13 @@ async function write(relativePath, contents) {
   return target;
 }
 
-async function validate(registry, hotels) {
+async function validate(registry, hotels, stations) {
   const slugs = [
     ...registry.searchPages.map(p => `search:${p.slug}`),
     ...registry.routePages.map(p => `route:${p.slug}`),
     ...registry.hubPages.map(p => `hub:${p.slug}`),
     ...hotels.map(h => `hotel:${h.id}`),
+    ...stations.map(s => `station:${s.id}`),
   ];
   const duplicates = slugs.filter((slug, index) => slugs.indexOf(slug) !== index);
   if (duplicates.length) throw new Error(`Duplicate slugs: ${duplicates.join(', ')}`);
@@ -413,16 +571,23 @@ async function validate(registry, hotels) {
       throw new Error(`Bad hotel ${hotel.id || '(no id)'}`);
     }
   }
-  console.log(`SEO validate OK: ${registry.searchPages.length} search, ${registry.routePages.length} route, ${registry.hubPages.length} hub, ${hotels.length} hotel pages`);
+  for (const station of stations) {
+    if (!station.id || !/^[0-9a-f-]{36}$/i.test(station.id) || !station.name
+      || !Number.isFinite(station.lat) || !Number.isFinite(station.lng)) {
+      throw new Error(`Bad station ${station.id || '(no id)'}`);
+    }
+  }
+  console.log(`SEO validate OK: ${registry.searchPages.length} search, ${registry.routePages.length} route, ${registry.hubPages.length} hub, ${hotels.length} hotel, ${stations.length} station pages`);
 }
 
 async function main() {
-  const [registry, hotels, assets] = await Promise.all([
+  const [registry, hotels, stations, assets] = await Promise.all([
     fs.readFile(REGISTRY_PATH, 'utf8').then(JSON.parse),
     fs.readFile(HOTELS_PATH, 'utf8').then(JSON.parse),
+    fs.readFile(STATIONS_PATH, 'utf8').then(JSON.parse),
     readAssetTags(),
   ]);
-  await validate(registry, hotels.hotels);
+  await validate(registry, hotels.hotels, stations.stations);
   if (validateOnly) return;
 
   const routes = routeRules(registry);
@@ -522,6 +687,27 @@ async function main() {
     await write(`hotels/${hotel.id}/index.html`, html);
   }
 
+  // Only the dist pass writes station shells. Writing 5.6K files into public/
+  // makes local `vercel dev` watchers noisy; production still gets them from
+  // the postbuild pass into dist/.
+  if (distMode) for (const station of stations.stations) {
+    const canonical = `/station/${station.id}`;
+    const photoUrl = stationPhotoUrl(station);
+    await write(`station/${station.id}.html`, shell({
+      title: `${clip(stationH1(station), 80)} | Ampo`,
+      description: clip(stationIntro(station), 220),
+      canonical,
+      h1: stationH1(station),
+      intro: stationIntro(station),
+      bullets: stationBullets(station),
+      links: stationLinks(station),
+      queryMap: stationQueryMap(station, registry),
+      photo: photoUrl ? { src: photoUrl, alt: station.name } : null,
+      jsonLd: stationJsonLd(station, canonical),
+      assets,
+    }));
+  }
+
   const sitemapEntries = [
     { loc: '/' },
     ...registry.searchPages.map(page => ({ loc: searchUrl(page) })),
@@ -529,12 +715,16 @@ async function main() {
     ...registry.hubPages.map(page => ({ loc: page.path })),
     { loc: '/hotels/' },
     ...hotels.hotels.map(hotel => ({ loc: `/hotels/${hotel.id}/`, lastmod: String(hotel.provenance?.retrievedAt ?? hotels.generatedAt).slice(0, 10) })),
+    ...stations.stations.map(station => ({
+      loc: `/station/${station.id}`,
+      lastmod: station.updatedAt ? String(station.updatedAt).slice(0, 10) : undefined,
+    })),
   ];
   await write('sitemap.xml', sitemapXml(sitemapEntries));
-  await write('llms.txt', llmsTxt(registry, hotels.hotels));
+  await write('llms.txt', llmsTxt(registry, hotels.hotels, stations.stations));
 
   const queryRoutes = routes.filter(route => route.has?.length).length;
-  console.log(`${distMode ? 'dist' : 'public'} SEO pages generated: ${sitemapEntries.length} sitemap URLs, ${queryRoutes} query routes`);
+  console.log(`${distMode ? 'dist' : 'public'} SEO pages generated: ${sitemapEntries.length} sitemap URLs (${stations.stations.length} station shells), ${queryRoutes} query routes`);
   console.log(`Vercel routes snippet: ${ROUTES_OUT}`);
 }
 

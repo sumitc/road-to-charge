@@ -437,6 +437,10 @@ async function checkHeaderHomeAffordances() {
   const cached = { lat: 17.4485, lng: 78.3908 };
   const current = { lat: 17.42, lng: 78.42 };
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const distanceRequests = [];
+  page.on('request', request => {
+    if (request.url().includes('/api/stations?mode=distance')) distanceRequests.push(request.url());
+  });
   await page.addInitScript(({ cached, current }) => {
     localStorage.setItem('ampo_last_location', JSON.stringify({ location: cached, timestamp: Date.now() }));
     Object.defineProperty(navigator, 'geolocation', {
@@ -454,12 +458,20 @@ async function checkHeaderHomeAffordances() {
     await page.waitForTimeout(2500);
   };
   const expectCurrent = async (label) => {
-    const request = page.waitForRequest(req => req.url().includes('/api/stations?mode=distance')
-      && req.url().includes(`lat=${current.lat}`) && req.url().includes(`lng=${current.lng}`),
-    { timeout: 20000 }).catch(() => null);
+    const before = distanceRequests.length;
     await page.getByRole('link', { name: label }).click();
-    const matched = await request;
-    check(`header ${label} returns to the current location`, Boolean(matched),
+    // A nearby fetch can already be in flight when a home affordance is used.
+    // Observe the request window instead of relying on a one-shot waiter that
+    // only sees requests issued after it was registered.
+    const matchesCurrent = () => distanceRequests.slice(before).some(url => {
+      const params = new URL(url).searchParams;
+      return params.get('mode') === 'distance'
+        && params.get('lat') === String(current.lat)
+        && params.get('lng') === String(current.lng);
+    });
+    const deadline = Date.now() + 20000;
+    while (!matchesCurrent() && Date.now() < deadline) await page.waitForTimeout(100);
+    check(`header ${label} returns to the current location`, matchesCurrent(),
       `current=${current.lat},${current.lng} cached=${cached.lat},${cached.lng}`);
     check(`header ${label} clears the searched query`,
       !page.url().includes('q=') && !page.url().includes('place='), page.url());

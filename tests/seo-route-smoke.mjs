@@ -28,7 +28,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 });
 
-async function newPage() {
+async function newPage(detailRow = null) {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
   await page.addInitScript(() => {
@@ -73,8 +73,18 @@ async function newPage() {
       }),
     });
   });
-  await page.route('**/api/stations**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.route('**/api/stations**', route => {
+    const url = new URL(route.request().url());
+    if (detailRow && url.searchParams.get('mode') === 'id'
+      && url.searchParams.get('id') === detailRow.id) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(detailRow),
+      });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
   return { page, counters };
 }
 
@@ -107,12 +117,15 @@ async function checkStaticAssets() {
   const urlCount = (sitemap.match(/<url>/g) ?? []).length;
   const registry = JSON.parse(await fs.readFile('src/data/seoPages.json', 'utf8'));
   const hotels = JSON.parse(await fs.readFile('src/data/hotels-ev.index.generated.json', 'utf8'));
+  const stations = JSON.parse(await fs.readFile('src/data/stations-seo.generated.json', 'utf8'));
   const expectedUrls = 2 + registry.searchPages.length + registry.routePages.length
-    + registry.hubPages.length + hotels.hotels.length;
+    + registry.hubPages.length + hotels.hotels.length + stations.stations.length;
   check('sitemap includes all generated pages', urlCount === expectedUrls, `${urlCount}/${expectedUrls} URLs`);
   check('sitemap XML-escapes canonical query URLs',
     sitemap.includes('https://ampo.vercel.app/?q=Delhi&amp;place=ChIJL_P_CXMEDTkRw0ZdG-0GVvw'));
   check('sitemap includes hotel detail pages', sitemap.includes('<loc>https://ampo.vercel.app/hotels/google-'));
+  check('sitemap includes quality-gated station detail pages',
+    sitemap.includes('<loc>https://ampo.vercel.app/station/'));
 
   const llms = await fetch(`${BASE_URL}/llms.txt`).then(r => r.text());
   check('llms.txt points to canonical Ampo URLs',
@@ -134,11 +147,28 @@ async function checkStaticAssets() {
   // curated query URLs would silently serve the generic shell.
   check('vercel.json keeps curated query routes ahead of filesystem and SPA fallback',
     queryRoutes.length === 34
-      && fsHandleAt === 34
+      && fsHandleAt === 35
       && (config.routes ?? []).at(-1)?.src === '/(.*)'
       && (config.rewrites ?? []).length === 0
       && config.crons?.length === 2,
     `${queryRoutes.length} query routes, filesystem at ${fsHandleAt}`);
+  const stationRouteIndex = (config.routes ?? []).findIndex(route =>
+    route.src?.startsWith('/station/') && route.dest === '/station/$1.html');
+  check('vercel.json maps clean station URLs to static shells before SPA fallback',
+    stationRouteIndex === 34 && stationRouteIndex < fsHandleAt,
+    `station route at ${stationRouteIndex}, filesystem at ${fsHandleAt}`);
+
+  const station = stations.stations[0];
+  const stationShell = await fs.readFile(`dist/station/${station.id}.html`, 'utf8');
+  check('station shell has its own canonical, query map and JSON-LD',
+    stationShell.includes(`href="https://ampo.vercel.app/station/${station.id}"`)
+      && stationShell.includes('ampo-query-map')
+      && stationShell.includes('data-ampo-seo="static"')
+      && stationShell.includes('point-in-time catalogue entry'));
+  const queryLinks = [...stationShell.matchAll(/href="\/\?([^"]+)"/g)].map(match => match[1]);
+  check('station query map only links curated place-locked searches',
+    queryLinks.every(query => query.includes('place=')),
+    queryLinks.join(' | ') || 'no query links');
 }
 
 async function checkCuratedSearch() {
@@ -298,11 +328,98 @@ async function checkRouteLinks() {
   await manual.page.close();
 }
 
+function stationDetailRow(station) {
+  const now = station.updatedAt ?? new Date().toISOString();
+  return {
+    id: station.id,
+    station_name: station.name,
+    provider: station.provider,
+    address: station.address,
+    city: station.city,
+    state: station.state,
+    district: station.district,
+    latitude: station.lat,
+    longitude: station.lng,
+    connector_types: station.connectorTypes,
+    availability_status: 'operational',
+    connectors: null,
+    max_power_kw: station.maxPowerKw,
+    max_kw_by_standard: null,
+    total_chargers: null,
+    total_connectors: station.totalConnectors,
+    vehicle_classes: null,
+    charging_current: null,
+    ownership: null,
+    location_quality: null,
+    mixed_admin: false,
+    opening_hours: null,
+    payment_modes: null,
+    contact_numbers: null,
+    staff: null,
+    access: null,
+    fee: null,
+    station_type: 'charging',
+    available_count: null,
+    out_of_service_count: null,
+    availability_last_update: null,
+    last_rider_report: null,
+    data_as_of: null,
+    maps_link: station.mapsLink,
+    external_id: station.googlePlaceId,
+    pricing: null,
+    power_output: station.maxPowerKw ? `${station.maxPowerKw}kW` : null,
+    source_name: station.sourceName,
+    source_url: station.sourceUrl,
+    google_place_id: station.googlePlaceId,
+    photo_references: station.photoRef ? [station.photoRef] : [],
+    place_details: null,
+    photo_enriched_at: null,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+async function checkStationDetailSeo() {
+  const snapshot = JSON.parse(await fs.readFile('src/data/stations-seo.generated.json', 'utf8'));
+  const station = snapshot.stations[0];
+  const canonical = `https://ampo.vercel.app/station/${station.id}`;
+  const { page } = await newPage(stationDetailRow(station));
+  await page.route('**/api/station-reviews**', route =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"reviews":[]}' }));
+  await page.route('**/api/station-feedback**', route =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"total":0,"recent":[]}' }));
+  await page.goto(`${BASE_URL}/station/${station.id}`, { waitUntil: 'domcontentloaded' });
+  // The dist shell hands off to React, which replaces the static JSON-LD with
+  // the live station payload. Wait for that hydration rather than reading the
+  // shell's canonical alone.
+  await page.waitForFunction(
+    expected => document.querySelector('link[rel="canonical"]')?.getAttribute('href') === expected
+      && [...document.querySelectorAll('script[type="application/ld+json"]')].some(script => {
+        if (script.dataset.ampoSeo !== 'dynamic') return false;
+        try { return JSON.parse(script.textContent ?? '{}')['@type'] === 'Place'; }
+        catch { return false; }
+      }),
+    canonical,
+    { timeout: 15000 },
+  );
+  const meta = await metaOf(page);
+  check('station detail hydrates its own canonical and structured data',
+    meta.canonical === canonical
+      && meta.robots !== 'noindex,follow'
+      && meta.jsonLd.some(item => item['@type'] === 'Place'),
+    `${meta.canonical} · ${JSON.stringify(meta.jsonLd.map(item => item['@type']))}`);
+  const text = await page.locator('body').innerText();
+  check('station detail keeps source provenance visible', text.includes(`Source: ${station.sourceName}`),
+    text.slice(0, 140).replace(/\n/g, ' '));
+  await page.close();
+}
+
 try {
   await checkStaticAssets();
   await checkCuratedSearch();
   await checkArbitraryQuery();
   await checkHubsAndHotels();
+  await checkStationDetailSeo();
   await checkRouteLinks();
 } finally {
   await browser.close();

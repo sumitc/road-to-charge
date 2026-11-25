@@ -49,3 +49,10 @@ Station data is point-in-time. Always open Ampo for current details.
 - [EV road trip from Bengaluru to Mysuru](https://ampo.vercel.app/?from=Bengaluru&to=Mysuru)
 
 The local hotel index contains 370 source-attributed hotels with nearby public chargers.
+The quality-gated station index contains 5661 source-attributed public chargers with their own canonical /station/<id> pages.
+
+## Example station pages
+
+- [Kharadi,Pune,Maharashtra,411014](https://ampo.vercel.app/station/00032557-a730-4b0f-9640-e7e750e998db)
+- [410 Shaniwar Peth](https://ampo.vercel.app/station/00039ce2-b347-4258-b245-45d3231a57f6)
+- [113/1A, 113/1B, PALLAPACHERI, , City=TIRUPULLANI, District=RAMANATHAP…](https://ampo.vercel.app/station/0004a87b-d508-49e1-bb78-56f088bc5818)
