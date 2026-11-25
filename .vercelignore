@@ -1,0 +1,18 @@
+# Build output is regenerated on Vercel; never upload local dist/ to the CLI.
+dist
+dist-ssr
+node_modules
+.vercel
+local-review-screenshots
+public/station
+
+# Local-only hotel research artifacts — intentionally untracked and never deployed.
+public/hotels/amazing-new-water-vu-balboa-peninsula-ev-charge.jpg
+public/hotels/radisson-blu-bengaluru-outer-ring-road.jpg
+public/hotels/radisson-blu-plaza-hyderabad-banjara-hills.jpg
+public/hotels/sofitel-mumbai-bkc.jpg
+public/hotels/the-leela-palace-bengaluru.jpg
+public/hotels/the-retreat-hotel-mumbai.jpg
+scripts/scrape-hotels.mjs
+src/data/hotels.generated.json
+src/data/hotels.seed.json
