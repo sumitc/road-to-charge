@@ -13,13 +13,10 @@ import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex, type Charger } from 
 import { hotelPhotoUrl } from '@/lib/hotelPhotos';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
+import { cn } from '@/lib/utils';
 import type { ChargingStation } from '@/types/station';
 
 const VISIBLE_CHARGER_LIMIT = 8;
-
-function formatDistance(meters: number) {
-  return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`;
-}
 
 const AMPO_STATION_URL = /\/station\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 
@@ -57,7 +54,6 @@ export function HotelDetailPage() {
   const hotel = findHotel(id);
   const [showAllChargers, setShowAllChargers] = useState(false);
   const onSite = hotel ? hasAuthenticOnSiteEvidence(hotel) : false;
-  const nearest = hotel?.ev.nearestCharger ?? null;
   const place = hotel ? [hotel.city, hotel.state].filter(Boolean).join(', ') : '';
   const jsonLd = useMemo(() => (hotel ? hotelJsonLd(hotel) : null), [hotel]);
 
@@ -85,9 +81,17 @@ export function HotelDetailPage() {
       lng: row.station.lng,
     })),
   );
+  // The nearest row belongs at the top of the same list users already know
+  // from charger search. Prefer the road distance once it arrives, but keep
+  // the straight-line fallback so the order never waits on OSRM.
+  const nearestFirstChargers = useMemo(() => [...chargerRows].sort((a, b) => {
+    const aDistance = drivingDistances[a.station.id] ?? a.station.distance;
+    const bDistance = drivingDistances[b.station.id] ?? b.station.distance;
+    return aDistance - bDistance;
+  }), [chargerRows, drivingDistances]);
   const visibleChargers = showAllChargers
-    ? chargerRows
-    : chargerRows.slice(0, VISIBLE_CHARGER_LIMIT);
+    ? nearestFirstChargers
+    : nearestFirstChargers.slice(0, VISIBLE_CHARGER_LIMIT);
 
   useDynamicSeo({
     title: hotel
@@ -151,34 +155,26 @@ export function HotelDetailPage() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={onSite
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-600'
-                    : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50'}
+                <div className="flex flex-nowrap items-center gap-2">
+                  <Badge
+                    data-hotel-evidence="true"
+                    className={cn(
+                      'shrink-0',
+                      onSite
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-600'
+                        : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50',
+                    )}
                   >
                     <BatteryCharging className="mr-1 h-3 w-3" /> {onSite ? 'EV on site' : 'Charger nearby'}
                   </Badge>
-                  <Badge variant="outline">Nearby public chargers, not an on-site claim</Badge>
+                  {hotel.sourceUrl && (
+                    <Button variant="outline" size="sm" asChild className="h-8 shrink-0 px-2 text-[11px]">
+                      <a data-hotel-maps-link="true" href={hotel.sourceUrl} target="_blank" rel="noopener noreferrer">
+                        View on Google Maps <ExternalLink className="ml-1 h-3 w-3" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
-
-                {nearest && (
-                  <div className="rounded-xl bg-muted/60 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Nearest verified public charger
-                    </p>
-                    <p className="mt-1 text-sm font-medium">{nearest.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {nearest.provider} · {formatDistance(nearest.distanceMeters)} · {nearest.source || nearest.sourceKind || 'mapped source'}
-                    </p>
-                    {nearest.sourceUrl && (
-                      <Button variant="link" size="sm" asChild className="mt-1 h-7 px-0 text-xs">
-                        <a href={nearest.sourceUrl} target="_blank" rel="noopener noreferrer">
-                          View charger source <ExternalLink className="ml-1 h-3 w-3" />
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                )}
 
                 {onSite && hotel.onSiteEvidenceSource && (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
@@ -217,34 +213,15 @@ export function HotelDetailPage() {
                       </a>
                     </Button>
                   )}
-                  <Button variant="outline" asChild>
-                    <a href={hotel.sourceUrl} target="_blank" rel="noopener noreferrer">
-                      Google Maps source <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                    </a>
-                  </Button>
                 </div>
 
-                <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-                  {hotel.formattedAddress || hotel.area}. Source: {hotel.source} · Retrieved{' '}
-                  {String(hotel.provenance.retrievedAt).slice(0, 10)}.{' '}
-                  {onSite
-                    ? 'On-site charging is based on the linked property/brand source above. Confirm access and pricing with the property before travel.'
-                    : 'A nearby public charger is not an on-site charging claim. Confirm charging access with the property before travel.'}
+                <p className="border-t pt-3 text-[11px] text-muted-foreground">
+                  Source: {hotel.source} · Updated {String(hotel.provenance.retrievedAt).slice(0, 10)}
                 </p>
               </CardContent>
             </Card>
 
-            <section id="chargers" className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Public chargers near this property
-              </h2>
-              <p className="text-xs leading-snug text-muted-foreground">
-                Google Places reports {hotel.ev.chargerCountWithinRadius} public charging
-                place{hotel.ev.chargerCountWithinRadius === 1 ? '' : 's'} within{' '}
-                {(hotel.ev.radiusMeters / 1000).toFixed(1)} km. The list also includes real
-                rows from OpenStreetMap and the Ampo catalogue. These are chargers near the
-                hotel, not chargers owned by the property.
-              </p>
+            <section id="chargers" aria-label="Public chargers near this property" className="space-y-3">
               {chargerRows.length > 0 ? (
                 <div className="space-y-3">
                   {visibleChargers.map(({ station, hasDetailPage }) => (

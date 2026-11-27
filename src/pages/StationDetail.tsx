@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
@@ -100,6 +100,7 @@ function relativeDate(value?: string | null): string {
 const StationDetail: React.FC = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   // Both queries are cached, so revisiting a station (or going back to the
   // list) shows instantly instead of re-fetching station + feedback.
@@ -250,6 +251,14 @@ const StationDetail: React.FC = () => {
     toast({ title: 'Thanks — feedback recorded' });
   };
 
+  // Preserve the real traversal tree: hotel → charger, search → charger and
+  // saved → charger all return to where the tap happened. A direct/static
+  // detail load has no in-app history entry to go back to, so use the finder.
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="sticky top-0 z-30 bg-gradient-hero text-primary-foreground shadow-electric">
@@ -260,7 +269,7 @@ const StationDetail: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/')}
+            onClick={goBack}
             aria-label="Back"
             className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
           >

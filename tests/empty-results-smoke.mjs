@@ -12,6 +12,7 @@ import { chromium } from 'playwright-core';
 const HOTEL_INDEX = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generated.json', 'utf8'));
 const TOTAL_STAYS = HOTEL_INDEX.hotels.length;
 const PHOTO_HOTEL = HOTEL_INDEX.hotels.find(hotel => hotel.photo?.reference) ?? HOTEL_INDEX.hotels[0];
+const DETAIL_HOTEL = HOTEL_INDEX.hotels.find(hotel => /park continental/i.test(hotel.name)) ?? PHOTO_HOTEL;
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/$/, '');
 const CHROME_PATH =
@@ -327,32 +328,61 @@ async function checkHotels() {
 
   // Hotel-detail chargers must use the same card/actions/click-through as the
   // station search list, scoped to the hotel as the distance origin.
-  await page.goto(new URL(`/hotels/${PHOTO_HOTEL.id}`, BASE_URL).toString(), { waitUntil: 'domcontentloaded' });
+  await page.goto(new URL(`/hotels/${DETAIL_HOTEL.id}`, BASE_URL).toString(), { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-hotel-maps-link]').waitFor({ timeout: 20000 });
   const detailPhotoRef = new URL(
     await page.locator('main img').first().getAttribute('src') ?? '',
     BASE_URL,
   ).searchParams.get('ref');
   check('hotel detail uses the real Google Maps photo',
-    decodeURIComponent(detailPhotoRef ?? '') === PHOTO_HOTEL.photo.reference,
+    decodeURIComponent(detailPhotoRef ?? '') === DETAIL_HOTEL.photo.reference,
     detailPhotoRef ?? '');
+
+  const detailEvidenceTag = page.locator('[data-hotel-evidence]');
+  check('hotel detail shows only one EV evidence tag',
+    (await detailEvidenceTag.count()) === 1 && /^(EV on site|Charger nearby)$/.test((await detailEvidenceTag.innerText()).trim()),
+    (await detailEvidenceTag.allInnerTexts()).join(' | '));
+  const evidenceBox = await detailEvidenceTag.boundingBox();
+  const mapsBox = await page.locator('[data-hotel-maps-link]').boundingBox();
+  check('Google Maps link sits directly beside the hotel EV tag',
+    Boolean(evidenceBox && mapsBox && mapsBox.x > evidenceBox.x && Math.abs(mapsBox.y - evidenceBox.y) < 20),
+    `tag=${JSON.stringify(evidenceBox)} maps=${JSON.stringify(mapsBox)}`);
+  const detailMainText = await page.locator('main').innerText();
+  check('hotel detail drops the duplicate tag, nearest panel and verbose address',
+    !detailMainText.includes('Nearby public chargers, not an on-site claim')
+      && !detailMainText.includes('NEAREST VERIFIED PUBLIC CHARGER')
+      && (!DETAIL_HOTEL.formattedAddress || !detailMainText.includes(DETAIL_HOTEL.formattedAddress)),
+    detailMainText.replace(/\n/g, ' ').slice(0, 220));
+
   const chargerSectionClass = await page.locator('#chargers').getAttribute('class');
   check('hotel charger rows have no extra panel boundary around the search-style list',
     !/\b(bg-muted|rounded-xl|border|shadow|p-3)\b/.test(chargerSectionClass ?? ''),
     chargerSectionClass ?? '');
-  const chargerRow = page.locator('#chargers button[aria-label^="View details for"], #chargers button[aria-label^="Open charger source for"]').first();
+  check('hotel charger list starts with cards instead of a title and explanation',
+    !detailMainText.includes('Public chargers near this property')
+      && !detailMainText.includes('Google Places reports'));
+  const chargerRows = page.locator('#chargers button[aria-label^="View details for"], #chargers button[aria-label^="Open charger source for"]');
+  const chargerRow = chargerRows.first();
   await chargerRow.waitFor({ timeout: 20000 });
   check('hotel charger list uses the same station cards as search',
     (await chargerRow.count()) > 0,
     await chargerRow.getAttribute('aria-label') ?? '');
+  check('nearest charger is ranked at the top of the same list',
+    (await chargerRow.getAttribute('aria-label') ?? '').includes(DETAIL_HOTEL.ev.nearestCharger.name),
+    `${await chargerRow.getAttribute('aria-label')} vs ${DETAIL_HOTEL.ev.nearestCharger.name}`);
   check('hotel charger cards expose the search-list actions',
     (await page.locator('#chargers button:has-text("Directions")').count()) > 0
       && (await page.locator('#chargers button:has-text("App")').count()) > 0);
-  const detailLabel = await chargerRow.getAttribute('aria-label');
-  if (detailLabel?.startsWith('View details for')) {
-    await chargerRow.click();
+  const detailRow = page.locator('#chargers button[aria-label^="View details for"]').first();
+  if (await detailRow.count()) {
+    await detailRow.click();
     await page.waitForURL(/\/station\/[0-9a-f-]{36}/, { timeout: 15000 });
     check('hotel charger row click-out opens the Ampo station detail',
       /\/station\//.test(page.url()), page.url());
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await page.waitForURL(url => url.pathname === `/hotels/${DETAIL_HOTEL.id}`, { timeout: 15000 });
+    check('Back from a hotel charger returns to the hotel detail, not the search list',
+      new URL(page.url()).pathname === `/hotels/${DETAIL_HOTEL.id}`, page.url());
   }
   await context.close();
 }

@@ -256,12 +256,7 @@ async function checkHubsAndHotels() {
 
   const detail = await newPage();
   await detail.page.goto(`${BASE_URL}/hotels/${hotel.id}/`, { waitUntil: 'domcontentloaded' });
-  await detail.page.waitForFunction(
-    () => document.body.innerText.includes('NEAREST VERIFIED PUBLIC CHARGER')
-      || document.body.innerText.includes('Source: Google Places API'),
-    null,
-    { timeout: 15000 },
-  );
+  await detail.page.getByRole('link', { name: /View on Google Maps/i }).waitFor({ timeout: 15000 });
   if (hotel.photo?.reference) {
     const detailPhotoSrc = await detail.page.locator('main img').first().getAttribute('src');
     check('hotel pages use real Google Maps photos through the existing proxy',
@@ -269,13 +264,23 @@ async function checkHubsAndHotels() {
       detailPhotoSrc ?? '');
   }
   const detailText = await detail.page.locator('body').innerText();
-  check('hotel detail keeps honest nearby-charger provenance',
-    detailText.includes('nearby public charger') || detailText.includes('nearby charger')
-      ? !/on-site EV charging/i.test(detailText)
-      : /Google Maps source/.test(detailText),
-    detailText.slice(0, 140).replace(/\n/g, ' '));
-  check('hotel detail exposes charger sources and a contribution path',
-    /Public chargers near this property/i.test(detailText)
+  const evidenceTag = detail.page.locator('[data-hotel-evidence]');
+  check('hotel detail shows a single honest evidence tag',
+    (await evidenceTag.count()) === 1 && /^(EV on site|Charger nearby)$/.test((await evidenceTag.innerText()).trim()),
+    (await evidenceTag.allInnerTexts()).join(' | '));
+  const evidenceBox = await evidenceTag.boundingBox();
+  const mapsBox = await detail.page.locator('[data-hotel-maps-link]').boundingBox();
+  check('Google Maps link sits beside the evidence tag for more property details',
+    Boolean(evidenceBox && mapsBox && mapsBox.x > evidenceBox.x && Math.abs(mapsBox.y - evidenceBox.y) < 20),
+    `tag=${JSON.stringify(evidenceBox)} maps=${JSON.stringify(mapsBox)}`);
+  check('hotel detail drops duplicate, verbose and full-address copy',
+    !detailText.includes('Nearby public chargers, not an on-site claim')
+      && !detailText.includes('NEAREST VERIFIED PUBLIC CHARGER')
+      && !detailText.includes('Public chargers near this property')
+      && (!hotel.formattedAddress || !detailText.includes(hotel.formattedAddress)),
+    detailText.replace(/\n/g, ' ').slice(0, 220));
+  check('hotel detail keeps compact source attribution and a contribution path',
+    /Source: .+· Updated \d{4}-\d{2}-\d{2}/.test(detailText)
       && detailText.includes('submit a location')
       && (await detail.page.getByRole('button', { name: 'Add a charging station' }).count()) === 1);
   if (hotel.tripadvisorUrl) {

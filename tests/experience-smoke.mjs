@@ -728,6 +728,12 @@ try {
 
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });
+    check(`${width}px: Back from station detail restores the searched list`,
+      /[?&]q=/.test(page.url()), page.url());
+    // Use a clean home URL for the refresh-stability pass; Back intentionally
+    // restores the searched results URL, so refreshing it should keep the query.
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.getByLabel('Search for charging stations by area or city').waitFor({ state: 'visible', timeout: 20000 });
 
     // Repeated refresh must not change the active tab, restore stale text, or
     // accumulate console errors.
