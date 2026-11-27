@@ -14,6 +14,13 @@ import { chromium } from 'playwright-core';
 const BASE_URL = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/$/, '');
 const CHROME_PATH =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const HOTEL_REVIEWS = Array.from({ length: 5 }, (_, index) => ({
+  authorName: `Google Maps reviewer ${index + 1}`,
+  rating: 5 - (index % 2),
+  text: `A real Google Maps review about the property, number ${index + 1}.`,
+  relativeTime: `${index + 1} month${index ? 's' : ''} ago`,
+  googleMapsUri: `https://maps.google.com/?review=${index + 1}`,
+}));
 
 let failures = 0;
 function check(name, condition, detail = '') {
@@ -77,6 +84,11 @@ async function newPage(detailRow = null) {
     status: 200,
     contentType: 'image/gif',
     body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64'),
+  }));
+  await page.route('**/api/station-reviews?placeId=**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ reviews: HOTEL_REVIEWS }),
   }));
   await page.route('**/api/stations**', route => {
     const url = new URL(route.request().url());
@@ -283,6 +295,18 @@ async function checkHubsAndHotels() {
     /Source: .+· Updated \d{4}-\d{2}-\d{2}/.test(detailText)
       && detailText.includes('submit a location')
       && (await detail.page.getByRole('button', { name: 'Add a charging station' }).count()) === 1);
+  check('hotel detail drops the city charger button and interest tags',
+    (await detail.page.getByRole('link', { name: /^Chargers in /i }).count()) === 0
+      && hotel.interestTags.every(tag => !new RegExp(`\\b${tag}\\b`, 'i').test(detailText)),
+    hotel.interestTags.join(', '));
+  check('EV badge and rating bubble are in-page shortcuts',
+    (await detail.page.locator('[data-hotel-evidence-link]').getAttribute('href')) === '#chargers'
+      && (hotel.rating == null
+        || (await detail.page.locator('[data-hotel-rating-link]').getAttribute('href')) === '#ratings'));
+  await detail.page.locator('[data-hotel-review]').first().waitFor({ timeout: 15000 });
+  check('ratings accordion shows three real Google reviews with inline see-more',
+    (await detail.page.locator('[data-hotel-review]').count()) === 3
+      && (await detail.page.locator('[data-hotel-reviews-more]').innerText()).includes('See 2 more reviews'));
   if (hotel.tripadvisorUrl) {
     check('verified Tripadvisor link is present only when sourced',
       (await detail.page.locator(`a[href="${hotel.tripadvisorUrl}"]`).count()) > 0);

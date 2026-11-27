@@ -1,16 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, BatteryCharging, ExternalLink, Info, MapPin, Star } from 'lucide-react';
+import { ArrowLeft, BatteryCharging, ExternalLink, Info, Loader2, MapPin, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrandTitle } from '@/components/BrandTitle';
 import { ContributionButton } from '@/components/ContributionButton';
+import { HotelReviews } from '@/components/HotelReviews';
 import { SiteFooter } from '@/components/SiteFooter';
 import { StationCard } from '@/components/StationCard';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
-import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex, type Charger } from '@/lib/hotelIndex';
+import { hasAuthenticOnSiteEvidence, findHotel, type Charger, type Hotel } from '@/lib/hotelIndex';
 import { hotelPhotoUrl } from '@/lib/hotelPhotos';
+import { EVStationService } from '@/services/evStationService';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
 import { cn } from '@/lib/utils';
@@ -51,8 +53,28 @@ function chargerToStation(charger: Charger): ChargingStation {
 
 export function HotelDetailPage() {
   const { id } = useParams();
-  const hotel = findHotel(id);
+  const staticHotel = findHotel(id);
+  // Discovery rows keep the exact Google Place ID in the route so a shared or
+  // reloaded detail page can re-verify the property without relying on memory.
+  const discoveredPlaceId = id?.startsWith('google-') ? id.slice('google-'.length) : '';
+  const [discoveredHotel, setDiscoveredHotel] = useState<Hotel | null>(null);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const hotel = staticHotel ?? discoveredHotel;
   const [showAllChargers, setShowAllChargers] = useState(false);
+
+  useEffect(() => {
+    if (staticHotel) return;
+    setDiscoveredHotel(null);
+    if (!discoveredPlaceId || !/^[A-Za-z0-9_-]{10,}$/.test(discoveredPlaceId)) return;
+    let active = true;
+    setIsDiscovering(true);
+    void EVStationService.discoverHotel({ placeId: discoveredPlaceId }).then(found => {
+      if (!active) return;
+      setDiscoveredHotel(found);
+      setIsDiscovering(false);
+    });
+    return () => { active = false; };
+  }, [discoveredPlaceId, staticHotel]);
   const onSite = hotel ? hasAuthenticOnSiteEvidence(hotel) : false;
   const place = hotel ? [hotel.city, hotel.state].filter(Boolean).join(', ') : '';
   const jsonLd = useMemo(() => (hotel ? hotelJsonLd(hotel) : null), [hotel]);
@@ -96,10 +118,12 @@ export function HotelDetailPage() {
   useDynamicSeo({
     title: hotel
       ? `${hotel.name} — Hotels with EV charging | Ampo`
-      : 'Hotel not found | Ampo',
+      : isDiscovering ? 'Discovering stay | Ampo' : 'Hotel not found | Ampo',
     description: hotel
       ? `${hotel.name} in ${place}. ${hotel.ev.label}. Source-attributed hotel and charger data on Ampo.`
-      : 'This hotel is not in Ampo’s EV hotel index.',
+      : isDiscovering
+        ? 'Verifying this Google Maps place and its nearby public chargers.'
+        : 'This property could not be verified with a real public charger nearby.',
     canonical: `/hotels/${id ?? ''}/`,
     jsonLd,
   });
@@ -121,13 +145,27 @@ export function HotelDetailPage() {
         {!hotel ? (
           <Card className="rounded-2xl">
             <CardContent className="p-5">
-              <h1 className="text-xl font-semibold">Hotel not found</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                This property is not in the current {hotelIndex.hotels.length}-hotel index.
-              </p>
-              <Button asChild className="mt-4">
-                <Link to="/hotels/">Browse the hotel index</Link>
-              </Button>
+              {isDiscovering ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <h1 className="text-xl font-semibold">Checking this stay on Google Maps…</h1>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    We only add a property when its exact place has a real public charger nearby.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-xl font-semibold">Hotel not found</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    This property could not be verified with a real public charger nearby, or it is no longer listed on Google Maps.
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link to="/hotels/">Browse the hotel index</Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -149,24 +187,38 @@ export function HotelDetailPage() {
                     </p>
                   </div>
                   {hotel.rating != null && (
-                    <Badge variant="secondary" className="shrink-0">
-                      <Star className="mr-1 h-3 w-3 fill-amber-400 text-amber-400" /> {hotel.rating}
-                    </Badge>
+                    <a
+                      href="#ratings"
+                      data-hotel-rating-link="true"
+                      className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      aria-label={`See ratings and reviews for ${hotel.name}`}
+                    >
+                      <Badge variant="secondary">
+                        <Star className="mr-1 h-3 w-3 fill-amber-400 text-amber-400" /> {hotel.rating}
+                      </Badge>
+                    </a>
                   )}
                 </div>
 
                 <div className="flex flex-nowrap items-center gap-2">
-                  <Badge
-                    data-hotel-evidence="true"
-                    className={cn(
-                      'shrink-0',
-                      onSite
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-600'
-                        : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50',
-                    )}
+                  <a
+                    href="#chargers"
+                    data-hotel-evidence-link="true"
+                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    aria-label={`Jump to chargers near ${hotel.name}`}
                   >
-                    <BatteryCharging className="mr-1 h-3 w-3" /> {onSite ? 'EV on site' : 'Charger nearby'}
-                  </Badge>
+                    <Badge
+                      data-hotel-evidence="true"
+                      className={cn(
+                        'shrink-0',
+                        onSite
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-600'
+                          : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50',
+                      )}
+                    >
+                      <BatteryCharging className="mr-1 h-3 w-3" /> {onSite ? 'EV on site' : 'Charger nearby'}
+                    </Badge>
+                  </a>
                   {hotel.sourceUrl && (
                     <Button variant="outline" size="sm" asChild className="h-8 shrink-0 px-2 text-[11px]">
                       <a data-hotel-maps-link="true" href={hotel.sourceUrl} target="_blank" rel="noopener noreferrer">
@@ -192,28 +244,15 @@ export function HotelDetailPage() {
                   </div>
                 )}
 
-                {hotel.interestTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {hotel.interestTags.map(tag => (
-                      <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button asChild>
-                    <Link to={`/?q=${encodeURIComponent(hotel.city || hotel.area)}`}>
-                      Chargers in {hotel.city || hotel.area}
-                    </Link>
-                  </Button>
-                  {hotel.tripadvisorUrl && (
+                {hotel.tripadvisorUrl && (
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <Button variant="outline" asChild>
                       <a href={hotel.tripadvisorUrl} target="_blank" rel="noopener noreferrer">
                         Tripadvisor listing <ExternalLink className="ml-1 h-3.5 w-3.5" />
                       </a>
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <p className="border-t pt-3 text-[11px] text-muted-foreground">
                   Source: {hotel.source} · Updated {String(hotel.provenance.retrievedAt).slice(0, 10)}
@@ -221,7 +260,13 @@ export function HotelDetailPage() {
               </CardContent>
             </Card>
 
-            <section id="chargers" aria-label="Public chargers near this property" className="space-y-3">
+            <HotelReviews
+              placeId={hotel.provenance.placeId}
+              rating={hotel.rating}
+              mapsUrl={hotel.sourceUrl}
+            />
+
+            <section id="chargers" aria-label="Public chargers near this property" className="scroll-mt-20 space-y-3">
               {chargerRows.length > 0 ? (
                 <div className="space-y-3">
                   {visibleChargers.map(({ station, hasDetailPage }) => (

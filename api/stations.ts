@@ -12,6 +12,7 @@ import {
   searchPlaceByText,
   suggestPlaces,
 } from '../server/lib/googlePlaces.js';
+import { discoverHotel } from '../server/lib/hotelDiscovery.js';
 import { PLACE_ALIASES as SEARCH_ALIASES } from '../src/lib/placeAliases.js';
 
 export const config = { runtime: 'nodejs' };
@@ -93,6 +94,35 @@ export async function GET(req: Request): Promise<Response> {
         });
       }
       return new Response(JSON.stringify(place), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      });
+    }
+
+    // Demand-driven hotel discovery. Unlike the static seed, this verifies the
+    // exact Google place, reads real nearby chargers and returns the same Hotel
+    // shape. It never touches the station DB and adds no Vercel function.
+    if (mode === 'discover-hotel') {
+      const placeId = params.get('placeId')?.trim() ?? '';
+      const query = params.get('q')?.trim() ?? '';
+      if (placeId && !/^[A-Za-z0-9_-]{10,}$/.test(placeId)) {
+        return new Response(JSON.stringify({ hotel: null, reason: 'failed' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!placeId && query.length < 3) {
+        return new Response(JSON.stringify({ hotel: null, reason: 'failed' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const result = await discoverHotel({ placeId, query }, process.env.GOOGLE_MAPS_API_KEY);
+      return new Response(JSON.stringify(result), {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',

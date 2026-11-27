@@ -9,9 +9,12 @@ const corsHeaders = {
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Google Place IDs are opaque; this only blocks malformed or oversized input.
+// The server key is restricted and responses are CDN-cached for a day.
+const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{8,255}$/;
 
 interface ReviewsResponse extends ReviewLookup {
-  stationId: string;
+  stationId?: string;
   /** Shown verbatim in the UI so attribution is never implied. */
   source: 'Google Maps';
 }
@@ -38,21 +41,39 @@ export async function OPTIONS(): Promise<Response> {
 }
 
 export async function GET(req: Request): Promise<Response> {
-  const stationId = new URL(req.url).searchParams.get('stationId') ?? '';
-  if (!UUID_PATTERN.test(stationId)) {
-    return respond({ error: 'Valid stationId is required' }, 400, 60);
+  const params = new URL(req.url).searchParams;
+  const stationId = params.get('stationId') ?? '';
+  const placeId = params.get('placeId') ?? '';
+  const byPlaceId = Boolean(placeId);
+
+  if (byPlaceId ? !PLACE_ID_PATTERN.test(placeId) : !UUID_PATTERN.test(stationId)) {
+    return respond({ error: 'Valid stationId or placeId is required' }, 400, 60);
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return respond({ error: 'Google Maps is not configured' }, 503, 60);
 
-  const existing = inFlight.get(stationId);
+  const cacheKey = byPlaceId ? `place:${placeId}` : stationId;
+  const existing = inFlight.get(cacheKey);
   if (existing) {
     const result = await existing;
-    return result ? respond(result) : respond({ error: 'Station not found' }, 404, 60);
+    return result ? respond(result) : respond({ error: 'Place not found' }, 404, 60);
   }
 
   const task = (async (): Promise<ReviewsResponse | null> => {
+    // Hotel pages already have an exact Google Place ID from the index; skip
+    // the station DB lookup and ask Places directly for that one property.
+    if (byPlaceId) {
+      const lookup = await fetchGoogleReviews({
+        station_name: '',
+        address: null,
+        latitude: 0,
+        longitude: 0,
+        google_place_id: placeId,
+      }, apiKey);
+      return { ...lookup, placeId: lookup.placeId ?? placeId, source: 'Google Maps' };
+    }
+
     const url = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
     if (!url) throw new Error('POSTGRES_URL / POSTGRES_URL_NON_POOLING is not configured');
     const sql = postgres(url, {
@@ -83,20 +104,20 @@ export async function GET(req: Request): Promise<Response> {
     }
   })();
 
-  inFlight.set(stationId, task);
+  inFlight.set(cacheKey, task);
   try {
     const result = await task;
-    if (!result) return respond({ error: 'Station not found' }, 404, 60);
+    if (!result) return respond({ error: 'Place not found' }, 404, 60);
     return respond(result);
   } catch (error) {
     console.error('Google reviews lookup failed:', error);
     // Degrade gracefully — the community reviews section still works.
     return respond(
-      { stationId, source: 'Google Maps', reviews: [], error: 'Reviews are temporarily unavailable' },
+      { [byPlaceId ? 'placeId' : 'stationId']: byPlaceId ? placeId : stationId, source: 'Google Maps', reviews: [], error: 'Reviews are temporarily unavailable' },
       200,
       300
     );
   } finally {
-    inFlight.delete(stationId);
+    inFlight.delete(cacheKey);
   }
 }

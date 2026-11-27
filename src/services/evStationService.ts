@@ -1,5 +1,6 @@
 import type { Tables } from '@/integrations/supabase/types';
 import type { GoogleRefreshInfo } from '@/lib/googleArea';
+import type { Hotel } from '@/lib/hotelIndex';
 import { displayStationAddress, displayStationName } from '@/lib/provider';
 import type {
   ChargingCurrent,
@@ -228,6 +229,27 @@ export class EVStationService {
       };
     } catch (error) {
       console.error('Error in resolvePlace:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Discover a real stay that is not in the curated hotel seed. The API
+   * verifies the exact Google place and its nearby public chargers, so only a
+   * property with real EV data becomes a row. The key never reaches the client.
+   */
+  static async discoverHotel(input: { placeId?: string; query?: string }): Promise<Hotel | null> {
+    try {
+      const params = new URLSearchParams({ mode: 'discover-hotel' });
+      if (input.placeId) params.set('placeId', input.placeId);
+      else if (input.query) params.set('q', input.query);
+      else return null;
+      const response = await fetch(`/api/stations?${params.toString()}`);
+      if (!response.ok) return null;
+      const result = await response.json() as { hotel?: Hotel | null } | null;
+      return result?.hotel ?? null;
+    } catch (error) {
+      console.error('Error in discoverHotel:', error);
       return null;
     }
   }

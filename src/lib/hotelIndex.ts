@@ -72,6 +72,10 @@ export type Hotel = {
     placeId: string;
     retrievedAt: string;
     demandUrl: string;
+    /** Present on discovery rows so sources stay explicit in the UI. */
+    hotelLookup?: string;
+    chargerLookup?: string;
+    coordinatesAsOf?: string;
   };
 };
 

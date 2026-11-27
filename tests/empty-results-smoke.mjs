@@ -13,6 +13,60 @@ const HOTEL_INDEX = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generat
 const TOTAL_STAYS = HOTEL_INDEX.hotels.length;
 const PHOTO_HOTEL = HOTEL_INDEX.hotels.find(hotel => hotel.photo?.reference) ?? HOTEL_INDEX.hotels[0];
 const DETAIL_HOTEL = HOTEL_INDEX.hotels.find(hotel => /park continental/i.test(hotel.name)) ?? PHOTO_HOTEL;
+const DISCOVERED_NEAREST = {
+  ...(DETAIL_HOTEL.ev.nearestCharger ?? {}),
+  placeId: 'test-zeon-charger',
+  name: 'Zeon Charging Station',
+  provider: 'Zeon',
+  location: { lat: 15.2408, lng: 73.9271 },
+  distanceMeters: 282,
+  sourceUrl: 'https://www.google.com/maps/search/?api=1&query=Zeon%20Charging%20Station',
+  source: 'Google Places API (New)',
+  sourceKind: 'google',
+  connectors: [],
+};
+const DISCOVERED_HOTEL = {
+  ...DETAIL_HOTEL,
+  id: 'google-test-azaya-place',
+  name: 'Azaya Beach Resort Goa',
+  area: 'Benaulim',
+  city: 'Goa',
+  state: 'Goa',
+  locality: 'Benaulim',
+  formattedAddress: 'Village, Calwaddo, Benaulim, Goa',
+  location: { lat: 15.2410414, lng: 73.9273839 },
+  interestTags: [],
+  rating: 4,
+  ratingSource: 'google',
+  source: 'Google Places API (New) · discovered by search',
+  sourceUrl: 'https://www.google.com/maps/place/?q=place_id:test-azaya-place',
+  evSignal: 'ev_charger_nearby',
+  onSiteEvidence: null,
+  onSiteEvidenceSource: null,
+  ev: {
+    ...DETAIL_HOTEL.ev,
+    label: 'EV charger 0.3 km away',
+    nearestCharger: DISCOVERED_NEAREST,
+    chargerCountWithinRadius: 1,
+    providers: ['Zeon'],
+    nearbyChargerSources: [DISCOVERED_NEAREST],
+  },
+  provenance: {
+    ...DETAIL_HOTEL.provenance,
+    placeId: 'test-azaya-place',
+    retrievedAt: new Date().toISOString(),
+    demandUrl: 'https://www.google.com/maps/place/?q=place_id:test-azaya-place',
+    hotelLookup: 'Google Places API (New) place details',
+    chargerLookup: 'Google Places API (New) places:searchNearby',
+  },
+};
+const HOTEL_REVIEWS = Array.from({ length: 5 }, (_, index) => ({
+  authorName: `Google Maps reviewer ${index + 1}`,
+  rating: 5 - (index % 2),
+  text: `A real Google Maps review about the property, number ${index + 1}.`,
+  relativeTime: `${index + 1} month${index ? 's' : ''} ago`,
+  googleMapsUri: `https://maps.google.com/?review=${index + 1}`,
+}));
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/$/, '');
 const CHROME_PATH =
@@ -77,22 +131,49 @@ async function newPage({ withRoute = false } = {}) {
             primaryText: 'Goa',
             secondaryText: 'India',
           }]
-          : [];
+          : q.includes('azaya')
+            ? [{
+              placeId: 'test-azaya-place',
+              label: 'Azaya Beach Resort Goa, Benaulim, Goa',
+              primaryText: 'Azaya Beach Resort Goa',
+              secondaryText: 'Benaulim, Goa',
+            }]
+            : [];
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(suggestions) });
     }
     if (url.searchParams.get('mode') === 'resolve') {
-      const place = url.searchParams.get('placeId') === 'test-goa-area'
+      const placeId = url.searchParams.get('placeId');
+      const place = placeId === 'test-goa-area'
         ? {
           placeId: 'test-goa-area',
           label: 'Goa, India',
           lat: 15.3,
           lng: 73.9,
         }
-        : null;
+        : placeId === 'test-azaya-place'
+          ? {
+            placeId: 'test-azaya-place',
+            label: 'Azaya Beach Resort Goa',
+            lat: 15.2410414,
+            lng: 73.9273839,
+          }
+          : null;
       return route.fulfill({
         status: place ? 200 : 404,
         contentType: 'application/json',
         body: JSON.stringify(place ?? { error: 'Place could not be resolved' }),
+      });
+    }
+    if (url.searchParams.get('mode') === 'discover-hotel') {
+      const placeId = url.searchParams.get('placeId');
+      const query = (url.searchParams.get('q') ?? '').toLowerCase();
+      const found = placeId === 'test-azaya-place' || query.includes('azaya');
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(found
+          ? { hotel: DISCOVERED_HOTEL }
+          : { hotel: null, reason: 'no_ev_data' }),
       });
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -106,6 +187,11 @@ async function newPage({ withRoute = false } = {}) {
     status: 200,
     contentType: 'image/gif',
     body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64'),
+  }));
+  await page.route('**/api/station-reviews?placeId=**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ reviews: HOTEL_REVIEWS, googleMapsUri: DETAIL_HOTEL.sourceUrl }),
   }));
   if (withRoute) {
     await page.route('**/nominatim.openstreetmap.org/search**', route => {
@@ -354,6 +440,79 @@ async function checkHotels() {
       && (!DETAIL_HOTEL.formattedAddress || !detailMainText.includes(DETAIL_HOTEL.formattedAddress)),
     detailMainText.replace(/\n/g, ' ').slice(0, 220));
 
+  const mapsHref = await page.locator('[data-hotel-maps-link]').getAttribute('href');
+  check('top Google Maps button uses the exact sourced property link',
+    mapsHref === DETAIL_HOTEL.sourceUrl,
+    mapsHref ?? '');
+  check('hotel detail drops the city charger shortcut and interest tags',
+    (await page.getByRole('link', { name: /^Chargers in /i }).count()) === 0
+      && DETAIL_HOTEL.interestTags.every(tag =>
+        !new RegExp(`\\b${tag}\\b`, 'i').test(detailMainText)),
+    DETAIL_HOTEL.interestTags.join(', '));
+
+  const evidenceLink = page.locator('[data-hotel-evidence-link]');
+  check('EV evidence badge is a shortcut to the charger list',
+    (await evidenceLink.count()) === 1 && (await evidenceLink.getAttribute('href')) === '#chargers');
+  const ratingLink = page.locator('[data-hotel-rating-link]');
+  if (DETAIL_HOTEL.rating != null) {
+    check('rating bubble is a shortcut to the reviews section',
+      (await ratingLink.count()) === 1 && (await ratingLink.getAttribute('href')) === '#ratings');
+  }
+  const domOrder = await page.evaluate(() => {
+    const tag = document.querySelector('[data-hotel-evidence]');
+    const ratings = document.getElementById('ratings');
+    const chargers = document.getElementById('chargers');
+    const follows = (first, second) => Boolean(first && second
+      && (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING));
+    return {
+      tagBeforeRatings: follows(tag, ratings),
+      ratingsBeforeChargers: follows(ratings, chargers),
+    };
+  });
+  check('ratings section sits below the EV tag and above the charger list',
+    domOrder.tagBeforeRatings && domOrder.ratingsBeforeChargers,
+    JSON.stringify(domOrder));
+
+  await page.locator('[data-hotel-review]').first().waitFor({ timeout: 20000 });
+  const reviewsToggle = page.locator('[data-hotel-reviews-toggle]');
+  check('reviews are an expanded accordion by default',
+    (await reviewsToggle.getAttribute('aria-expanded')) === 'true');
+  await reviewsToggle.click();
+  check('reviews accordion collapses',
+    (await reviewsToggle.getAttribute('aria-expanded')) === 'false'
+      && (await page.locator('#hotel-reviews-body').count()) === 0);
+  await reviewsToggle.click();
+  check('reviews accordion reopens',
+    (await reviewsToggle.getAttribute('aria-expanded')) === 'true'
+      && (await page.locator('[data-hotel-review]').count()) === 3);
+  const moreReviews = page.locator('[data-hotel-reviews-more]');
+  check('reviews show three top entries with an inline see-more',
+    (await page.locator('[data-hotel-review]').count()) === 3
+      && (await moreReviews.innerText()).includes('See 2 more reviews'));
+  await moreReviews.click();
+  check('inline see-more expands the remaining real reviews',
+    (await page.locator('[data-hotel-review]').count()) === HOTEL_REVIEWS.length
+      && (await moreReviews.innerText()).includes('Show fewer reviews'));
+
+  if (DETAIL_HOTEL.rating != null) {
+    await ratingLink.click();
+    await page.waitForFunction(() => {
+      const section = document.getElementById('ratings');
+      const rect = section?.getBoundingClientRect();
+      return window.location.hash === '#ratings' && rect && rect.top >= -10 && rect.top < 180;
+    }, null, { timeout: 10000 });
+    check('rating bubble scrolls to the ratings section',
+      new URL(page.url()).hash === '#ratings', page.url());
+  }
+  await evidenceLink.click();
+  await page.waitForFunction(() => {
+    const section = document.getElementById('chargers');
+    const rect = section?.getBoundingClientRect();
+    return window.location.hash === '#chargers' && rect && rect.top >= -10 && rect.top < 180;
+  }, null, { timeout: 10000 });
+  check('EV badge scrolls to the charger list',
+    new URL(page.url()).hash === '#chargers', page.url());
+
   const chargerSectionClass = await page.locator('#chargers').getAttribute('class');
   check('hotel charger rows have no extra panel boundary around the search-style list',
     !/\b(bg-muted|rounded-xl|border|shadow|p-3)\b/.test(chargerSectionClass ?? ''),
@@ -384,6 +543,50 @@ async function checkHotels() {
     check('Back from a hotel charger returns to the hotel detail, not the search list',
       new URL(page.url()).pathname === `/hotels/${DETAIL_HOTEL.id}`, page.url());
   }
+  await context.close();
+}
+
+async function checkHotelDiscovery() {
+  const { page, context } = await newPage();
+  await page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(
+    total => document.body.innerText.includes(`${total} of ${total} stays`),
+    TOTAL_STAYS,
+    { timeout: 30000 },
+  );
+
+  const input = page.getByLabel('Search hotels by city or hotel name');
+  await input.fill('Azaya Beach Resort');
+  const listbox = page.getByRole('listbox', { name: 'Matching hotel areas and places' });
+  await listbox.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  check('autocomplete offers stays outside the curated index',
+    (await listbox.innerText().catch(() => '')).includes('Azaya Beach Resort'));
+  await listbox.getByRole('option').first().click();
+
+  const card = page.locator(`[data-hotel-card="${DISCOVERED_HOTEL.id}"]`);
+  await card.waitFor({ state: 'visible', timeout: 20000 });
+  const body = await page.locator('body').innerText();
+  check('picking an unindexed stay adds one verified row',
+    body.includes(`1 of ${TOTAL_STAYS + 1} stays`), body.slice(0, 180).replace(/\n/g, ' '));
+  check('discovered stay keeps the honest nearby-charger evidence',
+    (await card.innerText()).includes('Charger nearby')
+      && (await card.innerText()).includes('Zeon Charging Station'));
+
+  const detailHref = await card.locator('a[aria-label^="View details for"]').getAttribute('href');
+  check('discovered stay links to its own detail route',
+    detailHref === `/hotels/${DISCOVERED_HOTEL.id}`, detailHref ?? '');
+  await card.locator('a[aria-label^="View details for"]').click();
+  await page.waitForURL(url => url.pathname === `/hotels/${DISCOVERED_HOTEL.id}`, { timeout: 15000 });
+  const heading = page.getByRole('heading', { name: DISCOVERED_HOTEL.name });
+  await heading.waitFor({ timeout: 20000 });
+  check('discovered stay opens a real detail page', await heading.isVisible());
+  check('discovered detail keeps the exact Google Maps source',
+    (await page.locator('[data-hotel-maps-link]').getAttribute('href')) === DISCOVERED_HOTEL.sourceUrl);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await heading.waitFor({ timeout: 20000 });
+  check('discovered detail survives a reload through its exact Place ID',
+    await page.getByRole('heading', { name: DISCOVERED_HOTEL.name }).isVisible());
   await context.close();
 }
 
@@ -428,6 +631,7 @@ async function checkRoute() {
 
 try {
   await checkHotels();
+  await checkHotelDiscovery();
   await checkSearch();
   await checkRoute();
 } finally {

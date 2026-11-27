@@ -55,6 +55,18 @@ function evEvidenceTag(hotel: Hotel) {
   };
 }
 
+/** Cheap gate so city/area searches never trigger a paid lodging text search. */
+function matchesIndexedHotelPlace(term: string) {
+  const needle = term.trim().replace(/\s+/g, ' ').toLowerCase();
+  if (!needle) return false;
+  return index.areas.some(area => area.coordinates && matchesPlaceQuery(
+    [area.name, area.city, area.state].filter(Boolean).join(' '), needle,
+  )) || index.hotels.some(hotel => matchesPlaceQuery(
+    [hotel.name, hotel.area, hotel.city, hotel.state, hotel.locality]
+      .filter(Boolean).join(' '), needle,
+  ));
+}
+
 type HotelCardProps = {
   hotel: Hotel;
   distanceKm?: number;
@@ -173,10 +185,15 @@ export function HotelsTab() {
   // A picked Google place can be outside the 32 curated areas. Resolve its
   // real coordinates once; never fall back to the device for a place search.
   const [resolvedAnchor, setResolvedAnchor] = useState<PlaceAnchor | null>(null);
+  // A stay found through Google autocomplete but missing from the curated seed
+  // is verified live, then shown alongside the index for this and later visits.
+  const [discoveredHotel, setDiscoveredHotel] = useState<Hotel | null>(null);
+  const [isDiscovering, setIsDiscovering] = useState(false);
 
   const suggestionTimer = useRef<number | null>(null);
   const suggestionRequest = useRef(0);
   const resolveRequest = useRef(0);
+  const discoveryRequest = useRef(0);
   const loggedEmpty = useRef<string | null>(null);
 
   const { data: userLocation } = useUserLocation();
@@ -234,20 +251,27 @@ export function HotelsTab() {
   const anchor = resolvedAnchor ?? staticAnchor ?? textAnchor ?? null;
   const origin = anchor ?? userLocation ?? null;
   const originLabel = anchor?.label ?? 'your location';
-  const focusedHotelId = selectedPlace ? hotelByPlaceId.get(selectedPlace.placeId)?.id : undefined;
+  const focusedHotelId = selectedPlace
+    ? (hotelByPlaceId.get(selectedPlace.placeId)?.id ?? discoveredHotel?.id)
+    : undefined;
+
+  const visibleHotels = useMemo(
+    () => (discoveredHotel ? [...index.hotels, discoveredHotel] : index.hotels),
+    [discoveredHotel],
+  );
 
   const straightKmByHotel = useMemo(() => {
     const result: Record<string, number> = {};
     if (!origin) return result;
-    index.hotels.forEach(hotel => {
+    visibleHotels.forEach(hotel => {
       result[hotel.id] = RouteService.calculateDistance(origin, hotel.location);
     });
     return result;
-  }, [origin]);
+  }, [origin, visibleHotels]);
 
   const allHotelPoints = useMemo<DistancePoint[]>(
-    () => index.hotels.map(hotel => ({ id: hotel.id, lat: hotel.location.lat, lng: hotel.location.lng })),
-    [],
+    () => visibleHotels.map(hotel => ({ id: hotel.id, lat: hotel.location.lat, lng: hotel.location.lng })),
+    [visibleHotels],
   );
   const drivingDistances = useDrivingDistances(origin, allHotelPoints, 'hotels');
 
@@ -259,7 +283,7 @@ export function HotelsTab() {
   }, [drivingDistances.data, straightKmByHotel]);
 
   const filtered = useMemo(() => {
-    const rows = index.hotels.filter(hotel => {
+    const rows = visibleHotels.filter(hotel => {
       if (focusedHotelId && hotel.id !== focusedHotelId) return false;
       if (searchNeedle) {
         // Hotel-only search: name, locality, city, state or address. Never the
@@ -286,7 +310,7 @@ export function HotelsTab() {
       }
       return (right.rating ?? 0) - (left.rating ?? 0);
     });
-  }, [connectors, distanceFor, focusedHotelId, radiusKm, searchNeedle]);
+  }, [connectors, distanceFor, focusedHotelId, radiusKm, searchNeedle, visibleHotels]);
 
   // Count each distinct failed query/filter combination once, not on every
   // render. Clearing back to a non-empty list re-arms the same query.
@@ -296,7 +320,7 @@ export function HotelsTab() {
       connectors.join(','),
       radiusKm ?? 'all',
     ].join('::');
-    if (filtered.length > 0) {
+    if (filtered.length > 0 || isDiscovering) {
       loggedEmpty.current = null;
       return;
     }
@@ -314,12 +338,13 @@ export function HotelsTab() {
       filter: filters || undefined,
       reason: filters ? 'filters' : 'no_rows',
     });
-  }, [connectors, filtered.length, query, radiusKm, selectedPlace]);
+  }, [connectors, filtered.length, isDiscovering, query, radiusKm, selectedPlace]);
 
   useEffect(() => () => {
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
     suggestionRequest.current++;
     resolveRequest.current++;
+    discoveryRequest.current++;
   }, []);
 
   const loadSuggestions = useCallback(async (term: string) => {
@@ -340,10 +365,35 @@ export function HotelsTab() {
     setIsFetchingSuggestions(false);
   }, []);
 
+  const runDiscovery = useCallback(async ({ placeId, query }: { placeId?: string; query?: string }) => {
+    const request = ++discoveryRequest.current;
+    setDiscoveredHotel(null);
+    setIsDiscovering(true);
+    const hotel = await EVStationService.discoverHotel({ placeId, query });
+    if (request !== discoveryRequest.current) return;
+    setDiscoveredHotel(hotel);
+    setIsDiscovering(false);
+    if (hotel) {
+      setResolvedAnchor({
+        lat: hotel.location.lat,
+        lng: hotel.location.lng,
+        label: hotel.name,
+        source: 'google',
+      });
+    }
+  }, []);
+
+  const clearDiscovery = useCallback(() => {
+    discoveryRequest.current++;
+    setDiscoveredHotel(null);
+    setIsDiscovering(false);
+  }, []);
+
   const handleInputChange = (value: string) => {
     setQuery(value);
     setSelectedPlace(null);
     setResolvedAnchor(null);
+    clearDiscovery();
     resolveRequest.current++;
     setHighlightedSuggestion(-1);
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
@@ -365,6 +415,7 @@ export function HotelsTab() {
     setQuery(suggestion.label);
     setSelectedPlace(suggestion);
     setResolvedAnchor(null);
+    clearDiscovery();
     setSuggestions([]);
     setShowSuggestions(false);
     setHighlightedSuggestion(-1);
@@ -379,6 +430,9 @@ export function HotelsTab() {
     // Google pick is resolved so the distance origin follows the searched
     // place instead of the user's GPS.
     if (areaByPlaceId.has(suggestion.placeId) || hotelByPlaceId.has(suggestion.placeId)) return;
+    // The exact Google pick is the strongest signal — verify it as a stay and
+    // only keep it when Places reports real EV data.
+    void runDiscovery({ placeId: suggestion.placeId });
     void EVStationService.resolvePlace(suggestion.placeId).then(place => {
       if (request !== resolveRequest.current || !place) return;
       setResolvedAnchor({
@@ -397,6 +451,7 @@ export function HotelsTab() {
     if (!clean) {
       setSelectedPlace(null);
       setResolvedAnchor(null);
+      clearDiscovery();
       resolveRequest.current++;
       setShowSuggestions(false);
       return;
@@ -412,9 +467,15 @@ export function HotelsTab() {
     setQuery(clean);
     setSelectedPlace(null);
     setResolvedAnchor(null);
+    clearDiscovery();
     resolveRequest.current++;
     setShowSuggestions(false);
     trackAmpo('search_submit', { query: clean, place_id: null, source: 'hotels' });
+    // Typed property names with no autocomplete pick still grow the index,
+    // but known cities/areas stay local and never cost a Places lookup.
+    if (clean.length >= 3 && !matchesIndexedHotelPlace(clean)) {
+      void runDiscovery({ query: clean });
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -450,6 +511,7 @@ export function HotelsTab() {
     setQuery('');
     setSelectedPlace(null);
     setResolvedAnchor(null);
+    clearDiscovery();
     setSuggestions([]);
     setShowSuggestions(false);
     setHighlightedSuggestion(-1);
@@ -588,7 +650,9 @@ export function HotelsTab() {
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          {filtered.length} of {index.hotels.length} stays · distances from {originLabel}
+          {isDiscovering
+            ? 'Checking Google Maps for this stay…'
+            : `${filtered.length} of ${visibleHotels.length} stays · distances from ${originLabel}`}
         </p>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={reset} className="h-8 shrink-0 px-2 text-xs">
@@ -613,16 +677,28 @@ export function HotelsTab() {
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed p-6 text-center">
-          <p className="text-sm font-medium">
-            No stays found {query.trim() ? `for “${query.trim()}”` : 'for these filters'}.
-          </p>
-          <p className="mt-1 text-xs leading-snug text-muted-foreground">
-            Try a city like Jaipur or a hotel name. We only list stays with a real public charger mapped nearby.
-          </p>
-          {hasFilters && (
-            <Button variant="outline" size="sm" onClick={reset} className="mt-3">
-              Clear search and filters
-            </Button>
+          {isDiscovering ? (
+            <>
+              <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
+              <p className="mt-2 text-sm font-medium">Checking Google Maps for this stay…</p>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                We only add the property when its exact place has a real public charger nearby.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium">
+                No stays found {query.trim() ? `for “${query.trim()}”` : 'for these filters'}.
+              </p>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                Try a city like Jaipur or a hotel name. We only list stays with a real public charger mapped nearby.
+              </p>
+              {hasFilters && (
+                <Button variant="outline" size="sm" onClick={reset} className="mt-3">
+                  Clear search and filters
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}
