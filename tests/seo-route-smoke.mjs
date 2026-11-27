@@ -73,6 +73,11 @@ async function newPage(detailRow = null) {
       }),
     });
   });
+  await page.route('**/api/place-photo?**', route => route.fulfill({
+    status: 200,
+    contentType: 'image/gif',
+    body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64'),
+  }));
   await page.route('**/api/stations**', route => {
     const url = new URL(route.request().url());
     if (detailRow && url.searchParams.get('mode') === 'id'
@@ -257,6 +262,12 @@ async function checkHubsAndHotels() {
     null,
     { timeout: 15000 },
   );
+  if (hotel.photo?.reference) {
+    const detailPhotoSrc = await detail.page.locator('main img').first().getAttribute('src');
+    check('hotel pages use real Google Maps photos through the existing proxy',
+      decodeURIComponent(new URL(detailPhotoSrc ?? '', BASE_URL).searchParams.get('ref') ?? '') === hotel.photo.reference,
+      detailPhotoSrc ?? '');
+  }
   const detailText = await detail.page.locator('body').innerText();
   check('hotel detail keeps honest nearby-charger provenance',
     detailText.includes('nearby public charger') || detailText.includes('nearby charger')

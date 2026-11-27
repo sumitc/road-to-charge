@@ -677,7 +677,10 @@ async function main() {
       jsonLd: hotelJsonLd(hotel, canonical),
       assets,
     });
-    const photo = hotel.photo?.localPath;
+    const photo = hotel.photo?.localPath
+      || (hotel.photo?.reference
+        ? `/api/place-photo?ref=${encodeURIComponent(hotel.photo.reference)}&width=640`
+        : null);
     if (photo) {
       html = html.replace(
         '<h1>' + esc(hotelH1(hotel)) + '</h1>',

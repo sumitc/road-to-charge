@@ -9,7 +9,9 @@
 import fs from 'node:fs';
 import { chromium } from 'playwright-core';
 
-const TOTAL_STAYS = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generated.json', 'utf8')).hotels.length;
+const HOTEL_INDEX = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generated.json', 'utf8'));
+const TOTAL_STAYS = HOTEL_INDEX.hotels.length;
+const PHOTO_HOTEL = HOTEL_INDEX.hotels.find(hotel => hotel.photo?.reference) ?? HOTEL_INDEX.hotels[0];
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/$/, '');
 const CHROME_PATH =
@@ -99,6 +101,11 @@ async function newPage({ withRoute = false } = {}) {
     contentType: 'application/json',
     body: JSON.stringify({ distances: [] }),
   }));
+  await page.route('**/api/place-photo?**', route => route.fulfill({
+    status: 200,
+    contentType: 'image/gif',
+    body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64'),
+  }));
   if (withRoute) {
     await page.route('**/nominatim.openstreetmap.org/search**', route => {
       const q = new URL(route.request().url()).searchParams.get('q') ?? '';
@@ -150,6 +157,27 @@ async function checkHotels() {
   check('evidence tag is a small search-results-style pill',
     Boolean(evidenceClass?.includes('rounded-full') && evidenceClass.includes('text-[10px]')),
     evidenceClass ?? '');
+
+  const photoCard = page.locator(`[data-hotel-card="${PHOTO_HOTEL.id}"]`);
+  const photoSrc = await photoCard.locator('img').getAttribute('src');
+  const photoRef = new URL(photoSrc ?? '', BASE_URL).searchParams.get('ref');
+  check('hotel cards use real Google Maps photos through the existing proxy',
+    decodeURIComponent(photoRef ?? '') === PHOTO_HOTEL.photo.reference,
+    photoSrc ?? '');
+  await photoCard.scrollIntoViewIfNeeded();
+  const photoBox = await photoCard.locator('img').boundingBox();
+  if (photoBox) {
+    await page.mouse.click(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
+    await page.waitForURL(url => url.pathname === `/hotels/${PHOTO_HOTEL.id}`, { timeout: 15000 });
+    check('clicking any part of a hotel card opens the detail page',
+      new URL(page.url()).pathname === `/hotels/${PHOTO_HOTEL.id}`, page.url());
+    await page.goBack();
+    await page.waitForFunction(
+      total => document.body.innerText.includes(`${total} of ${total} stays`),
+      TOTAL_STAYS,
+      { timeout: 15000 },
+    );
+  }
 
   const radiusSelect = page.getByLabel('Search radius in kilometres');
   check('hotel search has the same distance control as stations',
@@ -299,24 +327,32 @@ async function checkHotels() {
 
   // Hotel-detail chargers must use the same card/actions/click-through as the
   // station search list, scoped to the hotel as the distance origin.
-  const detailHref = await page.locator('a[href^="/hotels/"]').first().getAttribute('href');
-  if (detailHref) {
-    await page.goto(new URL(detailHref, BASE_URL).toString(), { waitUntil: 'domcontentloaded' });
-    const chargerRow = page.locator('#chargers button[aria-label^="View details for"], #chargers button[aria-label^="Open charger source for"]').first();
-    await chargerRow.waitFor({ timeout: 20000 });
-    check('hotel charger list uses the same station cards as search',
-      (await chargerRow.count()) > 0,
-      await chargerRow.getAttribute('aria-label') ?? '');
-    check('hotel charger cards expose the search-list actions',
-      (await page.locator('#chargers button:has-text("Directions")').count()) > 0
-        && (await page.locator('#chargers button:has-text("App")').count()) > 0);
-    const detailLabel = await chargerRow.getAttribute('aria-label');
-    if (detailLabel?.startsWith('View details for')) {
-      await chargerRow.click();
-      await page.waitForURL(/\/station\/[0-9a-f-]{36}/, { timeout: 15000 });
-      check('hotel charger row click-out opens the Ampo station detail',
-        /\/station\//.test(page.url()), page.url());
-    }
+  await page.goto(new URL(`/hotels/${PHOTO_HOTEL.id}`, BASE_URL).toString(), { waitUntil: 'domcontentloaded' });
+  const detailPhotoRef = new URL(
+    await page.locator('main img').first().getAttribute('src') ?? '',
+    BASE_URL,
+  ).searchParams.get('ref');
+  check('hotel detail uses the real Google Maps photo',
+    decodeURIComponent(detailPhotoRef ?? '') === PHOTO_HOTEL.photo.reference,
+    detailPhotoRef ?? '');
+  const chargerSectionClass = await page.locator('#chargers').getAttribute('class');
+  check('hotel charger rows have no extra panel boundary around the search-style list',
+    !/\b(bg-muted|rounded-xl|border|shadow|p-3)\b/.test(chargerSectionClass ?? ''),
+    chargerSectionClass ?? '');
+  const chargerRow = page.locator('#chargers button[aria-label^="View details for"], #chargers button[aria-label^="Open charger source for"]').first();
+  await chargerRow.waitFor({ timeout: 20000 });
+  check('hotel charger list uses the same station cards as search',
+    (await chargerRow.count()) > 0,
+    await chargerRow.getAttribute('aria-label') ?? '');
+  check('hotel charger cards expose the search-list actions',
+    (await page.locator('#chargers button:has-text("Directions")').count()) > 0
+      && (await page.locator('#chargers button:has-text("App")').count()) > 0);
+  const detailLabel = await chargerRow.getAttribute('aria-label');
+  if (detailLabel?.startsWith('View details for')) {
+    await chargerRow.click();
+    await page.waitForURL(/\/station\/[0-9a-f-]{36}/, { timeout: 15000 });
+    check('hotel charger row click-out opens the Ampo station detail',
+      /\/station\//.test(page.url()), page.url());
   }
   await context.close();
 }

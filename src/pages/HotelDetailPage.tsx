@@ -10,11 +10,11 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { StationCard } from '@/components/StationCard';
 import { useDrivingDistances } from '@/hooks/useDrivingDistances';
 import { hasAuthenticOnSiteEvidence, findHotel, hotelIndex, type Charger } from '@/lib/hotelIndex';
+import { hotelPhotoUrl } from '@/lib/hotelPhotos';
 import { useDynamicSeo } from '@/lib/dynamicSeo';
 import { hotelJsonLd } from '@/lib/seoJsonLd';
 import type { ChargingStation } from '@/types/station';
 
-const HOTEL_PHOTO = '/hotels/placeholder.svg';
 const VISIBLE_CHARGER_LIMIT = 8;
 
 function formatDistance(meters: number) {
@@ -131,7 +131,7 @@ export function HotelDetailPage() {
             <Card className="overflow-hidden rounded-2xl">
               <CardContent className="space-y-4 p-4 sm:p-6">
                 <img
-                  src={hotel.photo?.localPath || HOTEL_PHOTO}
+                  src={hotelPhotoUrl(hotel, 800)}
                   alt={hotel.name}
                   className="h-48 w-full rounded-xl object-cover sm:h-64"
                   loading="eager"
@@ -196,56 +196,6 @@ export function HotelDetailPage() {
                   </div>
                 )}
 
-                <div id="chargers" className="rounded-xl bg-muted/40 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Public chargers near this property
-                  </p>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                    Google Places reports {hotel.ev.chargerCountWithinRadius} public charging
-                    place{hotel.ev.chargerCountWithinRadius === 1 ? '' : 's'} within{' '}
-                    {(hotel.ev.radiusMeters / 1000).toFixed(1)} km. The list also includes real
-                    rows from OpenStreetMap and the Ampo catalogue. These are chargers near the
-                    hotel, not chargers owned by the property.
-                  </p>
-                  {chargerRows.length > 0 ? (
-                    <div className="mt-3 space-y-3">
-                      {visibleChargers.map(({ station, hasDetailPage }) => (
-                        <StationCard
-                          key={station.id}
-                          station={station}
-                          userLocation={hotel.location}
-                          drivingDistanceKm={drivingDistances[station.id]}
-                          hasDetailPage={hasDetailPage}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      No individual charger rows are cached for this property yet.
-                    </p>
-                  )}
-                  {nearbyChargers.length > VISIBLE_CHARGER_LIMIT && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setShowAllChargers(value => !value)}
-                      className="mt-2 h-7 px-0 text-xs"
-                    >
-                      {showAllChargers
-                        ? 'Show fewer chargers'
-                        : `Show all ${nearbyChargers.length} mapped rows`}
-                    </Button>
-                  )}
-                  <div id="contribute" className="mt-2 flex items-start gap-2 rounded-lg bg-background p-2 text-xs text-muted-foreground">
-                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span>
-                      Missing a charger or an on-site update? Use the + button to submit a location
-                      with a photo; we verify it on the map before publishing. Proximity alone never
-                      becomes an on-site claim.
-                    </span>
-                  </div>
-                </div>
-
                 {hotel.interestTags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {hotel.interestTags.map(tag => (
@@ -283,6 +233,56 @@ export function HotelDetailPage() {
                 </p>
               </CardContent>
             </Card>
+
+            <section id="chargers" className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Public chargers near this property
+              </h2>
+              <p className="text-xs leading-snug text-muted-foreground">
+                Google Places reports {hotel.ev.chargerCountWithinRadius} public charging
+                place{hotel.ev.chargerCountWithinRadius === 1 ? '' : 's'} within{' '}
+                {(hotel.ev.radiusMeters / 1000).toFixed(1)} km. The list also includes real
+                rows from OpenStreetMap and the Ampo catalogue. These are chargers near the
+                hotel, not chargers owned by the property.
+              </p>
+              {chargerRows.length > 0 ? (
+                <div className="space-y-3">
+                  {visibleChargers.map(({ station, hasDetailPage }) => (
+                    <StationCard
+                      key={station.id}
+                      station={station}
+                      userLocation={hotel.location}
+                      drivingDistanceKm={drivingDistances[station.id]}
+                      hasDetailPage={hasDetailPage}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No individual charger rows are cached for this property yet.
+                </p>
+              )}
+              {nearbyChargers.length > VISIBLE_CHARGER_LIMIT && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setShowAllChargers(value => !value)}
+                  className="h-7 px-0 text-xs"
+                >
+                  {showAllChargers
+                    ? 'Show fewer chargers'
+                    : `Show all ${nearbyChargers.length} mapped rows`}
+                </Button>
+              )}
+              <div id="contribute" className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>
+                  Missing a charger or an on-site update? Use the + button to submit a location
+                  with a photo; we verify it on the map before publishing. Proximity alone never
+                  becomes an on-site claim.
+                </span>
+              </div>
+            </section>
           </div>
         )}
         {hotel && <ContributionButton location={hotel.location} />}

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { BatteryCharging, ExternalLink, Loader2, MapPin, RotateCcw, Search, Star } from 'lucide-react';
 import affiliateLinks from '@/data/affiliateLinks.json';
 import { hasAuthenticOnSiteEvidence, hotelIndex as index, type Hotel } from '@/lib/hotelIndex';
+import { hotelPhotoUrl } from '@/lib/hotelPhotos';
 import { ConnectorFilter } from '@/components/ConnectorFilter';
 import { matchesConnectorFilters } from '@/lib/connectorLabels';
 import { matchesPlaceQuery } from '@/lib/placeAliases';
@@ -18,7 +19,6 @@ import { useDrivingDistances, type DistancePoint } from '@/hooks/useDrivingDista
 import { RouteService } from '@/services/routeService';
 
 const AFFILIATE_LINKS = affiliateLinks as Record<string, string>;
-const HOTEL_PHOTO = '/hotels/placeholder.svg';
 const hasAffiliateLinks = Object.keys(AFFILIATE_LINKS).some(key => !key.startsWith('_'));
 
 const RADIUS_OPTIONS = [
@@ -70,21 +70,28 @@ function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
   const distanceLabel = distanceKind === 'driving' ? 'Driving distance' : 'Straight-line distance';
 
   return (
-    <Card className="animate-fade-in overflow-hidden rounded-2xl border-border/70 shadow-sm">
-      <CardContent className="p-2.5 sm:p-3">
+    <Card
+      data-hotel-card={hotel.id}
+      className="relative animate-fade-in overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-electric"
+    >
+      {/* Whole-card target; real external links are lifted above it below. */}
+      <Link
+        to={`/hotels/${hotel.id}`}
+        aria-label={`View details for ${hotel.name}`}
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      />
+      <CardContent className="pointer-events-none relative z-10 p-2.5 sm:p-3">
         <div className="flex gap-3">
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-primary/10 sm:h-28 sm:w-32">
             <img
-              src={hotel.photo?.localPath || HOTEL_PHOTO}
+              src={hotelPhotoUrl(hotel, 320)}
               alt={hotel.name}
               className="h-full w-full object-cover"
               loading="lazy"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <Link to={`/hotels/${hotel.id}`} className="min-w-0 hover:underline">
-              <h3 className="text-sm font-semibold leading-tight">{hotel.name}</h3>
-            </Link>
+            <h3 className="min-w-0 text-sm font-semibold leading-tight">{hotel.name}</h3>
             <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="min-w-0 truncate">{location || hotel.area}</span>
@@ -127,7 +134,7 @@ function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
               href={hotel.onSiteEvidenceSource?.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-2"
+              className="pointer-events-auto underline underline-offset-2"
             >
               Source <ExternalLink className="inline h-2.5 w-2.5" />
             </a>
@@ -137,13 +144,13 @@ function HotelCard({ hotel, distanceKm, distanceKind }: HotelCardProps) {
           <span className="min-w-0 truncate text-[11px] text-muted-foreground">
             Source: {hotel.source}
             {hotel.tripadvisorUrl && (
-              <> · <a href={hotel.tripadvisorUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Tripadvisor</a></>
+              <> · <a href={hotel.tripadvisorUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-auto underline underline-offset-2">Tripadvisor</a></>
             )}
             {hotel.photo?.sourceUrl && (
-              <> · Photo: <a href={hotel.photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Google Maps</a></>
+              <> · Photo: <a href={hotel.photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-auto underline underline-offset-2">Google Maps</a></>
             )}
           </span>
-          <Button variant="ghost" size="sm" asChild className="h-7 shrink-0 px-2 text-[11px]">
+          <Button variant="ghost" size="sm" asChild className="pointer-events-auto h-7 shrink-0 px-2 text-[11px]">
             <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
               {affiliateUrl ? 'Book via partner' : 'View on Google Maps'} <ExternalLink className="ml-1 h-3 w-3" />
             </a>
