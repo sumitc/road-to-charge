@@ -21,12 +21,11 @@ import { RouteService } from '@/services/routeService';
 const AFFILIATE_LINKS = affiliateLinks as Record<string, string>;
 const hasAffiliateLinks = Object.keys(AFFILIATE_LINKS).some(key => !key.startsWith('_'));
 
+const MAX_HOTEL_RADIUS_KM = 25;
 const RADIUS_OPTIONS = [
-  { value: 'all', label: 'All distances' },
   { value: '5', label: '5 km' },
   { value: '10', label: '10 km' },
   { value: '25', label: '25 km' },
-  { value: '50', label: '50 km' },
 ];
 
 type PlaceAnchor = Omit<ResolvedPlaceAnchor, 'placeId'> & {
@@ -181,7 +180,9 @@ export function HotelsTab() {
   const [highlightedSuggestion, setHighlightedSuggestion] = useState(-1);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [connectors, setConnectors] = useState<string[]>([]);
-  const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  // The hotel list is intentionally bounded: 25 km is both the default and
+  // the maximum, so browsing never opens with hundreds of distant stays.
+  const [radiusKm, setRadiusKm] = useState<number | null>(MAX_HOTEL_RADIUS_KM);
   // A picked Google place can be outside the 32 curated areas. Resolve its
   // real coordinates once; never fall back to the device for a place search.
   const [resolvedAnchor, setResolvedAnchor] = useState<PlaceAnchor | null>(null);
@@ -328,7 +329,7 @@ export function HotelsTab() {
     loggedEmpty.current = signature;
     const filters = [
       connectors.length ? `connectors=${connectors.join(',')}` : '',
-      radiusKm !== null ? `radius=${radiusKm}` : '',
+      radiusKm !== null && radiusKm !== MAX_HOTEL_RADIUS_KM ? `radius=${radiusKm}` : '',
     ].filter(Boolean).join(',');
     trackEmptyResult({
       surface: 'hotels',
@@ -502,7 +503,7 @@ export function HotelsTab() {
     }
   };
 
-  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || radiusKm !== null;
+  const hasFilters = Boolean(query.trim()) || connectors.length > 0 || radiusKm !== MAX_HOTEL_RADIUS_KM;
   const showSearchResults = Boolean(query.trim()) || Boolean(selectedPlace);
   const reset = () => {
     if (suggestionTimer.current) window.clearTimeout(suggestionTimer.current);
@@ -517,7 +518,7 @@ export function HotelsTab() {
     setHighlightedSuggestion(-1);
     setIsFetchingSuggestions(false);
     setConnectors([]);
-    setRadiusKm(null);
+    setRadiusKm(MAX_HOTEL_RADIUS_KM);
   };
 
   const updated = useMemo(() => {
@@ -597,7 +598,7 @@ export function HotelsTab() {
           <div className="mt-2.5 space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
             <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
               <span className="min-w-0 truncate" title={showSearchResults ? `Hotel results for "${query}"` : undefined}>
-                {showSearchResults ? `Hotel results for “${query}”` : 'Showing all indexed hotels'}
+                {showSearchResults ? `Hotel results for “${query}”` : 'Hotels with chargers nearby'}
               </span>
               {hasFilters && (
                 <Button
@@ -627,8 +628,8 @@ export function HotelsTab() {
                     <MapPin className="w-4 h-4 shrink-0 text-primary" />
                     <select
                       aria-label="Search radius in kilometres"
-                      value={radiusKm === null ? 'all' : String(radiusKm)}
-                      onChange={event => setRadiusKm(event.target.value === 'all' ? null : Number(event.target.value))}
+                      value={String(radiusKm ?? MAX_HOTEL_RADIUS_KM)}
+                      onChange={event => setRadiusKm(Number(event.target.value))}
                       className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm sm:w-28 sm:flex-none"
                     >
                       {RADIUS_OPTIONS.map(option => (
@@ -652,7 +653,7 @@ export function HotelsTab() {
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {isDiscovering
             ? 'Checking Google Maps for this stay…'
-            : `${filtered.length} of ${visibleHotels.length} stays · distances from ${originLabel}`}
+            : `Stays within ${radiusKm ?? MAX_HOTEL_RADIUS_KM} km of ${originLabel}`}
         </p>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={reset} className="h-8 shrink-0 px-2 text-xs">

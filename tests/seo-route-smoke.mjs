@@ -249,15 +249,17 @@ async function checkHubsAndHotels() {
   const hotels = await newPage();
   await hotels.page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
   await hotels.page.waitForFunction(
-    expected => document.body.innerText.includes(expected),
-    `${hotelIndex.hotels.length} of ${hotelIndex.hotels.length} stays`,
+    () => document.body.innerText.includes('Stays within 25 km of your location')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
     { timeout: 15000 },
   );
   const hotelText = await hotels.page.locator('body').innerText();
-  check('published Hotels tab uses the real Google Places index',
-    hotelText.includes(`${hotelIndex.hotels.length} of ${hotelIndex.hotels.length} stays`)
-      && hotelText.includes('Google Places'),
-    hotelText.slice(0, 120).replace(/\n/g, ' '));
+  check('published Hotels tab uses the real Google Places index with a 25 km bound',
+    hotelText.includes('Stays within 25 km of your location')
+      && hotelText.includes('Google Places')
+      && !hotelText.includes(`of ${hotelIndex.hotels.length} stays`),
+    hotelText.slice(hotelText.indexOf('Stays within'), hotelText.indexOf('Stays within') + 80).replace(/\n/g, ' '));
   const hotelsMeta = await metaOf(hotels.page);
   check('hotel index has its own canonical',
     hotelsMeta.canonical === 'https://ampo.vercel.app/hotels/', hotelsMeta.canonical);

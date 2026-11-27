@@ -11,8 +11,12 @@ import { chromium } from 'playwright-core';
 
 const HOTEL_INDEX = JSON.parse(fs.readFileSync('src/data/hotels-ev.index.generated.json', 'utf8'));
 const TOTAL_STAYS = HOTEL_INDEX.hotels.length;
-const PHOTO_HOTEL = HOTEL_INDEX.hotels.find(hotel => hotel.photo?.reference) ?? HOTEL_INDEX.hotels[0];
-const DETAIL_HOTEL = HOTEL_INDEX.hotels.find(hotel => /park continental/i.test(hotel.name)) ?? PHOTO_HOTEL;
+const DETAIL_HOTEL = HOTEL_INDEX.hotels.find(hotel => /park continental/i.test(hotel.name)) ?? HOTEL_INDEX.hotels[0];
+// The default hotel radius is 25 km from the mocked Hyderabad location, so the
+// photo-card regression uses a nearby property rather than the first indexed row.
+const PHOTO_HOTEL = DETAIL_HOTEL.photo?.reference
+  ? DETAIL_HOTEL
+  : HOTEL_INDEX.hotels.find(hotel => hotel.photo?.reference) ?? HOTEL_INDEX.hotels[0];
 const DISCOVERED_NEAREST = {
   ...(DETAIL_HOTEL.ev.nearestCharger ?? {}),
   placeId: 'test-zeon-charger',
@@ -223,8 +227,9 @@ async function checkHotels() {
   const { page, context } = await newPage();
   await page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
-    total => document.body.innerText.includes(`${total} of ${total} stays`),
-    TOTAL_STAYS,
+    () => document.body.innerText.includes('Stays within 25 km of your location')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
     { timeout: 30000 },
   );
 
@@ -235,10 +240,28 @@ async function checkHotels() {
   const initialBody = await page.locator('body').innerText();
   check('EV index badge is gone but honest per-hotel evidence tags remain',
     !initialBody.includes('EV INDEX') && initialBody.includes('Charger nearby'));
-  check('on-site badges only appear for source-backed hotels',
-    initialBody.includes('EV on site')
-      && initialBody.includes('Marriott Bonvoy official property page')
-      && !initialBody.includes('Google place text'));
+  // The default 25 km list is Hyderabad-only, where no property has authentic
+  // on-site evidence. Verify the truthful badge on a known sourced stay instead.
+  const onSiteInput = page.getByLabel('Search hotels by city or hotel name');
+  await onSiteInput.fill('Jaipur Marriott Hotel');
+  await page.waitForFunction(
+    () => document.body.innerText.includes('EV on site'),
+    null,
+    { timeout: 15000 },
+  );
+  const onSiteBody = await page.locator('body').innerText();
+  check('on-site badge appears only for a source-backed hotel',
+    onSiteBody.includes('Marriott Bonvoy official property page')
+      && !onSiteBody.includes('Google place text')
+      && (await page.locator('[data-hotel-card]').count()) === 1,
+    onSiteBody.slice(onSiteBody.indexOf('EV on site') - 40, onSiteBody.indexOf('EV on site') + 120).replace(/\n/g, ' '));
+  await page.getByRole('button', { name: 'All hotels' }).click();
+  await page.waitForFunction(
+    () => document.body.innerText.includes('Stays within 25 km of your location')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
+    { timeout: 15000 },
+  );
   const evidenceTag = page.getByText('Charger nearby', { exact: true }).first();
   const evidenceClass = await evidenceTag.getAttribute('class');
   check('evidence tag is a small search-results-style pill',
@@ -260,42 +283,50 @@ async function checkHotels() {
       new URL(page.url()).pathname === `/hotels/${PHOTO_HOTEL.id}`, page.url());
     await page.goBack();
     await page.waitForFunction(
-      total => document.body.innerText.includes(`${total} of ${total} stays`),
-      TOTAL_STAYS,
+      () => document.body.innerText.includes('Stays within 25 km of your location'),
+      null,
       { timeout: 15000 },
     );
   }
 
   const radiusSelect = page.getByLabel('Search radius in kilometres');
-  check('hotel search has the same distance control as stations',
-    (await radiusSelect.inputValue()) === 'all'
-      && (await radiusSelect.locator('option[value="5"]').count()) === 1
-      && (await radiusSelect.locator('option[value="25"]').count()) === 1);
+  check('hotel search defaults to a 25 km maximum and offers no larger radius',
+    (await radiusSelect.inputValue()) === '25'
+      && (await radiusSelect.locator('option').count()) === 3
+      && (await radiusSelect.locator('option[value="all"]').count()) === 0
+      && (await radiusSelect.locator('option[value="50"]').count()) === 0);
   check('hotel search shows the same radius pin icon as station search',
     (await radiusSelect.locator('xpath=..').locator('svg.lucide-map-pin').count()) === 1);
   check('hotel search drops the extra Google rating filter',
     (await page.getByLabel('Minimum Google rating').count()) === 0);
   check('hotel cards show distance from the active origin',
     (await page.locator('span[title="Straight-line distance"]').count()) > 0);
-  check('hotel count names the distance origin',
-    (await page.locator('body').innerText()).includes('distances from your location'));
+  const initialBodyAfterRadius = await page.locator('body').innerText();
+  check('hotel status names the radius and distance origin without a 370 count',
+    initialBodyAfterRadius.includes('Stays within 25 km of your location')
+      && !initialBodyAfterRadius.includes(`of ${TOTAL_STAYS} stays`),
+    initialBodyAfterRadius.slice(initialBodyAfterRadius.indexOf('Stays within'), initialBodyAfterRadius.indexOf('Stays within') + 80).replace(/\n/g, ' '));
 
+  const baselineCount = await page.locator('[data-hotel-card]').count();
+  check('initial hotel list is distance-bounded to 25 km',
+    baselineCount > 0 && baselineCount < TOTAL_STAYS,
+    `${baselineCount} of ${TOTAL_STAYS} indexed stays`);
   const connectorButton = page.getByRole('button', { name: /All connectors/ });
   check('connector filter replaces the provider box', (await connectorButton.count()) > 0);
   await connectorButton.click();
-  await page.getByRole('button', { name: /Super-fast · CCS/ }).click();
+  await page.getByRole('button', { name: /CHAdeMO/ }).click();
   await page.getByRole('button', { name: 'Done' }).click();
-  await page.waitForFunction(total => {
-    const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
-    return match && Number(match[1]) > 0 && Number(match[1]) < total;
-  }, TOTAL_STAYS, { timeout: 15000 });
-  const ccsCount = Number(((await page.locator('body').innerText()).match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? TOTAL_STAYS);
-  check('connector filter narrows hotels using real Google connector data',
-    ccsCount > 0 && ccsCount < TOTAL_STAYS, `${ccsCount} stays`);
+  await page.waitForFunction(baseline => {
+    const count = document.querySelectorAll('[data-hotel-card]').length;
+    return count > 0 && count < baseline;
+  }, baselineCount, { timeout: 15000 });
+  const chademoCount = await page.locator('[data-hotel-card]').count();
+  check('connector filter narrows 25 km hotels using real Google connector data',
+    chademoCount > 0 && chademoCount < baselineCount, `${chademoCount} of ${baselineCount} cards`);
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await page.waitForFunction(
-    total => document.body.innerText.includes(`${total} of ${total} stays`),
-    TOTAL_STAYS,
+    count => document.querySelectorAll('[data-hotel-card]').length === count,
+    baselineCount,
     { timeout: 15000 },
   );
 
@@ -320,27 +351,28 @@ async function checkHotels() {
         && dropdownBox.y <= inputBox.y + inputBox.height + 10,
       `input=${JSON.stringify(inputBox)} dropdown=${JSON.stringify(dropdownBox)}`);
     await listbox.getByRole('option').first().click();
-    await page.waitForFunction(total => {
-      const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
-      return match && Number(match[1]) > 0 && Number(match[1]) < total;
-    }, TOTAL_STAYS, { timeout: 15000 });
-    const pickedText = await page.locator('body').innerText();
-    const pickedCount = Number((pickedText.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? TOTAL_STAYS);
-    check('picking a hotel-area suggestion narrows stays',
-      pickedCount > 0 && pickedCount < TOTAL_STAYS, `${pickedCount} stays`);
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Stays within 25 km of Jaipur')
+        && document.querySelectorAll('[data-hotel-card]').length > 0,
+      null,
+      { timeout: 15000 },
+    );
+    const pickedCount = await page.locator('[data-hotel-card]').count();
+    check('picking a hotel-area suggestion focuses the 25 km stay list',
+      pickedCount > 0, `${pickedCount} cards`);
     check('searched hotels hide the radius dropdown like station search',
       (await radiusSelect.count()) === 0);
   }
 
   await input.fill('Jaipur');
   await page.waitForFunction(
-    total => document.body.innerText.includes(`of ${total} stays`),
-    TOTAL_STAYS,
+    () => document.body.innerText.includes('Stays within 25 km of Jaipur')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
     { timeout: 15000 },
   );
-  const jaipurText = await page.locator('body').innerText();
-  const jaipurCount = Number((jaipurText.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? 0);
-  check('hotel list is queryable by city', jaipurCount > 0 && jaipurCount < TOTAL_STAYS, `${jaipurCount} stays`);
+  const jaipurCount = await page.locator('[data-hotel-card]').count();
+  check('hotel list is queryable by city', jaipurCount > 0, `${jaipurCount} cards`);
 
   await input.fill('zzzz-no-such-place');
   await page.waitForFunction(() => document.body.innerText.includes('No stays found'), null, { timeout: 15000 });
@@ -387,13 +419,15 @@ async function checkHotels() {
   check('Back restores the Hotels tab', /Hotels/i.test(activeTab), activeTab.replace(/\n/g, ' '));
 
   await input.fill('bangalore');
-  await page.waitForFunction(total => {
-    const match = document.body.innerText.match(new RegExp(`(\\d+) of ${total} stays`));
-    return match && Number(match[1]) > 0 && Number(match[1]) < total;
-  }, TOTAL_STAYS, { timeout: 15000 });
-  const bengaluruCount = Number((await page.locator('body').innerText()).match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`))?.[1] ?? 0);
+  await page.waitForFunction(
+    () => document.body.innerText.includes('Stays within 25 km of Bengaluru')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
+    { timeout: 15000 },
+  );
+  const bengaluruCount = await page.locator('[data-hotel-card]').count();
   check('hotel search resolves Bangalore to the indexed Bengaluru stays',
-    bengaluruCount > 0 && bengaluruCount < TOTAL_STAYS, `${bengaluruCount} stays`);
+    bengaluruCount > 0, `${bengaluruCount} cards`);
 
   await input.fill('goa');
   const goaListbox = page.getByRole('listbox', { name: 'Matching hotel areas and places' });
@@ -402,15 +436,16 @@ async function checkHotels() {
     (await goaListbox.innerText().catch(() => '')).includes('India'));
   await goaListbox.getByRole('option').first().click();
   await page.waitForFunction(
-    () => document.body.innerText.includes('distances from Goa, India'),
+    () => document.body.innerText.includes('Stays within 25 km of Goa, India')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
     null,
     { timeout: 15000 },
   );
   const goaBody = await page.locator('body').innerText();
-  const goaCount = Number((goaBody.match(new RegExp(`(\\d+) of ${TOTAL_STAYS} stays`)) ?? [])[1] ?? 0);
-  check('picked Goa anchors distances to the searched place, not the device',
-    goaCount > 0 && goaCount < TOTAL_STAYS && goaBody.includes('distances from Goa, India'),
-    `${goaCount} stays`);
+  const goaCount = await page.locator('[data-hotel-card]').count();
+  check('picked Goa anchors the 25 km stay list to the searched place, not the device',
+    goaCount > 0 && goaBody.includes('Stays within 25 km of Goa, India'),
+    `${goaCount} cards`);
 
   // Hotel-detail chargers must use the same card/actions/click-through as the
   // station search list, scoped to the hotel as the distance origin.
@@ -550,8 +585,9 @@ async function checkHotelDiscovery() {
   const { page, context } = await newPage();
   await page.goto(`${BASE_URL}/hotels/`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
-    total => document.body.innerText.includes(`${total} of ${total} stays`),
-    TOTAL_STAYS,
+    () => document.body.innerText.includes('Stays within 25 km of your location')
+      && document.querySelectorAll('[data-hotel-card]').length > 0,
+    null,
     { timeout: 30000 },
   );
 
@@ -567,7 +603,9 @@ async function checkHotelDiscovery() {
   await card.waitFor({ state: 'visible', timeout: 20000 });
   const body = await page.locator('body').innerText();
   check('picking an unindexed stay adds one verified row',
-    body.includes(`1 of ${TOTAL_STAYS + 1} stays`), body.slice(0, 180).replace(/\n/g, ' '));
+    (await page.locator('[data-hotel-card]').count()) === 1
+      && body.includes('Stays within 25 km of Azaya'),
+    body.slice(0, 180).replace(/\n/g, ' '));
   check('discovered stay keeps the honest nearby-charger evidence',
     (await card.innerText()).includes('Charger nearby')
       && (await card.innerText()).includes('Zeon Charging Station'));
