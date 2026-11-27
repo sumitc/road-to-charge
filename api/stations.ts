@@ -13,6 +13,7 @@ import {
   suggestPlaces,
 } from '../server/lib/googlePlaces.js';
 import { discoverHotel } from '../server/lib/hotelDiscovery.js';
+import { queueHotelDiscovery } from '../server/lib/hotelDiscoveryQueue.js';
 import { PLACE_ALIASES as SEARCH_ALIASES } from '../src/lib/placeAliases.js';
 
 export const config = { runtime: 'nodejs' };
@@ -122,6 +123,11 @@ export async function GET(req: Request): Promise<Response> {
         });
       }
       const result = await discoverHotel({ placeId, query }, process.env.GOOGLE_MAPS_API_KEY);
+      // Any successfully resolved non-indexed place becomes demand for a
+      // bounded nearby Google sweep. The local script drains this queue later.
+      if (result.anchor) {
+        waitUntil(queueHotelDiscovery(result.anchor, result.reason ?? 'ok'));
+      }
       return new Response(JSON.stringify(result), {
         headers: {
           ...corsHeaders,

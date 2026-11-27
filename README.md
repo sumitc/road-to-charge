@@ -104,6 +104,17 @@ The detail page also has a floating **Feedback** button. Reports (`working`, `no
 
 Schema: `supabase/migrations/20261120010000_add_station_place_photos_and_feedback.sql`.
 
+### Grow the hotel index from search demand
+
+When a Hotels search resolves a Google place that is not in the generated hotel index, `/api/stations?mode=discover-hotel` writes a small demand record to Vercel Blob (no new function or DB migration). Drain that queue locally with:
+
+```bash
+npm run hotels:discover          # --dry-run previews without writing or deleting
+npm run hotels:rebuild           # merge into the generated index and rebuild SEO shells/sitemap
+```
+
+Each anchor sweeps up to 20 real Google lodging places within 10 km, keeps only rows with property-specific on-site text or a real public charger within 2.5 km, and merges them by exact Google Place ID. Proximity never becomes an on-site claim; PlugShare/OTA scraping, copied reviews, and guessed URLs are not used. Deploy after the rebuild so the new static hotel pages and sitemap URLs go live.
+
 ## Mobile app (Capacitor)
 
 `capacitor.config.ts` uses app ID `com.ampo.evcharging`, app name `Ampo`, and loads

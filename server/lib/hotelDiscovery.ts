@@ -15,6 +15,9 @@ import type { Charger, Hotel } from '../src/lib/hotelIndex.js';
 const PLACES_BASE = 'https://places.googleapis.com/v1';
 const RADIUS_METERS = 2500;
 const CHARGER_LIMIT = 10;
+/** Bounded demand sweep: 20 lodgings within 10 km, matching the queued growth plan. */
+export const NEARBY_HOTEL_RADIUS_METERS = 10000;
+export const NEARBY_HOTEL_LIMIT = 20;
 
 const HOTEL_MASK = [
   'places.id',
@@ -93,9 +96,24 @@ type GooglePlace = {
   photos?: Array<{ name?: string }>;
 };
 
+export type HotelDiscoveryAnchor = {
+  placeId?: string;
+  label: string;
+  query?: string;
+  location: { lat: number; lng: number };
+};
+
 export type HotelDiscoveryResult = {
   hotel: Hotel | null;
   reason?: 'not_lodging' | 'no_ev_data' | 'not_configured' | 'failed';
+  /** Successful Google resolution, even when the place is not a lodging row. */
+  anchor?: HotelDiscoveryAnchor;
+};
+
+export type NearbyHotelDiscoveryResult = {
+  hotels: Hotel[];
+  anchor: HotelDiscoveryAnchor | null;
+  reason?: 'no_ev_data' | 'failed';
 };
 
 function addressPart(place: GooglePlace, types: string[], fallback = '') {
@@ -176,7 +194,9 @@ async function fetchPlace(placeId: string, key: string): Promise<GooglePlace | n
   return (data as GooglePlace | null) ?? null;
 }
 
-async function searchLodging(query: string, key: string): Promise<GooglePlace | null> {
+type ResolvedDiscoveryPlace = { place: GooglePlace; anchor: HotelDiscoveryAnchor };
+
+async function searchPlaces(query: string, key: string): Promise<GooglePlace[]> {
   const data = await placesRequest('places:searchText', {
     method: 'POST',
     headers: { 'X-Goog-FieldMask': HOTEL_MASK },
@@ -193,8 +213,68 @@ async function searchLodging(query: string, key: string): Promise<GooglePlace | 
       },
     }),
   }, key);
+  return (data?.places as GooglePlace[] | undefined) ?? [];
+}
+
+/**
+ * Resolve a search anchor once. Lodging results are preferred for typed hotel
+ * names, but a locality is also a valid anchor for a nearby-hotel sweep.
+ */
+async function resolveDiscoveryPlace(
+  input: { placeId?: string; query?: string },
+  key: string
+): Promise<ResolvedDiscoveryPlace | null> {
+  const placeId = input.placeId?.trim() ?? '';
+  const query = input.query?.trim() ?? '';
+  if (placeId && !PLACE_ID_RE.test(placeId)) return null;
+  if (!placeId && query.length < 3) return null;
+
+  let place: GooglePlace | null = null;
+  if (placeId) {
+    place = await fetchPlace(placeId, key);
+  } else {
+    const places = await searchPlaces(query, key);
+    place = places.find(item => item.types?.some(type => LODGING_TYPES.has(type)))
+      ?? places.find(item => item.location)
+      ?? null;
+  }
+
+  const lat = Number(place?.location?.latitude);
+  const lng = Number(place?.location?.longitude);
+  if (!place || ![lat, lng].every(Number.isFinite)) return null;
+
+  return {
+    place,
+    anchor: {
+      placeId: place.id || placeId || undefined,
+      label: place.displayName?.text?.trim() || query || placeId || 'Google place',
+      query: query || undefined,
+      location: { lat, lng },
+    },
+  };
+}
+
+async function searchNearbyLodging(
+  location: { lat: number; lng: number },
+  key: string
+): Promise<GooglePlace[]> {
+  const data = await placesRequest('places:searchNearby', {
+    method: 'POST',
+    headers: { 'X-Goog-FieldMask': HOTEL_MASK },
+    body: JSON.stringify({
+      includedTypes: ['lodging'],
+      maxResultCount: NEARBY_HOTEL_LIMIT,
+      rankPreference: 'DISTANCE',
+      locationRestriction: {
+        circle: {
+          center: { latitude: location.lat, longitude: location.lng },
+          radius: NEARBY_HOTEL_RADIUS_METERS,
+        },
+      },
+    }),
+  }, key);
   const places = (data?.places as GooglePlace[] | undefined) ?? [];
-  return places.find(place => place.types?.some(type => LODGING_TYPES.has(type))) ?? null;
+  return places.filter(place => place.types?.some(type => LODGING_TYPES.has(type)));
 }
 
 async function fetchNearbyChargers(place: GooglePlace, key: string): Promise<GooglePlace[]> {
@@ -217,6 +297,30 @@ async function fetchNearbyChargers(place: GooglePlace, key: string): Promise<Goo
     }),
   }, key);
   return (data?.places as GooglePlace[] | undefined) ?? [];
+}
+
+function toChargers(place: GooglePlace, nearby: GooglePlace[]): Charger[] {
+  return nearby
+    .filter(charger => charger.id && charger.location)
+    .map(charger => {
+      const name = charger.displayName?.text || 'EV charging station';
+      return {
+        placeId: charger.id!,
+        name,
+        provider: providerFromName(name),
+        location: {
+          lat: Number(charger.location!.latitude),
+          lng: Number(charger.location!.longitude),
+        },
+        distanceMeters: haversineMeters(place.location!, charger.location!),
+        sourceUrl: mapsUrl(charger, name),
+        source: 'Google Places API (New)',
+        sourceKind: 'google' as const,
+        connectors: connectorsFromName(name),
+      };
+    })
+    .filter(charger => Number.isFinite(charger.distanceMeters) && charger.distanceMeters <= RADIUS_METERS)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
 
 function buildHotel(place: GooglePlace, chargers: Charger[], retrievedAt: string): Hotel | null {
@@ -319,44 +423,70 @@ export async function discoverHotel(
   apiKey: string | undefined
 ): Promise<HotelDiscoveryResult> {
   if (!apiKey) return { hotel: null, reason: 'not_configured' };
-  const placeId = input.placeId?.trim() ?? '';
-  const query = input.query?.trim() ?? '';
-  if (placeId && !PLACE_ID_RE.test(placeId)) return { hotel: null, reason: 'failed' };
-  if (!placeId && query.length < 3) return { hotel: null, reason: 'failed' };
 
   try {
-    const place = placeId ? await fetchPlace(placeId, apiKey) : await searchLodging(query, apiKey);
-    if (!place) return { hotel: null, reason: 'failed' };
-    if (!place.types?.some(type => LODGING_TYPES.has(type))) return { hotel: null, reason: 'not_lodging' };
+    const resolved = await resolveDiscoveryPlace(input, apiKey);
+    if (!resolved) return { hotel: null, reason: 'failed' };
+    const { place, anchor } = resolved;
+    if (!place.types?.some(type => LODGING_TYPES.has(type))) {
+      return { hotel: null, reason: 'not_lodging', anchor };
+    }
 
-    const nearby = await fetchNearbyChargers(place, apiKey);
-    const chargers: Charger[] = nearby
-      .filter(charger => charger.id && charger.location)
-      .map(charger => {
-        const name = charger.displayName?.text || 'EV charging station';
-        return {
-          placeId: charger.id!,
-          name,
-          provider: providerFromName(name),
-          location: {
-            lat: Number(charger.location!.latitude),
-            lng: Number(charger.location!.longitude),
-          },
-          distanceMeters: haversineMeters(place.location!, charger.location!),
-          sourceUrl: mapsUrl(charger, name),
-          source: 'Google Places API (New)',
-          sourceKind: 'google',
-          connectors: connectorsFromName(name),
-        };
-      })
-      .filter(charger => Number.isFinite(charger.distanceMeters) && charger.distanceMeters <= RADIUS_METERS)
-      .sort((a, b) => a.distanceMeters - b.distanceMeters);
-
-    const resolvedId = place.id ?? placeId;
-    const hotel = buildHotel({ ...place, id: resolvedId }, chargers, new Date().toISOString());
-    return hotel ? { hotel } : { hotel: null, reason: 'no_ev_data' };
+    const chargers = toChargers(place, await fetchNearbyChargers(place, apiKey));
+    const hotel = buildHotel(place, chargers, new Date().toISOString());
+    return hotel ? { hotel, anchor } : { hotel: null, reason: 'no_ev_data', anchor };
   } catch (error) {
     console.error('[AmpoHotelDiscovery] failed:', error);
     return { hotel: null, reason: 'failed' };
+  }
+}
+
+/**
+ * Bounded nearby sweep used by the queued growth script. It caches up to 20
+ * real Google lodging places within 10 km of the searched anchor, keeping only
+ * rows with property-specific on-site text or a real public charger nearby.
+ */
+export async function discoverNearbyHotels(
+  input: { placeId?: string; query?: string },
+  apiKey: string | undefined,
+  options: { delayMs?: number } = {}
+): Promise<NearbyHotelDiscoveryResult> {
+  if (!apiKey) return { hotels: [], anchor: null, reason: 'failed' };
+
+  try {
+    const resolved = await resolveDiscoveryPlace(input, apiKey);
+    if (!resolved) return { hotels: [], anchor: null, reason: 'failed' };
+    const { anchor } = resolved;
+    const lodging = await searchNearbyLodging(anchor.location, apiKey);
+    const retrievedAt = new Date().toISOString();
+    const seen = new Set<string>();
+    const hotels: Hotel[] = [];
+
+    for (const place of lodging.slice(0, NEARBY_HOTEL_LIMIT)) {
+      const placeId = place.id;
+      if (!placeId || seen.has(placeId)) continue;
+      const distanceMeters = haversineMeters(
+        { latitude: anchor.location.lat, longitude: anchor.location.lng },
+        place.location ?? {}
+      );
+      if (!Number.isFinite(distanceMeters) || distanceMeters > NEARBY_HOTEL_RADIUS_METERS) continue;
+      seen.add(placeId);
+
+      try {
+        const chargers = toChargers(place, await fetchNearbyChargers(place, apiKey));
+        const hotel = buildHotel(place, chargers, retrievedAt);
+        if (hotel) hotels.push(hotel);
+      } catch (error) {
+        console.error(`[AmpoHotelDiscovery] nearby hotel ${placeId} failed:`, error);
+      }
+      if (options.delayMs && options.delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, options.delayMs));
+      }
+    }
+
+    return { hotels, anchor, reason: hotels.length ? undefined : 'no_ev_data' };
+  } catch (error) {
+    console.error('[AmpoHotelDiscovery] nearby sweep failed:', error);
+    return { hotels: [], anchor: null, reason: 'failed' };
   }
 }

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "hotels": [],
+  "areas": [],
+  "note": "Demand-discovered Google lodging rows. Managed by scripts/discover-hotels-from-queue.mjs; merged into hotels-ev.index.generated.json by scripts/build-hotels-ev-index.mjs."
+}

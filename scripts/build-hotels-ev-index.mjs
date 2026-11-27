@@ -25,6 +25,7 @@ const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const TARGETS = path.join(ROOT, 'scripts/hotels-ev-targets.json');
 const OFFICIAL_EVIDENCE = path.join(ROOT, 'scripts/hotels-official-evidence.json');
 const OUT = path.join(ROOT, 'src/data/hotels-ev.index.generated.json');
+const DISCOVERED = path.join(ROOT, 'src/data/hotels.discovered.json');
 const PHOTO_DIR = path.join(ROOT, 'public/hotels/google');
 const CACHE_DIR = path.join(os.tmpdir(), 'ampo-hotels-ev-index-cache-v1');
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -483,6 +484,44 @@ async function collectArea(area, key, resolvePlaceByText, retrievedAt, officialE
   };
 }
 
+/**
+ * Demand-discovered rows live in their own durable file so a fresh seed build
+ * never wipes them. Merge by exact Google Place ID before writing the index;
+ * build-seo-pages.mjs then emits detail shells and sitemap URLs for them too.
+ */
+async function mergeDiscoveredHotels(hotels, results) {
+  let discovered;
+  try {
+    discovered = JSON.parse(await fs.readFile(DISCOVERED, 'utf8'));
+  } catch {
+    return { hotelsAdded: 0, areasAdded: 0 };
+  }
+  const seenPlaces = new Set(hotels.map(hotel => hotel.provenance?.placeId).filter(Boolean));
+  let hotelsAdded = 0;
+  for (const hotel of discovered.hotels ?? []) {
+    const placeId = hotel.provenance?.placeId;
+    if (!placeId || seenPlaces.has(placeId)) continue;
+    seenPlaces.add(placeId);
+    hotels.push(hotel);
+    hotelsAdded++;
+  }
+
+  const seenAreaIds = new Set(results.map(area => area.id));
+  const seenAreaNames = new Set(results.map(area =>
+    `${area.name}|${area.city ?? ''}|${area.state ?? ''}`.toLowerCase()));
+  let areasAdded = 0;
+  for (const area of discovered.areas ?? []) {
+    if (!area?.id || seenAreaIds.has(area.id)) continue;
+    const key = `${area.name}|${area.city ?? ''}|${area.state ?? ''}`.toLowerCase();
+    if (seenAreaNames.has(key)) continue;
+    seenAreaIds.add(area.id);
+    seenAreaNames.add(key);
+    results.push(area);
+    areasAdded++;
+  }
+  return { hotelsAdded, areasAdded };
+}
+
 function validate(index) {
   if (!Array.isArray(index.hotels) || !Array.isArray(index.areas)) throw new Error('missing hotels/areas arrays');
   const allowed = new Set(['on_site_google_place', 'on_site_official_source', 'ev_charger_nearby', 'both']);
@@ -608,6 +647,8 @@ async function main() {
     }
   }
 
+  const discoveryMerge = await mergeDiscoveredHotels(hotels, results);
+
   const evSignalCounts = {};
   const providers = new Set();
   const priceBands = new Set();
@@ -633,7 +674,8 @@ async function main() {
       demandCheckedOn: targets.reviewedOn,
       officialEvidenceCheckedOn: officialEvidence.reviewedOn,
       cacheTtlDays: 30,
-      note: 'Point-in-time local seed. Proximity stays "Charger nearby"; only sourced text can claim on-site EV charging. No social reviews are collected.',
+      demandDiscovery: 'Demand-driven Google lodging results are merged from src/data/hotels.discovered.json by exact Place ID.',
+      note: 'Curated seed plus demand-discovered rows. Proximity stays "Charger nearby"; only sourced text can claim on-site EV charging. No social reviews are collected.',
     },
     coverage: {
       areasRequested: areas.length,
@@ -642,6 +684,8 @@ async function main() {
       hotelsIndexed: hotels.length,
       officialEvidenceEntries: officialEvidence.entries.length,
       officialExactAdditions: officialAdded,
+      discoveredHotels: discoveryMerge.hotelsAdded,
+      discoveredAreas: discoveryMerge.areasAdded,
       evSignalCounts,
       providers: [...providers].sort(),
       priceBands: [...priceBands].sort(),
